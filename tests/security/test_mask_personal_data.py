@@ -1,5 +1,7 @@
 """Table of cases for mask_personal_data, false positives included."""
 
+import time
+
 import pytest
 
 from meritum_core.security import MaskedText, mask_personal_data
@@ -12,6 +14,9 @@ CASES = [
     ("biuro 22 123 45 67", "biuro [telefon]"),
     ("numer 601234567", "numer [telefon]"),
     ("pisz: Jan.Kowalski+x@sub.example.com.pl!", "pisz: [e-mail]!"),
+    ("mieszkam na Długiej 5 601 234 567", "mieszkam na Długiej 5 [telefon]"),
+    ("lokal 12 601-234-567", "lokal 12 [telefon]"),
+    ("601 234 567 601 234 567", "[telefon] [telefon]"),
     ("PESEL 44051401359", "PESEL [PESEL]"),
     ("PESEL: 02070803628,", "PESEL: [PESEL],"),
     # false positives: left unchanged
@@ -46,3 +51,10 @@ def test_result_counts_replacements_and_holds_no_original() -> None:
 def test_masked_text_is_frozen() -> None:
     with pytest.raises(ValueError, match="frozen"):
         mask_personal_data("x").text = "y"  # ty: ignore[invalid-assignment]  # checks immutability
+
+
+@pytest.mark.parametrize("token", ["a" * 100_000, "1" * 100_000, "a@" + "b" * 100_000])
+def test_long_token_is_masked_in_linear_time(token: str) -> None:
+    started = time.perf_counter()
+    mask_personal_data(token)
+    assert time.perf_counter() - started < 0.5

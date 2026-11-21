@@ -35,7 +35,7 @@ class MaskedText(BaseModel, frozen=True):
 
 
 def _valid_pesel(digits: str) -> bool:
-    total = sum(int(d) * w for d, w in zip(digits, PESEL_WEIGHTS, strict=False))
+    total = sum(int(d) * w for d, w in zip(digits[:10], PESEL_WEIGHTS, strict=True))
     return (10 - total % 10) % 10 == int(digits[10])
 
 

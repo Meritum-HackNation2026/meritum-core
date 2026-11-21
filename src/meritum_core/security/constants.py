@@ -17,16 +17,19 @@ PESEL_MARKER: Final = "[PESEL]"
 """Replaces a PESEL number with a valid checksum."""
 
 PHONE_PATTERN: Final = re.compile(
-    r"(?<![\w+])(?<!\d[ -])"  # not the tail of a longer number
+    r"(?<![\w+])"
     r"(?:(?:\+|00)48[ -]?)?"
     r"(?:\d{3}[ -]?\d{3}[ -]?\d{3}|\d{2}[ -]?\d{3}[ -]?\d{2}[ -]?\d{2})"
-    r"(?![ -]?\d)(?!\w)"
+    r"(?!\w)"
 )
 """Polish phone: optional +48/0048, 9 digits as 3-3-3 (mobile) or 2-3-2-2 (landline),
-groups split by spaces or hyphens."""
+groups split by spaces or hyphens. A longer digit-grouped number may lose 9 digits:
+over-masking is the safe side."""
 
-EMAIL_PATTERN: Final = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
-"""E-mail address: local part, @, a domain with at least one dot."""
+EMAIL_PATTERN: Final = re.compile(r"(?<![\w.+-])[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+"""E-mail address: local part, @, a domain with at least one dot.
+
+A match starts only at a token start, so long input takes linear time."""
 
 PESEL_PATTERN: Final = re.compile(r"(?<![\w+])\d{11}(?!\w)")
 """Candidate PESEL: exactly 11 digits; the checksum decides."""
