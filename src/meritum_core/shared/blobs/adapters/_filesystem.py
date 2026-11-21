@@ -75,8 +75,11 @@ class FilesystemBlobStore:
     @staticmethod
     def _write(path: Path, data: bytes) -> None:
         partial = path.with_name(path.name + PARTIAL_SUFFIX)
-        partial.write_bytes(data)
-        partial.replace(path)
+        try:
+            partial.write_bytes(data)
+            partial.replace(path)
+        finally:
+            partial.unlink(missing_ok=True)
 
     async def get(self, blob_id: str) -> bytes:
         """Read a stored file.

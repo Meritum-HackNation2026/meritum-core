@@ -5,6 +5,7 @@ Features:
 """
 
 import asyncio
+import contextlib
 
 from google.api_core.exceptions import NotFound
 from google.cloud.storage import Client
@@ -87,6 +88,7 @@ class GcsBlobStore:
         """
         blob = self._bucket.blob(check_blob_id(blob_id))
         try:
+            # bytes(): the SDK is untyped; this types the adapter's surface
             return bytes(await asyncio.to_thread(blob.download_as_bytes))
         except NotFound:
             raise BlobNotFoundError(blob_id) from None
@@ -98,10 +100,8 @@ class GcsBlobStore:
             blob_id: the id ``put`` returned; a malformed one raises like ``get``.
         """
         blob = self._bucket.blob(check_blob_id(blob_id))
-        try:
+        with contextlib.suppress(NotFound):
             await asyncio.to_thread(blob.delete)
-        except NotFound:
-            return
 
     async def uri(self, blob_id: str) -> str:
         """Return ``gs://<bucket>/<blob_id>`` for Speech-to-Text batch (ADR-30).

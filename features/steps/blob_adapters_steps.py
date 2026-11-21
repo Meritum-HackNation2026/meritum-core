@@ -62,7 +62,11 @@ def given_filesystem_volume(context: Context) -> None:
 
 @when("backend zapisuje nagranie, a worker je odczytuje")
 def when_backend_saves_and_worker_reads(context: Context) -> None:
-    """Backend and worker each build their own store from the same settings."""
+    """Backend and worker each build their own store from the same settings.
+
+    Two instances in one process: they share nothing but the directory, as two
+    processes on one volume do.
+    """
     backend, worker = (
         build_blob_store(context.settings),
         build_blob_store(context.settings),

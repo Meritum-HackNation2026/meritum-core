@@ -102,13 +102,26 @@ def test_uri_names_the_blob_for_providers_that_read_from_storage(
     assert run.run(store.uri(ref.blob_id)).endswith(ref.blob_id)
 
 
-def test_naive_expiry_is_rejected(
-    run: asyncio.Runner, store: BlobStore
+@pytest.mark.parametrize(
+    ("content_type", "expires_at", "field"),
+    [
+        ("audio/ogg", EXPIRES_AT.replace(tzinfo=None), "expires_at"),
+        ("", EXPIRES_AT, "content_type"),
+    ],
+)
+def test_invalid_put_arguments_are_rejected(
+    run: asyncio.Runner,
+    store: BlobStore,
+    content_type: str,
+    expires_at: datetime,
+    field: str,
 ) -> None:
-    naive = EXPIRES_AT.replace(tzinfo=None)
-    with pytest.raises(ValidationError, match="expires_at"):
+    with pytest.raises(ValidationError, match=field):
         run.run(
             store.put(
-                b"abc", kind=BlobKind.AUDIO, content_type="audio/ogg", expires_at=naive
+                b"abc",
+                kind=BlobKind.AUDIO,
+                content_type=content_type,
+                expires_at=expires_at,
             )
         )
