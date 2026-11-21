@@ -43,6 +43,8 @@ class UnsupportedAudioFormatError(UnsupportedAudioError):
 class AudioTooLongError(UnsupportedAudioError):
     """Over ``MAX_AUDIO_SECONDS``, or over ``MAX_AUDIO_BYTES``.
 
+    The size cap counts as length: for the user both mean "recording too long".
+
     Features:
         US-SPR-11, F-08, ADR-30
     """
