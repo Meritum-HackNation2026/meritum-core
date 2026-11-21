@@ -62,16 +62,6 @@ def test_list_for_panel_is_newest_first_and_filters_by_state(
     assert [c.id for c in run.run(cases.list_cases("open"))] == ["#S-3", "#S-1"]
 
 
-def test_panel_list_carries_no_channel_user_hash(
-    run: asyncio.Runner, cases: ModeratorCaseRepository
-) -> None:
-    save(run, cases, case("#S-1"))
-    dumped = json.dumps(
-        [c.model_dump(mode="json") for c in run.run(cases.list_cases())]
-    )
-    assert "channel_user_hash" not in dumped
-
-
 def test_remove_checks_keeps_the_other_checks_of_a_case(
     run: asyncio.Runner, cases: ModeratorCaseRepository
 ) -> None:

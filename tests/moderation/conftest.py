@@ -5,11 +5,10 @@ from collections.abc import Callable, Iterator
 
 import pytest
 
-from meritum_core.moderation import (
-    HighRiskTopicRepository,
+from meritum_core.moderation import HighRiskTopicRepository, ModeratorCaseRepository
+from meritum_core.moderation.fakes import (
     InMemoryHighRiskTopicRepository,
     InMemoryModeratorCaseRepository,
-    ModeratorCaseRepository,
 )
 
 CASE_ADAPTERS: dict[str, Callable[[], ModeratorCaseRepository]] = {

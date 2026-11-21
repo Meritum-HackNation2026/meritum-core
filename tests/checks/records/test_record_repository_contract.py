@@ -88,7 +88,7 @@ def test_expired_selects_records_past_retention_oldest_first(
     run: asyncio.Runner, records: CheckRecordRepository
 ) -> None:
     save(run, records, record("c_2", 2), record("c_1", 1), record("c_9", 9))
-    now = T0 + timedelta(minutes=5)
+    now = T0 + timedelta(minutes=2)
     assert run.run(records.expired(now, limit=10)) == ["c_1", "c_2"]
     assert run.run(records.expired(now, limit=1)) == ["c_1"]
 

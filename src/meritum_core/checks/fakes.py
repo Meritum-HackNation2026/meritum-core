@@ -1,7 +1,7 @@
 """In-memory CheckRecordRepository for the tests of meritum-backend and meritum-worker.
 
 Features:
-    US-OBS-01, US-BEZ-05, F-22, F-24
+    US-OBS-01, US-BEZ-05, F-22, F-24, ADR-13
 """
 
 from collections.abc import Sequence

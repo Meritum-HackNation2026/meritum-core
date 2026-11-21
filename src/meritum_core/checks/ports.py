@@ -10,6 +10,7 @@ from typing import Literal, Protocol
 
 from meritum_core.checks.contracts import CheckRecord
 
+# A copy, not an import of jobs.contracts.SubjectKind: jobs imports checks (cycle).
 type SubjectKind = Literal["session_id", "user_id", "channel_user_hash"]
 """The CheckRecord field that names a person, as in `DeleteSubjectInput.kind`."""
 

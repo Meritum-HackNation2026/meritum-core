@@ -5,7 +5,8 @@ from collections.abc import Callable, Iterator
 
 import pytest
 
-from meritum_core.checks import CheckRecordRepository, InMemoryCheckRecordRepository
+from meritum_core.checks import CheckRecordRepository
+from meritum_core.checks.fakes import InMemoryCheckRecordRepository
 
 ADAPTERS: dict[str, Callable[[], CheckRecordRepository]] = {
     "memory": InMemoryCheckRecordRepository,

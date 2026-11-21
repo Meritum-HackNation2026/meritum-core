@@ -80,6 +80,6 @@ def test_delete_expired_removes_notifications_past_retention(
     run: asyncio.Runner, notes: NotificationRepository
 ) -> None:
     save(run, notes, note("n_old", 0), note("n_new", 60 * 24 * 10))
-    now = T0 + timedelta(days=31)
+    now = T0 + timedelta(days=30)  # n_old's retention ends exactly now
     assert run.run(notes.delete_expired(now)) == 1
     assert ids(run.run(notes.list_for("session_id", SESSION))) == ["n_new"]

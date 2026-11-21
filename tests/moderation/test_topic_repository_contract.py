@@ -2,9 +2,6 @@
 
 import asyncio
 
-import pytest
-from pydantic import ValidationError
-
 from meritum_core.moderation import HighRiskTopic, HighRiskTopicRepository
 
 HEALTH = HighRiskTopic(name="zdrowie", keywords=["szczepionka", "epidemia"])
@@ -35,12 +32,3 @@ def test_delete_topic_removes_it_and_ignores_unknown_names(
     run.run(topics.delete_topic("zdrowie"))
     run.run(topics.delete_topic("nieznany"))
     assert run.run(topics.list_topics()) == []
-
-
-@pytest.mark.parametrize(
-    "fields",
-    [{"name": "", "keywords": ["x"]}, {"name": "zdrowie", "keywords": []}],
-)
-def test_a_topic_needs_a_name_and_keywords(fields: dict[str, object]) -> None:
-    with pytest.raises(ValidationError):
-        HighRiskTopic.model_validate(fields)

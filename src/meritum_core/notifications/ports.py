@@ -10,7 +10,11 @@ from typing import Literal, Protocol
 from meritum_core.checks.contracts import Notification
 
 type RecipientKind = Literal["session_id", "user_id"]
-"""The Notification field that names its recipient."""
+"""The Notification field that names its recipient.
+
+Discord, SMS and MCP users are named by ``session_id``, which equals their
+channel user hash there.
+"""
 
 
 class NotificationRepository(Protocol):

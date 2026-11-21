@@ -11,9 +11,10 @@ from pathlib import Path
 from behave import given, then, when
 from behave.runner import Context
 
-from meritum_core.checks import CheckRecordRepository, InMemoryCheckRecordRepository
+from meritum_core.checks import CheckRecordRepository
 from meritum_core.checks.contracts import CheckRecord, ModeratorCase
-from meritum_core.moderation import InMemoryModeratorCaseRepository
+from meritum_core.checks.fakes import InMemoryCheckRecordRepository
+from meritum_core.moderation.fakes import InMemoryModeratorCaseRepository
 
 _EXAMPLES = json.loads(
     (Path(__file__).parents[2] / "contracts" / "examples.json").read_text("utf-8")

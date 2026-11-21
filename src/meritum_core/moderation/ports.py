@@ -70,6 +70,7 @@ class ModeratorCaseRepository(Protocol):
         """Drop deleted checks from every case (US-BEZ-05).
 
         A claim left without checks goes, and so does a case left without claims.
+        ``distinct_askers``, ``first_seen`` and ``last_seen`` stay: they name nobody.
 
         Args:
             check_ids: the deleted checks.

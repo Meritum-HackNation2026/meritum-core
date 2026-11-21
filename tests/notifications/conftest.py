@@ -5,10 +5,8 @@ from collections.abc import Callable, Iterator
 
 import pytest
 
-from meritum_core.notifications import (
-    InMemoryNotificationRepository,
-    NotificationRepository,
-)
+from meritum_core.notifications import NotificationRepository
+from meritum_core.notifications.fakes import InMemoryNotificationRepository
 
 ADAPTERS: dict[str, Callable[[], NotificationRepository]] = {
     "memory": InMemoryNotificationRepository,
