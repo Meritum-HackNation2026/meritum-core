@@ -4,6 +4,7 @@ Features:
     US-SPR-07, F-06
 """
 
+from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel
@@ -70,12 +71,15 @@ class FetchedPage(BaseModel, frozen=True):
         content_type: the media type of the response, without parameters.
         untrusted_text: the main text (trafilatura for HTML, the body for text).
         tdm_reserved: the page's meta tags reserve text and data mining.
+        published_at: the publication date from the HTML metadata; None for
+            plain text, a page without a date or one whose date is unreadable.
 
     Features:
-        US-SPR-07, F-06, ADR-12
+        US-SPR-07, US-ZRD-05, F-06, ADR-12
     """
 
     url: str
     content_type: str
     untrusted_text: str
     tdm_reserved: bool = False
+    published_at: date | None = None

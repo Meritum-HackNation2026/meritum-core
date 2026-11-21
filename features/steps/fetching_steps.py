@@ -5,6 +5,7 @@ The server is an in-process httpx handler and DNS a table: no network.
 
 import asyncio
 import ipaddress
+from datetime import date
 
 import httpx
 from behave import given, then, when
@@ -70,6 +71,41 @@ def given_facebook_post(context: Context) -> None:
         },
     )
     context.url = "https://www.facebook.com/post/1"
+
+
+ARTICLE = "<p>" + "Sejm uchwalił ustawę o ochronie danych. " * 20 + "</p>"
+
+
+@given("publiczna strona HTML z datą publikacji {day} w metadanych")
+def given_page_with_date(context: Context, day: str) -> None:
+    """An article whose head carries ``article:published_time``."""
+    meta = f'<meta property="article:published_time" content="{day}T09:30:00+01:00">'
+    html = f"<html><head>{meta}</head><body><article>{ARTICLE}</article></body></html>"
+    _serve(context, {"news.example/a": httpx.Response(200, html=html)})
+    context.url = "https://news.example/a"
+
+
+@given("publiczna strona HTML bez daty w metadanych")
+def given_page_without_date(context: Context) -> None:
+    """An article with no date anywhere in its markup."""
+    html = f"<html><body><article>{ARTICLE}</article></body></html>"
+    _serve(context, {"news.example/a": httpx.Response(200, html=html)})
+    context.url = "https://news.example/a"
+
+
+@when("fetcher pobiera ją jako link użytkownika")
+@when("fetcher ją pobiera")
+def when_fetching_page(context: Context) -> None:
+    """Fetch the link and keep the page."""
+    fetch = context.fetcher.fetch(context.url, purpose=FetchPurpose.USER_LINK)
+    context.page = asyncio.run(fetch)
+
+
+@then("FetchedPage ma published_at {day}")
+def then_published_at(context: Context, day: str) -> None:
+    """The page's publication date is ``day`` (``None`` for no date)."""
+    expected = None if day == "None" else date.fromisoformat(day)
+    assert context.page.published_at == expected
 
 
 @when("system próbuje pobrać stronę")
