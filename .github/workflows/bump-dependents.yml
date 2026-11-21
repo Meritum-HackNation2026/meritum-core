@@ -1,0 +1,37 @@
+name: Bump dependents
+
+# After a push to develop that changes the library, opens or updates PRs that move
+# meritum-backend and meritum-worker to this commit (rev in pyproject.toml and uv.lock) and
+# refresh the contract copy in meritum-design-system (scripts/open-bump-prs.sh).
+# Bump PRs only: their own CI runs lint and unit tests; nothing cross-component runs here.
+# Needs the repo secret MERITUM_BOT_TOKEN (on the Free plan org secrets do not reach private repos).
+on:
+  push:
+    branches: [develop]
+    paths: ["src/**", "contracts/**", "pyproject.toml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bump-dependents
+  cancel-in-progress: true # a newer develop commit supersedes the bump in flight
+
+jobs:
+  bump:
+    runs-on: [self-hosted, meritum]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false # ~/.cache/uv stays on the self-hosted runner
+      - name: Open bump PRs
+        env:
+          BOT_TOKEN: ${{ secrets.MERITUM_BOT_TOKEN }}
+        run: |
+          if [ -z "$BOT_TOKEN" ]; then
+            echo "::warning::MERITUM_BOT_TOKEN is not set; no bump PRs opened"
+            exit 0
+          fi
+          scripts/open-bump-prs.sh

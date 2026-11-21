@@ -40,10 +40,10 @@ Do końca prac repozytorium jest prywatne (potem wszystkie repozytoria Meritum b
 dependencies = ["meritum-core"]
 
 [tool.uv.sources]
-meritum-core = { git = "ssh://git@github.com/Meritum-HackNation2026/meritum-core.git", branch = "main" }
+meritum-core = { git = "ssh://git@github.com/Meritum-HackNation2026/meritum-core.git", rev = "<sha commita z develop>" }
 ```
 
-`uv.lock` przypina konkretny commit. Po zmianie w core: `uv lock --upgrade-package meritum-core` w backendzie i workerze. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret repozytorium `MERITUM_CORE_SSH_KEY` w backendzie i workerze; na planie Free sekrety organizacji nie trafiają do repo prywatnych).
+Backend i worker przypinają konkretny commit core (`rev`), na develop commit z develop. Po pushu do develop, który zmienia `src/`, `contracts/` albo `pyproject.toml`, workflow `bump-dependents.yml` otwiera albo aktualizuje PR-y z podbiciem w backendzie i workerze (gałąź `chore/bump-core`) oraz PR z kopią kontraktów w design-systemie, gdy kontrakty się zmieniły. Potrzebuje sekretu repozytorium `MERITUM_BOT_TOKEN`: tokenu fine-grained z uprawnieniami Contents i Pull requests (odczyt i zapis) w meritum-backend, meritum-worker i meritum-design-system oraz Contents (odczyt) w meritum-core. Bez sekretu workflow tylko ostrzega. Core promujemy do main przed backendem i workerem, żeby przypięty commit był już na main. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret repozytorium `MERITUM_CORE_SSH_KEY` w backendzie i workerze; na planie Free sekrety organizacji nie trafiają do repo prywatnych).
 
 ## Praca lokalna
 
