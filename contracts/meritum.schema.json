@@ -105,7 +105,7 @@
           ],
           "default": null,
           "description": "Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.",
-          "title": "Session Id"
+          "title": "Request Session Id"
         }
       },
       "required": [

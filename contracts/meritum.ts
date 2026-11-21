@@ -18,7 +18,7 @@ export type ChannelUserId = string | null;
 /**
  * Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.
  */
-export type SessionId = string | null;
+export type RequestSessionId = string | null;
 export type Id = string;
 export type Title = string;
 export type Publisher = string;
@@ -237,7 +237,7 @@ export type CheckId2 = string;
 /**
  * Web and extension: random id kept in the browser session. Discord, SMS, MCP: the salted hash of the channel user id (equal to channel_user_hash).
  */
-export type SessionId1 = string;
+export type SessionId = string;
 /**
  * Signed-in users only (Google or Microsoft account); None for anonymous checks.
  */
@@ -333,7 +333,7 @@ export type ExclusionReason = string | null;
 export type Id2 = string;
 export type Kind2 = "check_progress" | "check_done" | "moderator_answer" | "new_evidence" | "case_assigned" | "system";
 export type Status4 = "unread" | "read";
-export type SessionId2 = string | null;
+export type SessionId1 = string | null;
 export type UserId1 = string | null;
 export type CheckId3 = string | null;
 export type CaseId1 = string | null;
@@ -360,7 +360,7 @@ export interface CheckRequest {
   page_url?: PageUrl;
   audio_id?: AudioId;
   channel_user_id?: ChannelUserId;
-  session_id?: SessionId;
+  session_id?: RequestSessionId;
 }
 /**
  * A fragment of a source and how it bears on the claim. The pipeline drops fragments it cannot find verbatim.
@@ -628,7 +628,7 @@ export interface ModelUsage {
  */
 export interface CheckRecord {
   check_id: CheckId2;
-  session_id: SessionId1;
+  session_id: SessionId;
   user_id?: UserId;
   channel: Channel1;
   channel_user_hash?: ChannelUserHash;
@@ -712,7 +712,7 @@ export interface Notification {
   id: Id2;
   kind: Kind2;
   status?: Status4;
-  session_id?: SessionId2;
+  session_id?: SessionId1;
   user_id?: UserId1;
   check_id?: CheckId3;
   case_id?: CaseId1;

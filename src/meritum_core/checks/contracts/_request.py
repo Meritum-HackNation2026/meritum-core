@@ -63,6 +63,7 @@ class CheckRequest(_Model):
         Field(
             min_length=8,
             max_length=64,
+            title="Request Session Id",
             description="Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.",
         ),
     ] = None
@@ -75,7 +76,7 @@ class CheckRequest(_Model):
         return self
 
     @model_validator(mode="after")
-    def _channel_user_id_only_when_sessionless(self) -> CheckRequest:
+    def _channel_identity(self) -> CheckRequest:
         sessionless = self.channel in SESSIONLESS_CHANNELS
         if self.channel_user_id is not None and not sessionless:
             raise ValueError(
