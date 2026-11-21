@@ -1,4 +1,4 @@
-"""Constants of the checks slice: input normalization, contract version and verdict rules.
+"""Constants of the checks slice: input normalization, contracts and verdict rules.
 
 The contract value sets are typed with the contract literals; those annotations are
 only read by type checkers, so importing the contracts here creates no runtime cycle.

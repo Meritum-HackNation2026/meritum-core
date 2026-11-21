@@ -1,4 +1,4 @@
-"""Context next to a claim that never changes its verdict: incidents, ratings, sanctions.
+"""Claim context that never changes the verdict: incidents, ratings, sanctions.
 
 Features:
     US-ZRD-07, US-ZRD-08, ADR-02
