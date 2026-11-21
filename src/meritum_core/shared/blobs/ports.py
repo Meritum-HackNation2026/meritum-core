@@ -39,6 +39,10 @@ class BlobStore(Protocol):
 
         Returns:
             The stored file, with its id.
+
+        Raises:
+            pydantic.ValidationError: ``expires_at`` is naive or ``content_type``
+                is empty; nothing is stored.
         """
         ...
 

@@ -5,7 +5,10 @@ Features:
 """
 
 from enum import StrEnum
+from pathlib import Path
+from typing import Annotated
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from meritum_core.shared.blobs.constants import ENV_PREFIX
@@ -19,6 +22,8 @@ class BlobProvider(StrEnum):
     """
 
     MEMORY = "memory"
+    FILESYSTEM = "filesystem"
+    GCS = "gcs"
 
 
 class BlobSettings(BaseSettings):
@@ -26,6 +31,8 @@ class BlobSettings(BaseSettings):
 
     Attributes:
         provider: which adapter to build.
+        directory: the volume directory of ``filesystem`` (``MERITUM_BLOB_DIRECTORY``).
+        bucket: the private bucket of ``gcs`` (``MERITUM_BLOB_BUCKET``).
 
     Features:
         ADR-31
@@ -34,3 +41,5 @@ class BlobSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix=ENV_PREFIX, frozen=True)
 
     provider: BlobProvider
+    directory: Path | None = None
+    bucket: Annotated[str, Field(min_length=1)] | None = None

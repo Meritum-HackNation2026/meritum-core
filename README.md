@@ -9,9 +9,23 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania i czyta ich strumienie (`stream`) i zdarzenia (`event`) |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
 | `meritum_core.jobs.fakes` | `InMemoryJobQueue`: port w pamięci do testów backendu i workera (nagrywa zlecone zadania, odtwarza strumienie i zdarzenia) |
-| `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci i fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (`memory`); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
+| `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci, adaptery systemu plików i prywatnego bucketu GCS oraz fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (zob. [Magazyn plików](#magazyn-plików)); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
 | `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+
+## Magazyn plików
+
+Backend i worker budują `BlobStore` przez `build_blob_store(BlobSettings())`, a ustawienia czytają ze zmiennych środowiska:
+
+| Zmienna | Kiedy | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_BLOB_PROVIDER` | zawsze | `memory` (testy), `filesystem` (lokalnie i serwer zespołu), `gcs` (chmura) |
+| `MERITUM_BLOB_DIRECTORY` | `filesystem` | katalog na wolumenie wspólnym dla backendu i workera; tworzony, jeśli go nie ma |
+| `MERITUM_BLOB_BUCKET` | `gcs` | nazwa prywatnego bucketu Cloud Storage |
+
+Bucket leży w regionie `europe-central2`, nie ma publicznego dostępu, a reguła cyklu życia usuwa obiekty po 30 dniach (zakłada go meritum-infra). Adapter GCS loguje się przez Application Default Credentials i nie wydaje publicznych ani podpisanych adresów, tylko bajty albo adres `gs://` dla Speech-to-Text w trybie batch. Adapter systemu plików nazywa pliki wyłącznie identyfikatorem bloba i nie wychodzi poza katalog.
+
+Test kontraktowy uruchamia adapter GCS na emulatorze w procesie (`gcp-storage-emulator` na localhost), bez sieci. Zapis do prawdziwego bucketu sprawdza się tylko lokalnie: `MERITUM_BLOB_BUCKET=<bucket> uv run pytest -m integration`.
 
 ## Kontrakty dla TypeScriptu i design systemu
 

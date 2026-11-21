@@ -10,3 +10,13 @@ Feature: Magazyn plików
     Given nagranie z audio_id powiązanym z session_id
     When workflow usuwania danych sesji kasuje blob
     Then odczyt po audio_id kończy się udokumentowanym błędem „nie ma takiego pliku”
+
+  Scenario: adapter systemu plików
+    Given MERITUM_BLOB_PROVIDER=filesystem i katalog wolumenu
+    When backend zapisuje nagranie, a worker je odczytuje
+    Then oba procesy widzą ten sam plik, a usunięcie kasuje go z dysku
+
+  Scenario: adapter GCS podaje adres gs://
+    Given MERITUM_BLOB_PROVIDER=gcs i nazwa bucketu
+    When worker prosi o adres nagrania dłuższego niż około minuty
+    Then dostaje adres gs:// do odczytu przez Speech-to-Text w trybie batch

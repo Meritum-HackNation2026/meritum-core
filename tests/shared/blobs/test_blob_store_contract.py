@@ -5,6 +5,7 @@ import re
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from pydantic import ValidationError
 
 from meritum_core.shared.blobs import (
     BLOB_ID_PATTERN,
@@ -99,3 +100,15 @@ def test_uri_names_the_blob_for_providers_that_read_from_storage(
 ) -> None:
     ref = put(run, store, b"abc")
     assert run.run(store.uri(ref.blob_id)).endswith(ref.blob_id)
+
+
+def test_naive_expiry_is_rejected_before_anything_is_stored(
+    run: asyncio.Runner, store: BlobStore
+) -> None:
+    naive = EXPIRES_AT.replace(tzinfo=None)
+    with pytest.raises(ValidationError, match="expires_at"):
+        run.run(
+            store.put(
+                b"abc", kind=BlobKind.AUDIO, content_type="audio/ogg", expires_at=naive
+            )
+        )
