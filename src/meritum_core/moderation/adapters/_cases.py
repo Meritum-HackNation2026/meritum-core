@@ -30,6 +30,8 @@ async def remove_case_checks(conn: AsyncConnection, check_ids: Sequence[str]) ->
     gone = list(check_ids)
     if not gone:
         return
+    # shortcut: one lock for every case write serializes all saves; key it per
+    # case when the moderator panel's write rate makes the queue visible.
     await conn.execute("SELECT pg_advisory_xact_lock(%s)", (CASE_WRITE_LOCK,))
     await conn.execute(
         "INSERT INTO removed_case_checks (check_id) SELECT unnest(%s::text[])"
@@ -44,16 +46,22 @@ async def remove_case_checks(conn: AsyncConnection, check_ids: Sequence[str]) ->
     )
     for (body,) in await cursor.fetchall():
         case = ModeratorCase.model_validate(body)
-        claims = _without(case.claims, set(gone))
-        if claims:
-            await _upsert(conn, case.model_copy(update={"claims": claims}))
-        else:
-            await conn.execute("DELETE FROM moderator_cases WHERE id = %s", (case.id,))
+        await _store_without(conn, case, set(gone))
 
 
 def _without(claims: list[CaseClaim], gone: set[str]) -> list[CaseClaim]:
     kept = [(c, [i for i in c.check_ids if i not in gone]) for c in claims]
     return [c.model_copy(update={"check_ids": ids}) for c, ids in kept if ids]
+
+
+async def _store_without(
+    conn: AsyncConnection, case: ModeratorCase, gone: set[str]
+) -> None:
+    claims = _without(case.claims, gone)
+    if claims:
+        await _upsert(conn, case.model_copy(update={"claims": claims}))
+    else:
+        await conn.execute("DELETE FROM moderator_cases WHERE id = %s", (case.id,))
 
 
 async def _upsert(conn: AsyncConnection, case: ModeratorCase) -> None:
@@ -97,13 +105,7 @@ class PostgresModeratorCaseRepository:
                 (case.check_ids,),
             )
             removed = {check_id for (check_id,) in await cursor.fetchall()}
-            claims = _without(case.claims, removed)
-            if claims:
-                await _upsert(conn, case.model_copy(update={"claims": claims}))
-            else:
-                await conn.execute(
-                    "DELETE FROM moderator_cases WHERE id = %s", (case.id,)
-                )
+            await _store_without(conn, case, removed)
 
     async def get(self, case_id: str) -> ModeratorCase | None:
         """Read one case.
