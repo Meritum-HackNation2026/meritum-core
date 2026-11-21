@@ -146,8 +146,9 @@ class CatalogEntry(_Model):
         kind: the kind of source.
         tier: primary or secondary.
         license: the licence the content is used under.
+        role: evidence, or a source-status list that only feeds a neutral warning.
         ingest: how documents of the domain are ingested.
-        refresh_hours: how often the domain is refreshed.
+        refresh_minutes: how often the domain is refreshed; never set for live sources.
         validity: the age override for every document of the entry.
         max_age_hours: a shorter threshold for short-lived sources.
         qualified_because: why the domain qualifies.
@@ -165,14 +166,20 @@ class CatalogEntry(_Model):
     publisher_id: PublisherId
     kind: SourceKind
     tier: SourceTier
+    role: Annotated[
+        Literal["evidence", "source_status"],
+        Field(
+            description="source_status: a list (sanctions, CERT warnings) that ingest skips; a check uses it only for a neutral source-status warning, never as evidence."
+        ),
+    ] = "evidence"
     license: Annotated[str, Field(min_length=2, max_length=120)]
     ingest: Annotated[
-        Literal["static", "rss", "sitemap", "web_search", "mcp", "api"],
+        Literal["static", "rss", "sitemap", "web_search", "mcp", "api", "live"],
         Field(
-            description="mcp: the local EUvsDisinfo copy; api: Google Fact Check Tools, used only to discover URLs and show the rating as context."
+            description="mcp: the local EUvsDisinfo copy; api: a public API (IMGW, GIOS, Sejm ELI, dane.gov.pl, statistics) ingested into the corpus; live: queried at check time (Fact Check API, short-lived measurements), never in the corpus snapshot."
         ),
     ]
-    refresh_hours: Annotated[int | None, Field(ge=1)] = None
+    refresh_minutes: Annotated[int | None, Field(ge=15)] = None
     validity: Annotated[
         Validity,
         Field(
@@ -219,6 +226,8 @@ class CatalogEntry(_Model):
                 "a secondary source whose owner reserved text and data mining is "
                 "excluded"
             )
+        if self.ingest == "live" and self.refresh_minutes is not None:
+            raise ValueError("a live source is queried per check, not refreshed")
         if self.validity != "expires" and self.max_age_hours is not None:
             raise ValueError("a source that does not expire has no maximum age")
         return self

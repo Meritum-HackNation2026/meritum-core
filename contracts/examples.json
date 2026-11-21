@@ -156,7 +156,7 @@
   },
   "CatalogEntry.euvsdisinfo": {
     "domain": "euvsdisinfo.eu", "publisher": "EEAS East StratCom Task Force (EUvsDisinfo)", "publisher_id": "eeas-euvsdisinfo", "kind": "fact_check", "tier": "secondary",
-    "license": "brak licencji bazy; nota prawna EEAS: ponowne użycie z podaniem źródła", "ingest": "mcp", "refresh_hours": 24,
+    "license": "brak licencji bazy; nota prawna EEAS: ponowne użycie z podaniem źródła", "ingest": "mcp", "refresh_minutes": 1440,
     "qualified_because": "Baza przypadków prokremlowskiej dezinformacji prowadzona przez EEAS; tekst fact jest cytowalnym dowodem wtórnym."
   },
   "Notification": {

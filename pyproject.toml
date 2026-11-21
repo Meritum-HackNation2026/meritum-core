@@ -15,6 +15,7 @@ dependencies = [
     "pydantic>=2.14.4",
     "pydantic-ai-slim[google]>=2.71.0",
     "pydantic-settings>=2.16.3",
+    "pyyaml>=6.0.2",
     "trafilatura>=2.3.1",
 ]
 

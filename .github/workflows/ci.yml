@@ -58,3 +58,4 @@ jobs:
         with:
           node-version: 26
       - run: scripts/generate-contracts.sh --check
+      - run: uv run --locked python scripts/export_catalog.py --check # catalog/catalog.json and the README table match catalog.yaml

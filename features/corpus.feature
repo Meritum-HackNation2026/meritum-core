@@ -26,3 +26,14 @@ Feature: Wyszukiwanie w korpusie
     Given brak konfiguracji rerankera
     When fragmenty przechodzą przez bramkę
     Then kolejność z wyszukiwania hybrydowego zostaje, a log zapisuje pominięcie
+
+  Scenario: wykluczenie bez powodu nie przechodzi
+    Given pozycja katalogu z excluded = true i pustym exclusion_reason
+    When katalog jest walidowany
+    Then walidacja kończy się błędem wskazującym tę pozycję
+
+  Scenario: źródło wtórne z zastrzeżeniem TDM wypada
+    Given źródło wtórne (tier secondary) z zastrzeżeniem eksploracji tekstów i danych w robots.txt albo Content-Signal
+    When kurator uruchamia kontrolę katalogu
+    Then pozycja ma tdm_reservation = reserved, excluded = true i exclusion_reason z powodem
+    And walidacja CatalogEntry odrzuca taką pozycję bez wykluczenia

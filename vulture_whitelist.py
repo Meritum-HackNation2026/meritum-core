@@ -5,6 +5,7 @@ Run: ``uv run vulture`` (paths come from ``[tool.vulture]`` in pyproject.toml).
 
 from meritum_core.checks import constants
 from meritum_core.corpus import CorpusSettings, Passage
+from meritum_core.corpus.constants import FULL_TEXT_RETENTION_DAYS
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
     CheckInput,
@@ -65,3 +66,4 @@ EmbeddingsSettings.model_config  # read by pydantic-settings
 EmbeddingsSettings._vertex_is_in_the_eu  # ruff: ignore[private-member-access]  # Pydantic validator
 Passage.model_config  # read by pydantic
 HighRiskTopic.keywords  # read by the worker's topic step (keyword fallback)
+FULL_TEXT_RETENTION_DAYS  # read by the worker retention job (US-KOR-05)
