@@ -6,6 +6,7 @@ Features:
 
 import warnings
 from dataclasses import dataclass
+from datetime import date
 from urllib.parse import urlsplit
 
 from urllib3.exceptions import DependencyWarning
@@ -106,14 +107,20 @@ def _main_text(html: str) -> str:
     return text
 
 
+def _published_at(html: str) -> date | None:
+    # extensive=False: metadata and markup only, htmldate guesses nothing from the text
+    found = trafilatura.extract_metadata(html, extensive=False).date
+    return None if found is None else date.fromisoformat(found)
+
+
 def to_page(response: RawResponse) -> FetchedPage:
-    """Check the response for walls and errors and extract its main text.
+    """Check the response for walls and errors and extract its main text and date.
 
     Args:
         response: the final response, after redirects.
 
     Returns:
-        The page; its text is untrusted data.
+        The page; its text is untrusted data, its date comes from the HTML metadata.
 
     Raises:
         LoginWallError: A login stands in front of the content.
@@ -122,7 +129,7 @@ def to_page(response: RawResponse) -> FetchedPage:
         PageFetchError: An error status or an unsupported media type.
 
     Features:
-        US-SPR-07, F-06, ADR-12
+        US-SPR-07, US-ZRD-05, F-06, ADR-12
     """  # ruff: ignore[docstring-extraneous-exception]  # raised by the helpers it calls
     _check_walls(response)
     is_html = response.content_type in HTML_CONTENT_TYPES
@@ -132,4 +139,5 @@ def to_page(response: RawResponse) -> FetchedPage:
         content_type=response.content_type,
         untrusted_text=text,
         tdm_reserved=is_html and meta_reserves_mining(response.text),
+        published_at=_published_at(response.text) if is_html else None,
     )

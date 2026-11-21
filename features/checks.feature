@@ -52,6 +52,15 @@ Feature: Sprawdzanie treści
     When system pobiera stronę
     Then wynik to "technical_failure" z prośbą o wklejenie tekstu
 
+  Scenario: artykuł z datą publikacji w metadanych
+    Given publiczna strona HTML z datą publikacji 2026-11-18 w metadanych
+    When fetcher pobiera ją jako link użytkownika
+    Then FetchedPage ma published_at 2026-11-18
+
+  Scenario: strona bez daty publikacji
+    Given publiczna strona HTML bez daty w metadanych
+    When fetcher ją pobiera
+    Then FetchedPage ma published_at None
 
   Scenario: identyfikator w kanale z przeglądarką
     Given żądanie z channel = web i identyfikatorem użytkownika kanału
