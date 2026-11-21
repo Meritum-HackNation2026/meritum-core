@@ -1,7 +1,7 @@
 name: CI
 
 # lint, tests and contracts run in parallel on the GCP runners (labels self-hosted, meritum).
-# A newer push to the same branch cancels them, except on main and develop.
+# A newer push to the same branch cancels them, except on main.
 # No deploy: meritum-core is a library that meritum-backend and meritum-worker
 # pin in their uv.lock.
 on:
@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   lint:

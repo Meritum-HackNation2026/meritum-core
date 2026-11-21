@@ -40,10 +40,10 @@ Do końca prac repozytorium jest prywatne (potem wszystkie repozytoria Meritum b
 dependencies = ["meritum-core"]
 
 [tool.uv.sources]
-meritum-core = { git = "ssh://git@github.com/Meritum-HackNation2026/meritum-core.git", rev = "<sha commita z develop>" }
+meritum-core = { git = "ssh://git@github.com/Meritum-HackNation2026/meritum-core.git", rev = "<sha commita z main>" }
 ```
 
-Backend i worker przypinają konkretny commit core (`rev`), na develop commit z develop. Po pushu do develop, który zmienia `src/`, `contracts/` albo `pyproject.toml`, workflow `bump-dependents.yml` otwiera albo aktualizuje PR-y z podbiciem w backendzie i workerze (gałąź `chore/bump-core`) oraz PR z kopią kontraktów w design-systemie, gdy kontrakty się zmieniły. Potrzebuje sekretu repozytorium `MERITUM_BOT_TOKEN`: tokenu fine-grained z uprawnieniami Contents i Pull requests (odczyt i zapis) w meritum-backend, meritum-worker i meritum-design-system oraz Contents (odczyt) w meritum-core. Bez sekretu workflow tylko ostrzega. Core promujemy do main przed backendem i workerem, żeby przypięty commit był już na main. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret repozytorium `MERITUM_CORE_SSH_KEY` w backendzie i workerze; na planie Free sekrety organizacji nie trafiają do repo prywatnych).
+Backend i worker przypinają konkretny commit z gałęzi main w core (`rev`). Po pushu do main, który zmienia `src/`, `contracts/` albo `pyproject.toml`, workflow `bump-dependents.yml` otwiera albo aktualizuje PR-y z podbiciem do develop w backendzie i workerze (gałąź `chore/bump-core`) oraz PR z kopią kontraktów w design-systemie, gdy kontrakty się zmieniły. Potrzebuje sekretu repozytorium `MERITUM_BOT_TOKEN`: tokenu fine-grained z uprawnieniami Contents i Pull requests (odczyt i zapis) w meritum-backend, meritum-worker i meritum-design-system oraz Contents (odczyt) w meritum-core. Bez sekretu workflow tylko ostrzega. Core ma tylko gałąź main, więc przypięty commit jest na main, zanim backend albo worker wyda develop do main. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret repozytorium `MERITUM_CORE_SSH_KEY` w backendzie i workerze; na planie Free sekrety organizacji nie trafiają do repo prywatnych).
 
 ## Praca lokalna
 
@@ -56,4 +56,4 @@ uv run pytest            # z testami architektury (tests/architecture/)
 
 Zasady architektury i to, co je sprawdza: [docs/architecture.md](docs/architecture.md).
 
-Gałęzie: `develop` (integracja), `main` (produkcja). Zmiany przez PR do `develop`, potem PR `develop` → `main`. Nie pushuj bezpośrednio do `develop` ani `main`: na planie Free GitHub nie egzekwuje tego w repozytoriach prywatnych, więc to zasada zespołu.
+Gałąź: tylko `main`. Zmiany przez PR do `main`. Nie pushuj bezpośrednio do `main`: na planie Free GitHub nie egzekwuje tego w repozytoriach prywatnych, więc to zasada zespołu.

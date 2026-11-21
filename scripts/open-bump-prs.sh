@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# After a push to develop (workflow bump-dependents.yml): opens or updates PRs that move
+# After a push to main (workflow bump-dependents.yml): opens or updates PRs that move
 # meritum-backend and meritum-worker to this commit, and refreshes the contract copy in
 # meritum-design-system when the contracts changed. One rolling branch per repo, chore/bump-core.
 # Needs BOT_TOKEN: a fine-grained token with Contents and Pull requests read/write on those
@@ -45,12 +45,13 @@ push_if_changed() { # dir repo base message body
 
 for repo in meritum-backend meritum-worker; do
   dir=$work/$repo
+  # backend and worker keep develop as their integration branch
   git clone -q --depth 1 --branch develop "https://github.com/$org/$repo.git" "$dir"
   sed -i -E "s|(meritum-core\.git\", rev = \")[0-9a-f]{40}\"|\1$sha\"|" "$dir/pyproject.toml"
   grep -q "rev = \"$sha\"" "$dir/pyproject.toml" || { echo "::error::$repo does not pin meritum-core by rev"; exit 1; }
   (cd "$dir" && uv lock --quiet --upgrade-package meritum-core)
   push_if_changed "$dir" "$repo" develop "Podbij meritum-core do $short" \
-    "Automatyczne podbicie po zmianie w meritum-core develop ($sha). Przed scaleniem sprawdź CI tego PR."
+    "Automatyczne podbicie po zmianie w meritum-core main ($sha). Przed scaleniem sprawdź CI tego PR."
 done
 
 ds=$work/meritum-design-system
@@ -73,4 +74,4 @@ cp contracts/examples.json contracts/meritum.schema.json contracts/meritum.ts "$
 printf 'meritum-core %s\n' "$sha" >"$c/SOURCE"
 (cd "$c" && sha256sum meritum_contracts.py examples.json meritum.schema.json meritum.ts >SHA256SUMS)
 push_if_changed "$ds" meritum-design-system main "Odśwież kopię kontraktów z meritum-core $short" \
-  "Automatyczna kopia kontraktów z meritum-core develop ($sha), jak z contracts/sync.sh develop."
+  "Automatyczna kopia kontraktów z meritum-core main ($sha), jak z contracts/sync.sh."
