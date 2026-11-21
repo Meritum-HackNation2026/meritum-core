@@ -14,7 +14,7 @@ class BlobError(Exception):
 
 
 class BlobNotFoundError(BlobError, LookupError):
-    """No such blob: never stored, deleted with its session, expired or malformed id.
+    """No such blob: never stored, deleted, removed by retention, or a malformed id.
 
     Features:
         US-BEZ-05, ADR-31

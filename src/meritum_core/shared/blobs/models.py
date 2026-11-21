@@ -4,13 +4,15 @@ Features:
     US-SPR-11, US-SPR-08, US-BEZ-05, F-08, ADR-31
 """
 
+import re
 import secrets
 from enum import StrEnum
 from typing import Annotated
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-from meritum_core.shared.blobs.constants import BLOB_ID_PATTERN
+from meritum_core.shared.blobs.constants import BLOB_ID_PATTERN, BLOB_ID_RANDOM_BYTES
+from meritum_core.shared.blobs.errors import BlobNotFoundError
 
 
 class BlobKind(StrEnum):
@@ -59,4 +61,26 @@ def new_blob_id(kind: BlobKind) -> str:
     Features:
         US-BEZ-05, ADR-31
     """
-    return f"{kind}_{secrets.token_hex(16)}"
+    return f"{kind}_{secrets.token_hex(BLOB_ID_RANDOM_BYTES)}"
+
+
+def check_blob_id(blob_id: str) -> str:
+    """Reject anything that is not a blob id (paths, user text) before using it.
+
+    Every adapter calls this first, so a malformed id never reaches storage.
+
+    Args:
+        blob_id: the id to check.
+
+    Returns:
+        ``blob_id`` unchanged.
+
+    Raises:
+        BlobNotFoundError: ``blob_id`` does not match ``BLOB_ID_PATTERN``.
+
+    Features:
+        ADR-31
+    """
+    if re.fullmatch(BLOB_ID_PATTERN, blob_id) is None:
+        raise BlobNotFoundError(blob_id)
+    return blob_id

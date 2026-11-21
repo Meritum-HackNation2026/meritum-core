@@ -34,7 +34,8 @@ class BlobStore(Protocol):
             data: the file's bytes.
             kind: what the file holds; it prefixes the id.
             content_type: the MIME type, e.g. ``audio/ogg``.
-            expires_at: when the file is deleted at the latest (ADR-13).
+            expires_at: when the provider's retention deletes the file at the
+                latest (ADR-13).
 
         Returns:
             The stored file, with its id.
@@ -60,6 +61,9 @@ class BlobStore(Protocol):
 
         Args:
             blob_id: the id ``put`` returned.
+
+        Raises:
+            BlobNotFoundError: ``blob_id`` is malformed.
         """
         ...
 

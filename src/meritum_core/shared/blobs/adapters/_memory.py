@@ -8,7 +8,12 @@ from pydantic import AwareDatetime
 
 from meritum_core.shared.blobs.constants import MEMORY_URI_SCHEME
 from meritum_core.shared.blobs.errors import BlobNotFoundError
-from meritum_core.shared.blobs.models import BlobKind, BlobRef, new_blob_id
+from meritum_core.shared.blobs.models import (
+    BlobKind,
+    BlobRef,
+    check_blob_id,
+    new_blob_id,
+)
 
 
 class MemoryBlobStore:
@@ -60,10 +65,10 @@ class MemoryBlobStore:
             The stored bytes.
 
         Raises:
-            BlobNotFoundError: No such blob.
+            BlobNotFoundError: No such blob, or ``blob_id`` is malformed.
         """
         try:
-            return self._blobs[blob_id]
+            return self._blobs[check_blob_id(blob_id)]
         except KeyError:
             raise BlobNotFoundError(blob_id) from None
 
@@ -71,9 +76,9 @@ class MemoryBlobStore:
         """Delete a stored file, if present.
 
         Args:
-            blob_id: the id ``put`` returned.
+            blob_id: the id ``put`` returned; a malformed one raises like ``get``.
         """
-        self._blobs.pop(blob_id, None)
+        self._blobs.pop(check_blob_id(blob_id), None)
 
     async def uri(self, blob_id: str) -> str:
         """Return ``memory://<blob_id>``.
@@ -85,8 +90,8 @@ class MemoryBlobStore:
             The fake address.
 
         Raises:
-            BlobNotFoundError: No such blob.
+            BlobNotFoundError: No such blob, or ``blob_id`` is malformed.
         """
-        if blob_id not in self._blobs:
+        if check_blob_id(blob_id) not in self._blobs:
             raise BlobNotFoundError(blob_id)
         return f"{MEMORY_URI_SCHEME}{blob_id}"
