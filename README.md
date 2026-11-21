@@ -15,6 +15,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
 | `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`) i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przejdą też adaptery PostgreSQL (core#38) |
+| `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
 | `meritum_core.evidence`, `security`, `observability`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
@@ -94,6 +95,39 @@ Test adaptera na prawdziwej bazie uruchamia się lokalnie:
 docker run -d --rm --name corpus -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritum -p 55432:5432 <obraz meritum-postgres>
 MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum uv run pytest -m integration tests/corpus
 ```
+
+## Transkrypcja nagrań (`meritum_core.checks.transcription`)
+
+Nagranie z formularza albo wiadomość głosowa z Discorda leży w `BlobStore` (ADR-31). Workflow woła `TranscriptionPort.transcribe(audio_id)` i dostaje `Transcript` (tekst i język), który sprawdza jak zwykły tekst (US-SPR-11, F-08).
+
+| Co | Wartość |
+| --- | --- |
+| Dostawca | Google Speech-to-Text v2 przez REST, model `chirp_3`, multi-region `eu` (endpoint `eu-speech.googleapis.com`), język `pl-PL` (ADR-30). Dane nie opuszczają UE (ADR-14) |
+| Tryby | do `SYNC_MAX_SECONDS` (55 s) i 10 MiB: synchroniczne `recognize` z treścią w żądaniu; dłuższe i MP3 (bez długości w nagłówku): `batchRecognize` z adresu `gs://` z `BlobStore.uri()`. Batch nie mieści się w celu 30 s, więc dłuższe nagranie kończy się powiadomieniem |
+| Formaty | OGG z Opus, MP3, M4A, WAV; format rozpoznaje `inspect_audio` po bajtach, nie po typie MIME od użytkownika |
+| Limity | `MAX_AUDIO_BYTES` 20 MiB, `MAX_AUDIO_SECONDS` 600 s (sprawdzane, gdy kontener podaje długość: OGG, WAV, M4A) |
+| Koszt | cennik Standard to 0,016 USD za minutę; czy `chirp_3` jest tak rozliczany, nie potwierdziliśmy (załącznik B dokumentu produktowego) |
+| Retencja | nagranie w magazynie usuwa retencja `BlobStore` (`expires_at`, ADR-13); adapter niczego nie zapisuje po stronie dostawcy (wynik batch wraca w odpowiedzi, `inlineResponseConfig`) |
+
+Błędy: `UnsupportedAudioError` (inny format, przekroczony limit) workflow mapuje na `out_of_scope`, `TranscriptionUnavailableError` (dostawca padł po ponowieniach, odrzucone dane logowania, operacja batch nie skończyła się w `BATCH_TIMEOUT_SECONDS`) na `technical_failure`; oba błędy niosą status w `check_status`. Brak pliku to `BlobNotFoundError`.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_TRANSCRIPTION_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `speech_v2` |
+| `MERITUM_TRANSCRIPTION_PROJECT` | brak | projekt Google Cloud z włączonym Speech-to-Text API; wymagany dla `speech_v2` |
+| `MERITUM_TRANSCRIPTION_RETRIES` | `3` | liczba prób HTTP przy 429 i 5xx (z pierwszą) |
+| `MERITUM_TRANSCRIPTION_STUB_FIXTURE` | brak | plik JSON z `Transcript` dla stubu, np. `{"text": "...", "language": "pl-PL"}`; bez niego stub rzuca `TranscriptionUnavailableError` |
+
+Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na odpowiedziach w formacie Speech-to-Text v2 podanych przez atrapę HTTP (`tests/checks/transcription/fixtures/`), bez sieci.
+
+Ręczny test (lokalnie, nigdy w CI): czy v2 dekoduje wiadomość głosową z Discorda (OGG z Opus 48 kHz) bez konwersji.
+
+```bash
+gcloud auth application-default login
+uv run python scripts/transcribe_audio.py wiadomosc-glosowa.ogg --project <projekt>
+```
+
+Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga projektu GCP z włączonym API). Wpisz go tutaj i w załączniku B dokumentu produktowego.
 
 ## Użycie w innym repo
 

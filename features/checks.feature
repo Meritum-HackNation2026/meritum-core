@@ -21,3 +21,18 @@ Feature: Sprawdzanie treści
     Given trzy zapisy z session_id "s_12345678" i jedna sprawa z ich twierdzeniami
     When repozytorium usuwa dane tej sesji
     Then zapisy znikają, a sprawa traci tylko ich check_ids
+
+  Scenario: nagranie OGG z Opus
+    Given nagranie głosowe OGG z Opus 48 kHz o długości 40 s
+    When system zleca transkrypcję
+    Then dostaje tekst transkrypcji w języku pl-PL
+
+  Scenario: nieobsługiwany format
+    Given plik "nagranie.xyz"
+    When system zleca transkrypcję
+    Then port rzuca błąd nieobsługiwanego formatu, który workflow mapuje na "out_of_scope"
+
+  Scenario: awaria dostawcy
+    Given Speech-to-Text v2 zwraca błąd po wyczerpaniu ponowień
+    When system zleca transkrypcję
+    Then port rzuca błąd dostawcy, który workflow mapuje na "technical_failure"
