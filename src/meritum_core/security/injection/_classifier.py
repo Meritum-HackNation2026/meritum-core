@@ -16,12 +16,11 @@ from meritum_core.security.injection.models import InjectionClassification, Text
 from meritum_core.shared.llm import LlmPort, Prompt
 
 
-def _occurrences(text: str, quote: str) -> list[TextRange]:
+def _occurrences(folded: str, origin: tuple[int, ...], quote: str) -> list[TextRange]:
     # Match on folded text, word by word, so case, quote marks and spacing may differ.
     words = re.findall(r"\w+", fold(quote)[0])
     if len(words) < MIN_QUOTE_WORDS:
         return []
-    folded, origin = fold(text)
     pattern = re.compile(rf"\b{QUOTE_GAP.join(map(re.escape, words))}\b")
     return [
         TextRange(origin[m.start()], origin[m.end() - 1] + 1)
@@ -59,8 +58,9 @@ class LlmClassifierGate:
         answer = (await self._llm.complete(prompt, InjectionClassification)).output
         if not answer.injected:
             return ()
-        found = [_occurrences(text, quote) for quote in answer.instructions]
+        folded, origin = fold(text)
+        found = [_occurrences(folded, origin, q) for q in answer.instructions]
         if not found or not all(found):
-            # An instruction the model did not quote verbatim cannot be located.
+            # A quote too short or absent from the text cannot locate its instruction.
             return (TextRange(0, len(text)),)
         return tuple(r for ranges in found for r in ranges)
