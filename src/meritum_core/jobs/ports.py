@@ -1,9 +1,11 @@
 """Ports of the jobs slice."""
 
+from collections.abc import AsyncIterator
 from typing import Any, Protocol
 
 from pydantic import BaseModel
 
+from meritum_core.jobs.constants import EVENT_TIMEOUT_SECONDS
 from meritum_core.jobs.contracts import WorkflowSpec
 
 
@@ -28,10 +30,14 @@ class JobState(BaseModel):
 
 
 class JobQueue(Protocol):
-    """Enqueues workflows on the worker and reads their state (port).
+    """Enqueues workflows on the worker and reads their state and output (port).
+
+    Workflows publish values as JSON objects (`model_dump(mode="json")`):
+    a stream is an ordered sequence under one key (`PROGRESS_KEY`), an event is
+    the latest value under one key (`READINESS_KEY`).
 
     Features:
-        ADR-01, ADR-03
+        ADR-01, ADR-03, F-09, US-WDR-08
     """
 
     async def enqueue[In: BaseModel](
@@ -55,5 +61,49 @@ class JobQueue(Protocol):
 
         Args:
             workflow_id: the id `enqueue` returned.
+        """
+        ...
+
+    def stream[T: BaseModel](
+        self, workflow_id: str, key: str, model: type[T]
+    ) -> AsyncIterator[T]:
+        """Yield the values a workflow writes to stream `key`, in order.
+
+        Ends when the workflow closes the stream or terminates.
+
+        Args:
+            workflow_id: the id `enqueue` returned.
+            key: the stream key, e.g. `PROGRESS_KEY`.
+            model: the model every value validates against.
+
+        Yields:
+            The values in the order the workflow wrote them.
+
+        Raises:
+            ValidationError: a value does not match `model`.
+        """
+        ...
+
+    async def event[T: BaseModel](
+        self,
+        workflow_id: str,
+        key: str,
+        model: type[T],
+        *,
+        timeout_seconds: float = EVENT_TIMEOUT_SECONDS,
+    ) -> T | None:
+        """Return the latest value of event `key`, or None if none came in time.
+
+        Args:
+            workflow_id: the id `enqueue` returned.
+            key: the event key, e.g. `READINESS_KEY`.
+            model: the model the value validates against.
+            timeout_seconds: how long to wait for a value.
+
+        Returns:
+            The latest value, or None when none was set in time.
+
+        Raises:
+            ValidationError: the value does not match `model`.
         """
         ...

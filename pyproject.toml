@@ -125,7 +125,7 @@ max-lines = 250
 "src/meritum_core/checks/contracts.py" = "contracts v3 predates the conventions; Features, Attributes and constants.py come with the split in issue core/001"
 
 [tool.meritum-conventions.constants-exceptions]
-"src/meritum_core/jobs/contracts.py" = "PING and WORKFLOWS are built from the models defined here; a constants.py would import them back (cycle)"
+"src/meritum_core/jobs/contracts/_workflows.py" = "the workflow specs and WORKFLOWS are built from the contract models; a constants.py would import them back (cycle)"
 
 # --------------------------------------------------------------------------- #
 # Dead code (vulture) and security (bandit)
@@ -136,7 +136,7 @@ paths = ["src", "scripts", "tests", "features", "vulture_whitelist.py"]
 # never as attributes here. Revisit with the split in issue core/001.
 exclude = ["src/meritum_core/checks/contracts.py"]
 min_confidence = 60
-ignore_decorators = ["@given", "@when", "@then"]  # behave calls step functions
+ignore_decorators = ["@given", "@when", "@then", "@model_validator"]  # behave calls step functions, Pydantic calls validators
 
 # bandit is a security linter, not a dead-code tool. Ruff's S rules already run
 # bandit's checks; bandit itself runs too because the team asked for it.

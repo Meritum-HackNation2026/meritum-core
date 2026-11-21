@@ -5,9 +5,10 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | Moduł | Zawartość |
 | --- | --- |
 | `meritum_core.checks.contracts` | kontrakty sprawdzania (MSZ „Prawdowid”): `CheckRequest`, `CheckResult` z werdyktami, cytatami i przesłankami, `CachedResult` (merytoryczna część wyniku w pamięci wyników), `AnalysisStatus`, `CheckRecord`, `ModeratorCase`, `CatalogEntry`; reguły z treści zadania pilnuje walidacja, `CONTRACT_VERSION` osobno od kontraktu zadań |
-| `meritum_core.jobs.contracts` | nazwa aplikacji DBOS, kolejki, workflowy (`WorkflowSpec`) i ich modele wejścia/wyjścia (Pydantic) |
-| `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania |
+| `meritum_core.jobs.contracts` | nazwa aplikacji DBOS, kolejki, workflowy (`WorkflowSpec`: `ping`, `check`, `escalate_claim`, `delete_subject`, `readiness`) i ich modele wejścia/wyjścia (Pydantic) |
+| `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania i czyta ich strumienie (`stream`) i zdarzenia (`event`) |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
+| `meritum_core.jobs.fakes` | `InMemoryJobQueue`: port w pamięci do testów backendu i workera (nagrywa zlecone zadania, odtwarza strumienie i zdarzenia) |
 | `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci i fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (`memory`); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
 | `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
@@ -30,6 +31,8 @@ Design system (`design-system/contracts/`) i aplikacje w TypeScripcie trzymają 
 Zasady kontraktu:
 
 - Backend zleca zadania tylko przez `JobQueue`, worker wykonuje je jako workflowy DBOS o nazwie i kolejce z `WorkflowSpec`.
+- Workflow publikuje postęp jako obiekty JSON: strumień `PROGRESS_KEY` (kolejne `AnalysisStatus`, ostatni z `result`) i zdarzenie `READINESS_KEY` (`ReadinessReport`); klucze są w `meritum_core.jobs.constants`.
+- Wejście nie niesie surowych danych: tekst jest zamaskowany przed zleceniem, a identyfikator użytkownika kanału trafia tylko jako solony skrót (`channel_user_hash`).
 - Argument i wynik workflowu to jeden obiekt JSON (`model_dump(mode="json")`), serializowany jako `PORTABLE`, więc worker nie potrzebuje klas backendu, a backend klas workera.
 - Każde wejście i wyjście ma `contract_version`. Zmiana niezgodna wstecz podnosi `CONTRACT_VERSION`.
 - Worker przyjmuje tylko zadania ze swoim `application_version`, czyli nazwą środowiska (`dev`, `prd`, lokalnie `local`). Backend zleca z tą samą wartością.
