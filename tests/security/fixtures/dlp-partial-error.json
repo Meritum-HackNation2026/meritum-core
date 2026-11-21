@@ -1,0 +1,11 @@
+{
+  "item": {"value": "Mieszkam przy Marszałkowskiej 12/4."},
+  "overview": {
+    "transformationSummaries": [
+      {
+        "infoType": {"name": "STREET_ADDRESS"},
+        "results": [{"count": "1", "code": "ERROR", "details": "transformation failed"}]
+      }
+    ]
+  }
+}

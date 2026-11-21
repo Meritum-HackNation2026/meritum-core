@@ -1,0 +1,18 @@
+{
+  "item": {
+    "value": "Mieszkam przy [adres] i widziałem, że szczepionki zawierają chipy."
+  },
+  "overview": {
+    "transformedBytes": "34",
+    "transformationSummaries": [
+      {
+        "infoType": {"name": "STREET_ADDRESS"},
+        "transformation": {
+          "replaceConfig": {"newValue": {"stringValue": "[adres]"}}
+        },
+        "results": [{"count": "1", "code": "SUCCESS"}],
+        "transformedBytes": "34"
+      }
+    ]
+  }
+}

@@ -1,12 +1,11 @@
-"""Masking of phone numbers, e-mails and PESEL numbers in free text.
+"""Masking of personal data: the gate first, then phone, e-mail and PESEL patterns.
 
 Features:
-    US-BEZ-04, F-20, ADR-13
+    US-BEZ-04, F-20, ADR-13, ADR-35
 """
 
+import logging
 import re
-
-from pydantic import BaseModel
 
 from meritum_core.security.constants import (
     EMAIL_MARKER,
@@ -17,21 +16,11 @@ from meritum_core.security.constants import (
     PHONE_MARKER,
     PHONE_PATTERN,
 )
+from meritum_core.security.pii.errors import PiiGateUnavailableError
+from meritum_core.security.pii.models import MaskedText
+from meritum_core.security.pii.ports import PiiGatePort
 
-
-class MaskedText(BaseModel, frozen=True):
-    """Text with personal data replaced by markers; never holds the original.
-
-    Attributes:
-        text: the masked text.
-        replaced: how many personal-data items were replaced.
-
-    Features:
-        US-BEZ-04, F-20, ADR-13
-    """
-
-    text: str
-    replaced: int
+_log = logging.getLogger(__name__)
 
 
 def _valid_pesel(digits: str) -> bool:
@@ -43,21 +32,7 @@ def _pesel_or_keep(match: re.Match[str]) -> str:
     return PESEL_MARKER if _valid_pesel(match[0]) else match[0]
 
 
-def mask_personal_data(text: str) -> MaskedText:
-    """Replace phones, e-mails and checksum-valid PESEL numbers with markers.
-
-    Idempotent: the markers contain no digits or ``@``, so masking twice
-    changes nothing. Run it before a workflow starts and on step results.
-
-    Args:
-        text: free text that may contain personal data.
-
-    Returns:
-        The masked text and the number of replacements.
-
-    Features:
-        US-BEZ-04, F-20, ADR-13
-    """
+def _mask_patterns(text: str) -> MaskedText:
     masked = PESEL_PATTERN.sub(_pesel_or_keep, text)
     masked = EMAIL_PATTERN.sub(EMAIL_MARKER, masked)
     masked = PHONE_PATTERN.sub(PHONE_MARKER, masked)
@@ -65,3 +40,30 @@ def mask_personal_data(text: str) -> MaskedText:
     # Count added markers only: markers already in the input are not new replacements.
     replaced = sum(masked.count(m) - text.count(m) for m in markers)
     return MaskedText(text=masked, replaced=replaced)
+
+
+async def mask_personal_data(text: str, gate: PiiGatePort) -> MaskedText:
+    """Mask with the gate, then replace phones, e-mails and valid PESEL numbers.
+
+    Idempotent: markers contain no digits or ``@`` and are no personal data, so
+    masking twice changes nothing. Run it before a workflow starts and on step
+    results. A failing gate is skipped with a log line that never holds the
+    text; the patterns still run (ADR-35).
+
+    Args:
+        text: Free text that may contain personal data.
+        gate: The masking gate from ``build_pii_gate``.
+
+    Returns:
+        The masked text and the number of replacements by the gate and patterns.
+
+    Features:
+        US-BEZ-04, F-20, ADR-13, ADR-35
+    """
+    try:
+        gated = await gate.mask(text)
+    except PiiGateUnavailableError as exc:
+        _log.warning("personal-data DLP gate failed (%s); skipped", exc)
+        gated = MaskedText(text=text, replaced=0)
+    patterned = _mask_patterns(gated.text)
+    return MaskedText(text=patterned.text, replaced=gated.replaced + patterned.replaced)

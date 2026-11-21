@@ -1,10 +1,18 @@
 """Table of cases for mask_personal_data, false positives included."""
 
+import asyncio
 import time
 
 import pytest
 
-from meritum_core.security import MaskedText, mask_personal_data
+from meritum_core.security import MaskedText, NullPiiGate
+from meritum_core.security import mask_personal_data as mask_with_gate
+
+
+def mask_personal_data(text: str) -> MaskedText:
+    """Patterns only: the null gate, as in a deployment without DLP."""
+    return asyncio.run(mask_with_gate(text, NullPiiGate()))
+
 
 CASES = [
     ("Zadzwoń: 601 234 567.", "Zadzwoń: [telefon]."),
