@@ -1,4 +1,7 @@
-"""Domain skeleton: every domain of meritum-architecture rule 1 is a slice."""
+"""Domain skeleton: every core domain of meritum-architecture rule 1 is a slice.
+
+`channels` is not listed: inbound channels live in meritum-backend.
+"""
 
 DOMAINS = {
     "checks",
