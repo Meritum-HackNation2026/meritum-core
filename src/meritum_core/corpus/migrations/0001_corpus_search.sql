@@ -1,9 +1,11 @@
 -- Corpus search tables in the shared `corpus` schema (ADR-04, ADR-19, ADR-32).
 -- Backward compatible only: add, never drop or rename; deploys from main run it.
 -- Needs the infra image (pgvector + hunspell-pl with the `public.polish` config).
+-- The platform creates the `corpus` schema (infra db.sh): the migrating role owns
+-- it but has no CREATE on the database, which CREATE SCHEMA IF NOT EXISTS checks
+-- even when the schema exists. The extensions exist from the image's start-up.
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE SCHEMA IF NOT EXISTS corpus;
 
 -- A snapshot (corpus_version) sees the passages with added_at <= taken_at and
 -- no retired_at at or before taken_at. Passages are append-only: a changed or

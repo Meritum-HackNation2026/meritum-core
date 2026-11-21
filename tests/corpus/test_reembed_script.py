@@ -65,6 +65,7 @@ def test_every_passage_gets_a_new_vector() -> None:
     prefix = uuid.uuid4().hex
     texts = [f"Komunikat numer {i} o burzach" for i in range(11)]
     with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS corpus")  # the platform's job
         conn.execute(migration.read_bytes())
         for i, text in enumerate(texts):
             conn.execute(
