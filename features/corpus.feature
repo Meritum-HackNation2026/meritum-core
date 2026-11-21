@@ -16,3 +16,13 @@ Feature: Wyszukiwanie w korpusie
     Given korpus po ponownym przeliczeniu
     When sprawdzam metadane przebiegów embeddingów i logi Vertex AI
     Then każdy wektor pochodzi z regionu UE wybranego modelu, a wektory z us-central1 są usunięte
+
+  Scenario: reranker skraca listę fragmentów
+    Given 20 fragmentów z wyszukiwania hybrydowego dla jednego twierdzenia
+    When przechodzą przez reranker
+    Then do oceny wymowy trafia najwyżej tyle fragmentów, ile mówi stała, w kolejności trafności
+
+  Scenario: bramka pusta
+    Given brak konfiguracji rerankera
+    When fragmenty przechodzą przez bramkę
+    Then kolejność z wyszukiwania hybrydowego zostaje, a log zapisuje pominięcie
