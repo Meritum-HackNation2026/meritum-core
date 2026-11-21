@@ -131,6 +131,7 @@ uv run python scripts/transcribe_audio.py wiadomosc-glosowa.ogg --project <proje
 ```
 
 Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga projektu GCP z włączonym API, zgłoszenie #62). Wpisz go tutaj i w załączniku B dokumentu produktowego. Skrypt sprawdza tylko tryb synchroniczny (do 55 s); trybu batch na prawdziwym dostawcy nie sprawdził.
+
 ## Baza aplikacji
 
 Zapisy sprawdzeń, sprawy moderatora, tematy wysokiego ryzyka i powiadomienia leżą w schemacie aplikacji środowiska (`app_dev` albo `app_prd`, infra#12). Kod nie zna nazwy schematu: bierze ją z `search_path` w adresie bazy. Każda tabela trzyma cały model kontraktu jako `jsonb` i kolumny, po których repozytoria filtrują i sortują.
