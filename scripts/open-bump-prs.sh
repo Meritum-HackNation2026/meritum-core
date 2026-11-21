@@ -57,21 +57,17 @@ done
 ds=$work/meritum-design-system
 git clone -q --depth 1 "https://github.com/$org/meritum-design-system.git" "$ds"
 c=$ds/contracts
-if tail -n +3 "$c/meritum_contracts.py" | cmp -s - src/meritum_core/checks/contracts.py &&
-  cmp -s contracts/examples.json "$c/examples.json" &&
+# The contracts are a package (src/meritum_core/checks/contracts/), so the copy holds
+# only what consumers read: the generated files and the examples.
+if cmp -s contracts/examples.json "$c/examples.json" &&
   cmp -s contracts/meritum.schema.json "$c/meritum.schema.json" &&
   cmp -s contracts/meritum.ts "$c/meritum.ts"; then
   echo "meritum-design-system: contracts unchanged"
   exit 0
 fi
 # Same output as contracts/sync.sh in meritum-design-system; keep the two in step.
-{
-  printf '# Copy of meritum-core src/meritum_core/checks/contracts.py at %s.\n' "$sha"
-  printf '# Do not edit: change it in meritum-core and run contracts/sync.sh.\n'
-  cat src/meritum_core/checks/contracts.py
-} >"$c/meritum_contracts.py"
 cp contracts/examples.json contracts/meritum.schema.json contracts/meritum.ts "$c/"
 printf 'meritum-core %s\n' "$sha" >"$c/SOURCE"
-(cd "$c" && sha256sum meritum_contracts.py examples.json meritum.schema.json meritum.ts >SHA256SUMS)
+(cd "$c" && sha256sum examples.json meritum.schema.json meritum.ts >SHA256SUMS)
 push_if_changed "$ds" meritum-design-system main "Odśwież kopię kontraktów z meritum-core $short" \
   "Automatyczna kopia kontraktów z meritum-core main ($sha), jak z contracts/sync.sh."

@@ -45,7 +45,7 @@ jobs:
       - run: uv run behave # features/*.feature against in-process code only
 
   # Generated contracts (contracts/meritum.schema.json, contracts/meritum.ts) must
-  # match src/meritum_core/checks/contracts.py; versions pinned (uv.lock, generator).
+  # match the src/meritum_core/checks/contracts/ package; versions pinned (uv.lock, generator).
   contracts:
     runs-on: [self-hosted, meritum]
     timeout-minutes: 10

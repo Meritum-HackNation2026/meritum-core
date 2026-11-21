@@ -23,7 +23,6 @@ Wąsko i zawsze z powodem: `# noqa: XXX  # powód` w linii, per-file ignore w `[
 
 Obecne wyjątki:
 
-- `src/meritum_core/checks/contracts.py`: limit linii, sekcje `Features:`/`Attributes:` i `constants.py` (861 linii po kontraktach v3; podział na pakiet `checks/contracts/` i stałe w `checks/constants.py` w zgłoszeniu core/001), vulture (pola kontraktów czyta JSON i inne repo), ruff `too-many-boolean-expressions` (warunek wejścia `CheckRequest` z v3, do nazwanych warunków przy podziale);
-- `tests/test_checks_contracts.py`: limit linii (dzielony razem z modułem);
+- `src/meritum_core/checks/contracts/_*.py`: ruff `line-too-long` (docstringi klas i opisy pól trafiają do `contracts/meritum.schema.json`, więc ich przełamanie zmieniłoby wygenerowane pliki) oraz `raise-vanilla-args`, `raw-string-in-exception`, `f-string-in-exception` (walidatory Pydantic rzucają `ValueError` z treścią reguły); w `_claims.py`, `_records.py`, `_results.py` ruff `mutable-class-default` (ruff nie widzi, że `_Model` z `_base.py` to `BaseModel`, a `default_factory` usunąłby `"default": []` ze schematu); vulture pomija pakiet i `checks/constants.py` (pola kontraktów czyta JSON i inne repo, stałe czytają tylko te modele);
 - `src/meritum_core/jobs/contracts/_workflows.py`: stałe poza `constants.py`, bo specyfikacje workflowów (`PING`, `CHECK`…) i `WORKFLOWS` powstają z modeli kontraktu (osobny `constants.py` dałby cykl importów).
 - `features/steps/`: ty `not-callable` i `dynamic-function-decorator-return` (behave podmienia `given`/`when`/`then` na prawdziwe dekoratory dopiero przy ładowaniu kroków), vulture `ignore_decorators` dla tych dekoratorów (kroki woła behave), ruff `assert` (kroki sprawdzają jak testy).
