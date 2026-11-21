@@ -15,6 +15,10 @@ export type AudioId = string | null;
  * Discord, SMS and MCP only: user id, phone number or MCP client id. The API hashes it with a salt into channel_user_hash and never stores it.
  */
 export type ChannelUserId = string | null;
+/**
+ * Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.
+ */
+export type RequestSessionId = string | null;
 export type Id = string;
 export type Title = string;
 export type Publisher = string;
@@ -360,6 +364,7 @@ export interface CheckRequest {
   page_url?: PageUrl;
   audio_id?: AudioId;
   channel_user_id?: ChannelUserId;
+  session_id?: RequestSessionId;
 }
 /**
  * A fragment of a source and how it bears on the claim. The pipeline drops fragments it cannot find verbatim.

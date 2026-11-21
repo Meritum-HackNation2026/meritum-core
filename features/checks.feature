@@ -78,3 +78,8 @@ Feature: Sprawdzanie treści
     Given wynik "done" z twierdzeniem bez claim_date
     When kontrakt waliduje wynik
     Then walidacja go odrzuca
+
+  Scenario: żądanie sprawdzenia niesie session_id
+    Given kanał z identyfikatorem sesji przeglądarki
+    When wysyła CheckRequest z polem session_id
+    Then kontrakt przyjmuje żądanie, a session_id trafia do CheckRecord
