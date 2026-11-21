@@ -391,7 +391,7 @@
       "validity": "expires",
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; ratownictwo morskie.",
-      "tdm_reservation": "unknown",
+      "tdm_reservation": "none",
       "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
@@ -751,7 +751,7 @@
       "validity": "expires",
       "max_age_hours": null,
       "qualified_because": "Polski serwis fact-checkingowy, rozważony i odrzucony.",
-      "tdm_reservation": "unknown",
+      "tdm_reservation": "none",
       "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "Brak w IFCN i EFCSN; TVN wymaga umowy licencyjnej (zastrzeżenie z art. 25 ust. 1 pkt 1 lit. b pr. aut.)."
@@ -877,7 +877,7 @@
       "validity": "expires",
       "max_age_hours": null,
       "qualified_because": "Decyzje i komunikaty Rady, m.in. o sankcjach.",
-      "tdm_reservation": "unknown",
+      "tdm_reservation": "none",
       "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex."

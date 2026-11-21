@@ -266,7 +266,7 @@ Generuje ją `uv run python scripts/export_catalog.py` z `catalog.yaml`, razem z
 | `portalpasazera.pl` | PKP Polskie Linie Kolejowe (`pkp-plk`) | primary | evidence | live |  | expires, 6 h | unknown | włączone |
 | `utk.gov.pl` | Urząd Transportu Kolejowego (`utk`) | primary | evidence | static |  | updated_in_place | none | wykluczone: robots.txt: Disallow: / dla wszystkich robotów. |
 | `kgsok.pl` | Komenda Główna Straży Ochrony Kolei (`kg-sok`) | primary | evidence | sitemap | 1440 | expires | none | włączone |
-| `www.sar.gov.pl` | Morska Służba Poszukiwania i Ratownictwa (`mspir`) | primary | evidence | static | 1440 | expires | unknown | włączone |
+| `www.sar.gov.pl` | Morska Służba Poszukiwania i Ratownictwa (`mspir`) | primary | evidence | static | 1440 | expires | none | włączone |
 | `www.umgdy.gov.pl` | Urząd Morski w Gdyni (`um-gdynia`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
 | `www.ums.gov.pl` | Urząd Morski w Szczecinie (`um-szczecin`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
 | `www.gov.pl/web/wody-polskie` | Państwowe Gospodarstwo Wodne Wody Polskie (`wody-polskie`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
@@ -286,14 +286,14 @@ Generuje ją `uv run python scripts/export_catalog.py` z `catalog.yaml`, razem z
 | `factchecktools.googleapis.com` | Google (agregator ocen ClaimReview) (`google-factcheck`) | secondary | evidence | live |  | expires | unknown | włączone |
 | `demagog.org.pl` | Stowarzyszenie Demagog (`demagog`) | secondary | evidence | live |  | expires | reserved | wykluczone: Content-Signal ai-train=no, use=reference i blokady botów AI w robots.txt: nie pobieramy treści, tylko ocena z Fact Check API. |
 | `sprawdzam.afp.com` | Agence France-Presse (AFP Sprawdzam) (`afp`) | secondary | evidence | live |  | expires | unknown | włączone |
-| `konkret24.tvn24.pl` | TVN S.A. (Konkret24) (`konkret24`) | secondary | evidence | static |  | expires | unknown | wykluczone: Brak w IFCN i EFCSN; TVN wymaga umowy licencyjnej (zastrzeżenie z art. 25 ust. 1 pkt 1 lit. b pr. aut.). |
+| `konkret24.tvn24.pl` | TVN S.A. (Konkret24) (`konkret24`) | secondary | evidence | static |  | expires | none | wykluczone: Brak w IFCN i EFCSN; TVN wymaga umowy licencyjnej (zastrzeżenie z art. 25 ust. 1 pkt 1 lit. b pr. aut.). |
 | `www.gov.pl/web/dyplomacja/bip` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 10080 | updated_in_place | none | włączone |
 | `edmo.eu` | European Digital Media Observatory (`edmo`) | secondary | evidence | sitemap | 1440 | expires | none | włączone |
 | `checkfirst.network` | CheckFirst (`checkfirst`) | secondary | evidence | rss | 1440 | expires | none | włączone |
 | `www.nask.pl` | NASK – Państwowy Instytut Badawczy (`nask`) | secondary | evidence | static | 1440 | expires | none | włączone |
 | `www.eeas.europa.eu` | Europejska Służba Działań Zewnętrznych (`eeas`) | primary | evidence | static | 360 | expires | none | włączone |
 | `ec.europa.eu/commission/presscorner` | Komisja Europejska (`komisja-europejska`) | primary | evidence | rss | 60 | expires | none | włączone |
-| `www.consilium.europa.eu` | Rada Unii Europejskiej (`rada-ue`) | primary | evidence | static |  | expires | unknown | wykluczone: Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex. |
+| `www.consilium.europa.eu` | Rada Unii Europejskiej (`rada-ue`) | primary | evidence | static |  | expires | none | wykluczone: Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex. |
 | `www.nato.int` | Organizacja Traktatu Północnoatlantyckiego (NATO) (`nato`) | primary | evidence | sitemap | 360 | expires | none | włączone |
 | `bdl.stat.gov.pl` | Główny Urząd Statystyczny (`gus`) | primary | evidence | api | 10080 | expires | none | włączone |
 | `api.nbp.pl` | Narodowy Bank Polski (`nbp`) | primary | evidence | api | 1440 | expires | none | włączone |
