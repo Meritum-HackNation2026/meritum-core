@@ -3,7 +3,12 @@
 import pytest
 from pydantic import ValidationError
 
-from meritum_core.shared.blobs import BlobProvider, BlobSettings, build_blob_store
+from meritum_core.shared.blobs import (
+    BlobError,
+    BlobProvider,
+    BlobSettings,
+    build_blob_store,
+)
 
 
 def test_provider_comes_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -17,3 +22,19 @@ def test_missing_provider_fails_loudly(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("MERITUM_BLOB_PROVIDER", raising=False)
     with pytest.raises(ValidationError, match="provider"):
         BlobSettings()
+
+
+@pytest.mark.parametrize(
+    ("provider", "variable"),
+    [
+        (BlobProvider.FILESYSTEM, "MERITUM_BLOB_DIRECTORY"),
+        (BlobProvider.GCS, "MERITUM_BLOB_BUCKET"),
+    ],
+)
+def test_provider_without_its_location_fails_loudly(
+    monkeypatch: pytest.MonkeyPatch, provider: BlobProvider, variable: str
+) -> None:
+    monkeypatch.setenv("MERITUM_BLOB_PROVIDER", provider)
+    monkeypatch.delenv(variable, raising=False)
+    with pytest.raises(BlobError, match=variable):
+        build_blob_store(BlobSettings())

@@ -17,3 +17,9 @@ ENV_PREFIX: Final = "MERITUM_BLOB_"
 
 MEMORY_URI_SCHEME: Final = "memory://"
 """Scheme of the addresses the in-memory fake hands out."""
+
+GCS_URI_SCHEME: Final = "gs://"
+"""Scheme of Cloud Storage addresses, read by Speech-to-Text batch (ADR-30)."""
+
+PARTIAL_SUFFIX: Final = ".part"
+"""Suffix of a file the filesystem adapter is still writing; renamed when complete."""
