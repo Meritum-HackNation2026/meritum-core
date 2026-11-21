@@ -14,12 +14,12 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
 | `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
-| `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`) i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przejdą też adaptery PostgreSQL (core#38) |
+| `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
-| `meritum_core.evidence`, `security`, `observability`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
-| `meritum_core.evidence`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 | `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal |
-| `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+| `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
+| `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
+| `meritum_core.evidence`, `security`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
 
@@ -131,6 +131,29 @@ uv run python scripts/transcribe_audio.py wiadomosc-glosowa.ogg --project <proje
 ```
 
 Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga projektu GCP z włączonym API, zgłoszenie #62). Wpisz go tutaj i w załączniku B dokumentu produktowego. Skrypt sprawdza tylko tryb synchroniczny (do 55 s); trybu batch na prawdziwym dostawcy nie sprawdził.
+## Baza aplikacji
+
+Zapisy sprawdzeń, sprawy moderatora, tematy wysokiego ryzyka i powiadomienia leżą w schemacie aplikacji środowiska (`app_dev` albo `app_prd`, infra#12). Kod nie zna nazwy schematu: bierze ją z `search_path` w adresie bazy. Każda tabela trzyma cały model kontraktu jako `jsonb` i kolumny, po których repozytoria filtrują i sortują.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_DATABASE_PROVIDER` | `memory` | `memory` (fake'i w procesie: testy, behave, praca bez bazy) albo `postgres` |
+| `MERITUM_DATABASE_URL` | brak | adres libpq z `search_path` schematu aplikacji, np. `postgresql://worker_dev@host/meritum?options=-csearch_path%3Dapp_dev`; wymagany dla `postgres` |
+
+Migracje leżą w `src/meritum_core/shared/database/migrations/` (SQL, w kolejności nazw), osobno od migracji schematu `corpus`. Uruchamia je deploy workera (worker/035) poleceniem:
+
+```bash
+MERITUM_DATABASE_URL=... uv run meritum-migrate-app
+```
+
+Każdy plik idzie raz (tabela `schema_migrations`), wszystko w jednej transakcji pod blokadą doradczą, więc drugie uruchomienie niczego nie zmienia, a dwa deploye naraz czekają na siebie. `SubjectEraser` w PostgreSQL usuwa zapisy osoby, jej powiadomienia i jej sprawdzenia ze spraw moderatora w jednej transakcji.
+
+Testy kontraktowe na prawdziwym PostgreSQL działają tylko lokalnie. Każdy test dostaje własny, świeżo zmigrowany schemat i usuwa go po sobie:
+
+```bash
+docker run -d --rm --name app-db -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritum -p 55433:5432 <obraz meritum-postgres>
+MERITUM_DATABASE_URL=postgresql://postgres:test@localhost:55433/meritum uv run pytest -m integration tests/checks tests/moderation tests/notifications tests/observability tests/shared/database
+```
 
 ## Użycie w innym repo
 

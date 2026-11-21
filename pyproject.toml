@@ -18,6 +18,9 @@ dependencies = [
     "trafilatura>=2.3.1",
 ]
 
+[project.scripts]
+meritum-migrate-app = "meritum_core.shared.database.adapters:main"  # run by the worker's deploy (worker/035)
+
 [build-system]
 requires = ["uv_build>=0.13.0,<0.14.0"]
 build-backend = "uv_build"
@@ -142,6 +145,8 @@ max-lines = 250
 [tool.meritum-conventions.constants-exceptions]
 "src/meritum_core/jobs/contracts/_workflows.py" = "the workflow specs and WORKFLOWS are built from the contract models; a constants.py would import them back (cycle)"
 "src/meritum_core/corpus/adapters/_postgres.py" = "SQL text of the PostgreSQL adapter stays next to the code that runs it; the tunable weights are in corpus/constants.py"
+"src/meritum_core/checks/adapters/_postgres.py" = "the kind-to-column map is SQL of the PostgreSQL adapter and stays next to the queries that use it"
+"src/meritum_core/notifications/adapters/_postgres.py" = "the kind-to-column map is SQL of the PostgreSQL adapter and stays next to the queries that use it"
 
 # --------------------------------------------------------------------------- #
 # Dead code (vulture) and security (bandit)
@@ -153,6 +158,7 @@ paths = ["src", "scripts", "tests", "features", "vulture_whitelist.py"]
 exclude = ["src/meritum_core/checks/contracts/"]
 min_confidence = 60
 ignore_decorators = ["@given", "@when", "@then", "@model_validator"]  # behave calls step functions, Pydantic calls validators
+ignore_names = ["app_database_url"]  # tests/conftest.py fixture, requested by name through getfixturevalue
 
 # bandit is a security linter, not a dead-code tool. Ruff's S rules already run
 # bandit's checks; bandit itself runs too because the team asked for it.
