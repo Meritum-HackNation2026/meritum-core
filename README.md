@@ -27,7 +27,7 @@ dependencies = ["meritum-core"]
 meritum-core = { git = "ssh://git@github.com/Meritum-HackNation2026/meritum-core.git", branch = "main" }
 ```
 
-`uv.lock` przypina konkretny commit. Po zmianie w core: `uv lock --upgrade-package meritum-core` w backendzie i workerze. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret organizacji `MERITUM_CORE_SSH_KEY`).
+`uv.lock` przypina konkretny commit. Po zmianie w core: `uv lock --upgrade-package meritum-core` w backendzie i workerze. CI i deploy pobierają core kluczem wdrożeniowym tylko do odczytu (sekret repozytorium `MERITUM_CORE_SSH_KEY` w backendzie i workerze; na planie Free sekrety organizacji nie trafiają do repo prywatnych).
 
 ## Praca lokalna
 
