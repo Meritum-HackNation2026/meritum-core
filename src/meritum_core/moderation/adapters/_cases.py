@@ -11,6 +11,7 @@ from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
 from meritum_core.checks.contracts import CaseClaim, ModeratorCase
+from meritum_core.moderation.constants import CASE_WRITE_LOCK
 from meritum_core.moderation.ports import CaseState
 
 
@@ -29,6 +30,12 @@ async def remove_case_checks(conn: AsyncConnection, check_ids: Sequence[str]) ->
     gone = list(check_ids)
     if not gone:
         return
+    await conn.execute("SELECT pg_advisory_xact_lock(%s)", (CASE_WRITE_LOCK,))
+    await conn.execute(
+        "INSERT INTO removed_case_checks (check_id) SELECT unnest(%s::text[])"
+        " ON CONFLICT (check_id) DO NOTHING",
+        (gone,),
+    )
     cursor = await conn.execute(
         "SELECT body FROM moderator_cases WHERE EXISTS ("
         " SELECT 1 FROM jsonb_array_elements(body -> 'claims') AS c"
@@ -78,13 +85,25 @@ class PostgresModeratorCaseRepository:
         return await AsyncConnection.connect(self._conninfo)
 
     async def save(self, case: ModeratorCase) -> None:
-        """Store or update ``case``.
+        """Store or update ``case``, leaving out checks removed earlier.
 
         Args:
             case: the case to store.
         """
-        async with await self._connect() as conn:
-            await _upsert(conn, case)
+        async with await self._connect() as conn, conn.transaction():
+            await conn.execute("SELECT pg_advisory_xact_lock(%s)", (CASE_WRITE_LOCK,))
+            cursor = await conn.execute(
+                "SELECT check_id FROM removed_case_checks WHERE check_id = ANY(%s)",
+                (case.check_ids,),
+            )
+            removed = {check_id for (check_id,) in await cursor.fetchall()}
+            claims = _without(case.claims, removed)
+            if claims:
+                await _upsert(conn, case.model_copy(update={"claims": claims}))
+            else:
+                await conn.execute(
+                    "DELETE FROM moderator_cases WHERE id = %s", (case.id,)
+                )
 
     async def get(self, case_id: str) -> ModeratorCase | None:
         """Read one case.

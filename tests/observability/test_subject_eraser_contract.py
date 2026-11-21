@@ -88,3 +88,16 @@ def test_erasing_a_user_or_channel_user_leaves_everyone_else(
     notes = run.run(app.notifications.list_for("session_id", OTHER))
     assert sorted(n.id for n in notes) == ["n_about_s", "n_keep"]
     assert run.run(app.notifications.list_for("session_id", HASH)) == []
+
+
+def test_a_case_saved_from_before_the_erase_stays_without_erased_checks(
+    run: asyncio.Runner, app: AppRepositories
+) -> None:
+    seed(run, app)
+    stale = run.run(app.cases.get("#S-1"))
+    assert stale is not None
+    run.run(app.eraser.erase("session_id", SESSION))
+    run.run(app.cases.save(stale))
+    stored = run.run(app.cases.get("#S-1"))
+    assert stored is not None
+    assert stored.check_ids == ["c_keep"]

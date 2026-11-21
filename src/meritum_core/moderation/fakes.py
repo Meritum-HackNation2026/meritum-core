@@ -20,14 +20,19 @@ class InMemoryModeratorCaseRepository:
 
     def __init__(self) -> None:
         self._cases: dict[str, ModeratorCase] = {}
+        self._removed: set[str] = set()
 
     async def save(self, case: ModeratorCase) -> None:
-        """Store or update ``case`` under its id.
+        """Store or update ``case`` under its id, without removed checks.
 
         Args:
             case: the case to store.
         """
-        self._cases[case.id] = case
+        claims = _without(case.claims, self._removed)
+        if claims:
+            self._cases[case.id] = case.model_copy(update={"claims": claims})
+        else:
+            self._cases.pop(case.id, None)
 
     async def get(self, case_id: str) -> ModeratorCase | None:
         """Read one case.
@@ -75,6 +80,7 @@ class InMemoryModeratorCaseRepository:
             check_ids: the deleted checks.
         """
         gone = set(check_ids)
+        self._removed |= gone
         for case in list(self._cases.values()):
             claims = _without(case.claims, gone)
             if not claims:

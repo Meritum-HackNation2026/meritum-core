@@ -28,6 +28,10 @@ class ModeratorCaseRepository(Protocol):
     async def save(self, case: ModeratorCase) -> None:
         """Store a new case or update the stored one with the same ``id``.
 
+        Checks dropped earlier by ``remove_checks`` are left out, so a case read
+        before a deletion cannot bring them back; a case left without claims is
+        not stored (and a stored one goes).
+
         Args:
             case: the case to store.
         """

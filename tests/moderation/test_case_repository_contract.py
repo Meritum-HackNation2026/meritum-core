@@ -80,3 +80,26 @@ def test_remove_checks_deletes_a_case_left_without_checks(
     run.run(cases.remove_checks(["c_1"]))
     assert run.run(cases.get("#S-1")) is None
     assert run.run(cases.get("#S-2")) is not None
+
+
+def test_saving_a_case_read_before_remove_checks_does_not_bring_them_back(
+    run: asyncio.Runner, cases: ModeratorCaseRepository
+) -> None:
+    stale = case("#S-1", claims=claims((CLAIM, ["c_1", "c_2"])))
+    save(run, cases, stale)
+    run.run(cases.remove_checks(["c_1"]))
+    save(run, cases, stale.model_copy(update={"state": "answered"}))
+    stored = run.run(cases.get("#S-1"))
+    assert stored is not None
+    assert stored.state == "answered"
+    assert stored.check_ids == ["c_2"]
+
+
+def test_saving_a_case_left_only_with_removed_checks_stores_nothing(
+    run: asyncio.Runner, cases: ModeratorCaseRepository
+) -> None:
+    stale = case("#S-1", claims=claims((CLAIM, ["c_1"])))
+    save(run, cases, stale)
+    run.run(cases.remove_checks(["c_1"]))
+    save(run, cases, stale)
+    assert run.run(cases.get("#S-1")) is None
