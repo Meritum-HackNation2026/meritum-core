@@ -63,7 +63,13 @@ def test_factory_builds_vertex_from_settings(vertex_settings: LlmSettings) -> No
 
 @pytest.mark.parametrize(
     "overrides",
-    [{"model": None}, {"region": None}, {"region": "us-central1"}],
+    [
+        {"model": None},
+        {"region": None},
+        {"region": "us-central1"},
+        {"region": "europe-west2"},  # London: Europe, not the EU
+        {"region": "europe-west6"},  # Zurich
+    ],
 )
 def test_vertex_needs_a_pinned_model_and_an_eu_region(
     vertex_settings: LlmSettings, overrides: dict[str, object]

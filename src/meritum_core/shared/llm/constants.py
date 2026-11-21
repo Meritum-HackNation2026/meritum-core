@@ -9,14 +9,29 @@ from typing import Final
 ENV_PREFIX: Final = "MERITUM_LLM_"
 """Prefix of every LLM setting in the environment (US-WDR-02)."""
 
-EU_REGION_PREFIX: Final = "europe-"
-"""Vertex AI regions in the EU start with this; data stays in the EU (ADR-14)."""
-
-EU_MULTI_REGION: Final = "eu"
-"""Vertex AI EU multi-region endpoint, also allowed by ADR-14."""
+EU_REGIONS: Final = frozenset(
+    {
+        "eu",
+        "europe-central2",
+        "europe-north1",
+        "europe-north2",
+        "europe-southwest1",
+        "europe-west1",
+        "europe-west3",
+        "europe-west4",
+        "europe-west8",
+        "europe-west9",
+        "europe-west10",
+        "europe-west12",
+    }
+)
+"""Vertex AI locations inside the EU (ADR-14); London and Zurich are not."""
 
 DEFAULT_RETRIES: Final = 3
-"""Attempts per call, the first included, before ProviderUnavailableError (F-30)."""
+"""HTTP attempts per call, the first included, before ProviderUnavailableError."""
+
+OUTPUT_RETRIES: Final = 1
+"""Times the model is re-asked with the validation error when its answer is invalid."""
 
 TEMPERATURE: Final = 0.0
 """Deterministic sampling for every call (ADR-19)."""

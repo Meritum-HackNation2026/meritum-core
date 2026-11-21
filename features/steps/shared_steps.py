@@ -18,7 +18,6 @@ from google.oauth2.credentials import Credentials
 from pydantic import BaseModel
 
 from meritum_core.shared.llm import LlmSettings, Prompt, build_llm
-from meritum_core.shared.llm.adapters import VertexLlm
 
 ANSWER = {"claims": ["Sejm przyjął ustawę."]}
 REPLY = {
@@ -114,13 +113,7 @@ def given_vertex_configured(context: Context) -> None:
 
 @when("fabryka buduje adapter")
 def when_factory_builds_adapter(context: Context) -> None:
-    """Build from the environment, then call the same settings on a recorded reply.
-
-    The factory has no HTTP seam, so the call goes through a VertexLlm built with
-    the factory's settings and a mock transport.
-    """
-    context.settings = LlmSettings()
-    assert isinstance(build_llm(context.settings), VertexLlm)
+    """Build from the environment with a recorded reply as the HTTP transport."""
     context.sent = []
 
     def reply(request: httpx2.Request) -> httpx2.Response:
@@ -129,7 +122,7 @@ def when_factory_builds_adapter(context: Context) -> None:
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(reply), timeout=60)
     token = Credentials(token="recorded")  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
-    llm = VertexLlm(context.settings, credentials=token, http_client=client)
+    llm = build_llm(LlmSettings(), credentials=token, http_client=client)
     context.result = asyncio.run(llm.complete(PROMPT, ClaimList))
 
 

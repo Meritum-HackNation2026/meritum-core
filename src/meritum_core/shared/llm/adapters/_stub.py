@@ -1,7 +1,7 @@
 """Stub LLM: deterministic answers from a fixture, no keys and no network.
 
 Features:
-    US-WDR-02, F-30
+    US-WDR-02, F-30, ADR-11
 """
 
 from collections.abc import Mapping
@@ -21,7 +21,7 @@ class StubLlm:
         fixtures: Answer per output model class name, as JSON.
 
     Features:
-        US-WDR-02, F-30
+        US-WDR-02, F-30, ADR-11
     """
 
     def __init__(self, fixtures: Mapping[str, JsonValue]) -> None:

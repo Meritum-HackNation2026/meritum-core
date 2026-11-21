@@ -11,19 +11,14 @@ from typing import Self
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from meritum_core.shared.llm.constants import (
-    DEFAULT_RETRIES,
-    ENV_PREFIX,
-    EU_MULTI_REGION,
-    EU_REGION_PREFIX,
-)
+from meritum_core.shared.llm.constants import DEFAULT_RETRIES, ENV_PREFIX, EU_REGIONS
 
 
 class LlmProvider(StrEnum):
     """Which adapter ``build_llm`` builds.
 
     Features:
-        US-WDR-02, F-30
+        US-WDR-02, F-30, ADR-11
     """
 
     STUB = "stub"
@@ -36,9 +31,9 @@ class LlmSettings(BaseSettings):
     Attributes:
         provider: ``stub`` (default, no keys, no network) or ``vertex``.
         model: Pinned model version, e.g. a dated Gemini or Model Garden name.
-        region: Vertex AI region in the EU (``europe-*`` or ``eu``).
+        region: Vertex AI location in the EU, one of ``EU_REGIONS``.
         project: Google Cloud project; ADC's default project when None.
-        retries: Attempts per call, the first included.
+        retries: HTTP attempts per call on transient errors, the first included.
         stub_fixtures: JSON file mapping an output model's class name to its answer.
 
     Features:
@@ -59,12 +54,9 @@ class LlmSettings(BaseSettings):
         if self.provider is not LlmProvider.VERTEX:
             return self
         if self.model is None or self.region is None:
-            msg = "MERITUM_LLM_MODEL and MERITUM_LLM_REGION are required for vertex"
+            msg = f"{ENV_PREFIX}MODEL and {ENV_PREFIX}REGION are required for vertex"
             raise ValueError(msg)
-        in_eu = self.region == EU_MULTI_REGION or self.region.startswith(
-            EU_REGION_PREFIX
-        )
-        if not in_eu:
-            msg = f"MERITUM_LLM_REGION must be an EU region, got {self.region!r}"
+        if self.region not in EU_REGIONS:
+            msg = f"{ENV_PREFIX}REGION must be an EU region, got {self.region!r}"
             raise ValueError(msg)
         return self

@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 import httpx2
 import pytest
+from google.oauth2.credentials import Credentials
 from pydantic import BaseModel
 
 from meritum_core.shared.llm import (
@@ -13,6 +14,7 @@ from meritum_core.shared.llm import (
     LlmSettings,
     Prompt,
     ProviderUnavailableError,
+    build_llm,
 )
 
 PROMPT = Prompt(
@@ -90,3 +92,12 @@ def test_vertex_failure_after_retries_raises_provider_unavailable(
     with pytest.raises(ProviderUnavailableError):
         asyncio.run(llm.complete(PROMPT, claim_list))
     assert len(sent) == settings.retries
+
+
+def test_vertex_rejected_credentials_raise_provider_unavailable(
+    vertex_settings: LlmSettings, claim_list: type[BaseModel]
+) -> None:
+    expired = Credentials(token=None)  # cannot refresh: no refresh token
+    llm = build_llm(vertex_settings, credentials=expired)
+    with pytest.raises(ProviderUnavailableError):
+        asyncio.run(llm.complete(PROMPT, claim_list))

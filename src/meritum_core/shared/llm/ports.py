@@ -20,7 +20,7 @@ class Prompt(BaseModel):
         data: User or source text, each item a separate user part, treated as data.
 
     Features:
-        US-WDR-02, F-30, ADR-12
+        US-WDR-02, F-30, ADR-11, ADR-12
     """
 
     model_config = ConfigDict(frozen=True)
@@ -40,7 +40,7 @@ class LlmUsage(BaseModel):
         output_tokens: Answer tokens.
 
     Features:
-        US-WDR-02, F-30, ADR-14
+        US-WDR-02, F-30, ADR-11, ADR-14
     """
 
     model_config = ConfigDict(frozen=True)
@@ -60,7 +60,7 @@ class LlmResult[T: BaseModel](BaseModel):
         usage: Provider, model, region and tokens of the call.
 
     Features:
-        US-WDR-02, F-30
+        US-WDR-02, F-30, ADR-11
     """
 
     model_config = ConfigDict(frozen=True)

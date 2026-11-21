@@ -9,8 +9,7 @@ import pytest
 from google.oauth2.credentials import Credentials
 from pydantic import BaseModel
 
-from meritum_core.shared.llm import LlmSettings
-from meritum_core.shared.llm.adapters import VertexLlm
+from meritum_core.shared.llm import LlmPort, LlmSettings, build_llm
 
 ANSWER = {"claims": ["Sejm przyjął ustawę."]}
 RECORDED_REPLY = {
@@ -34,7 +33,7 @@ UNAVAILABLE = {
 }
 
 type Sent = list[httpx2.Request]
-type VertexFactory = Callable[[LlmSettings, int], tuple[VertexLlm, Sent]]
+type VertexFactory = Callable[[LlmSettings, int], tuple[LlmPort, Sent]]
 
 
 class ClaimList(BaseModel):
@@ -68,9 +67,9 @@ def stub_fixtures(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def recorded_vertex() -> VertexFactory:
-    """Build a VertexLlm whose HTTP calls get the recorded reply, or an error status."""
+    """Build Vertex through the factory; its HTTP calls get the recorded reply or an error."""
 
-    def build(settings: LlmSettings, status: int) -> tuple[VertexLlm, Sent]:
+    def build(settings: LlmSettings, status: int) -> tuple[LlmPort, Sent]:
         sent: Sent = []
 
         def reply(request: httpx2.Request) -> httpx2.Response:
@@ -80,6 +79,6 @@ def recorded_vertex() -> VertexFactory:
 
         client = httpx2.AsyncClient(transport=httpx2.MockTransport(reply), timeout=60)
         token = Credentials(token="recorded")  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
-        return VertexLlm(settings, credentials=token, http_client=client), sent
+        return build_llm(settings, credentials=token, http_client=client), sent
 
     return build

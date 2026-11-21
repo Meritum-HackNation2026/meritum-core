@@ -5,6 +5,7 @@ Features:
 """
 
 from google.auth.credentials import Credentials
+from google.auth.exceptions import GoogleAuthError
 from google.genai.types import HttpRetryOptions
 from httpx2 import AsyncClient
 from pydantic import BaseModel
@@ -14,7 +15,7 @@ from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google_cloud import GoogleCloudProvider
 from pydantic_ai.settings import ModelSettings
 
-from meritum_core.shared.llm.constants import TEMPERATURE
+from meritum_core.shared.llm.constants import OUTPUT_RETRIES, TEMPERATURE
 from meritum_core.shared.llm.errors import ProviderUnavailableError
 from meritum_core.shared.llm.ports import LlmResult, LlmUsage, Prompt
 from meritum_core.shared.llm.settings import LlmProvider, LlmSettings
@@ -41,7 +42,6 @@ class VertexLlm:
     ) -> None:
         self._model_name = str(settings.model)
         self._region = str(settings.region)
-        self._retries = settings.retries
         provider = GoogleCloudProvider(
             project=settings.project,
             location=self._region,
@@ -68,18 +68,19 @@ class VertexLlm:
             The validated answer and token usage.
 
         Raises:
-            ProviderUnavailableError: The provider failed, or the answer did not
-                validate, after the configured retries.
+            ProviderUnavailableError: The provider failed or refused the
+                credentials after the configured retries, or the answer did not
+                validate after ``OUTPUT_RETRIES`` re-asks.
         """
         agent = Agent(
             self._model,
             output_type=output,
             instructions=prompt.instructions,
-            retries=self._retries - 1,  # settings count attempts, Pydantic AI retries
+            retries=OUTPUT_RETRIES,
         )
         try:
             result = await agent.run(list(prompt.data))
-        except (ModelAPIError, UnexpectedModelBehavior) as exc:
+        except (ModelAPIError, UnexpectedModelBehavior, GoogleAuthError) as exc:
             msg = f"{LlmProvider.VERTEX} {self._model_name} failed after retries"
             raise ProviderUnavailableError(msg) from exc
         usage = result.usage

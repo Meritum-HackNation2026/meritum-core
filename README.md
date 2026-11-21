@@ -42,12 +42,12 @@ Każdy krok workflowu woła model tylko przez `LlmPort`. Adapter wybiera konfigu
 | --- | --- | --- |
 | `MERITUM_LLM_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
 | `MERITUM_LLM_MODEL` | brak | przypięta wersja modelu w Vertex AI, np. `gemini-2.5-flash-001`; wymagana dla `vertex` |
-| `MERITUM_LLM_REGION` | brak | region UE (`europe-*` albo `eu`), w którym model jest dostępny (ADR-14); wymagany dla `vertex` |
+| `MERITUM_LLM_REGION` | brak | lokalizacja Vertex AI w UE (lista w `EU_REGIONS`, np. `europe-west4`, `europe-central2`, `eu`), w której model jest dostępny (ADR-14); Londyn i Zurych są odrzucane; wymagany dla `vertex` |
 | `MERITUM_LLM_PROJECT` | projekt z ADC | projekt Google Cloud |
-| `MERITUM_LLM_RETRIES` | `3` | liczba prób jednego wywołania (z pierwszą); po ostatniej adapter rzuca `ProviderUnavailableError`, który workflow mapuje na `technical_failure` |
+| `MERITUM_LLM_RETRIES` | `3` | liczba prób HTTP przy błędach przejściowych (z pierwszą). Niepoprawną odpowiedź model dostaje do poprawy raz. Gdy próby się skończą albo dane logowania są odrzucone, adapter rzuca `ProviderUnavailableError`, który workflow mapuje na `technical_failure` |
 | `MERITUM_LLM_STUB_FIXTURES` | brak | plik JSON dla stubu: nazwa klasy modelu wyjścia → odpowiedź, np. `{"ClaimList": {"claims": [...]}}` |
 
-Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Temperatura jest zawsze 0 (ADR-19). Testy w CI używają stubu i nagranej odpowiedzi Vertex AI przez atrapę HTTP; prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER=vertex`.
+Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Temperatura jest zawsze 0 (ADR-19). Przypięcie wersji to odpowiedzialność konfiguracji: podaj nazwę z wersją, nie alias. Testy w CI używają stubu i odpowiedzi w formacie Vertex AI podanej przez atrapę HTTP (`build_llm(..., http_client=...)`); prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER=vertex`.
 
 ## Użycie w innym repo
 
