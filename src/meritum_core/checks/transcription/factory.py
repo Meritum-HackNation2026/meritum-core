@@ -51,8 +51,7 @@ def build_transcriber(
             )
         case TranscriptionProvider.STUB:
             path = settings.stub_fixture
-            fixture = None if path is None else path.read_bytes()
-            transcript = (
-                None if fixture is None else Transcript.model_validate_json(fixture)
-            )
+            if path is None:
+                return StubTranscriber(blobs, None)
+            transcript = Transcript.model_validate_json(path.read_bytes())
             return StubTranscriber(blobs, transcript)

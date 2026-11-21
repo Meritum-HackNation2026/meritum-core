@@ -22,6 +22,7 @@ from meritum_core.checks.transcription.audio import inspect_audio
 from meritum_core.checks.transcription.constants import (
     BATCH_POLL_SECONDS,
     BATCH_TIMEOUT_SECONDS,
+    GCS_SCHEME,
     HTTP_TIMEOUT_SECONDS,
     LANGUAGE,
     RECOGNITION_CONFIG,
@@ -114,9 +115,12 @@ class SpeechV2Transcriber:
             The transcript in ``pl-PL``.
 
         Raises:
+            UnsupportedAudioError: Not a supported recording (``inspect_audio``).
             TranscriptionUnavailableError: The provider failed or refused the
                 credentials after the configured retries, its reply did not
-                parse, or the batch operation failed or timed out.
+                parse, the store gave no ``gs://`` address for batch, or the
+                batch operation failed or timed out.
+            BlobNotFoundError: No recording under ``audio_id``.
         """  # ruff: ignore[docstring-extraneous-exception]  # raised by _send and _batch
         data = await self._blobs.get(audio_id)
         info = inspect_audio(data)
@@ -137,6 +141,9 @@ class SpeechV2Transcriber:
         )
 
     async def _batch(self, uri: str) -> _Recognition:
+        if not uri.startswith(GCS_SCHEME):
+            msg = f"batch recognition reads only {GCS_SCHEME} addresses"
+            raise TranscriptionUnavailableError(msg)
         request: dict[str, JsonValue] = {
             "config": RECOGNITION_CONFIG,
             "files": [{"uri": uri}],
@@ -217,9 +224,8 @@ class SpeechV2Transcriber:
 
 
 def _fits_sync(info: AudioInfo, size: int) -> bool:
-    seconds = info.duration_seconds
-    is_short = seconds is not None and seconds <= SYNC_MAX_SECONDS
-    return is_short and size <= SYNC_MAX_BYTES
+    base64_size = 4 * -(-size // 3)
+    return info.duration_seconds <= SYNC_MAX_SECONDS and base64_size <= SYNC_MAX_BYTES
 
 
 def _is_transient(status: int) -> bool:

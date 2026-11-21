@@ -27,17 +27,17 @@ class AudioInfo(BaseModel):
 
     Attributes:
         format: The container and codec.
-        duration_seconds: Length stated by the container; None when it does not
-            state one cheaply (MP3).
+        duration_seconds: Length stated by the container; for MP3 estimated
+            from the first frame's bitrate.
 
     Features:
-        US-SPR-11, F-08
+        US-SPR-11, F-08, ADR-30
     """
 
     model_config = ConfigDict(frozen=True)
 
     format: AudioFormat
-    duration_seconds: float | None = Field(default=None, ge=0)
+    duration_seconds: float = Field(ge=0)
 
 
 class Transcript(BaseModel):

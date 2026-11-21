@@ -103,9 +103,9 @@ Nagranie z formularza albo wiadomość głosowa z Discorda leży w `BlobStore` (
 | Co | Wartość |
 | --- | --- |
 | Dostawca | Google Speech-to-Text v2 przez REST, model `chirp_3`, multi-region `eu` (endpoint `eu-speech.googleapis.com`), język `pl-PL` (ADR-30). Dane nie opuszczają UE (ADR-14) |
-| Tryby | do `SYNC_MAX_SECONDS` (55 s) i 10 MiB: synchroniczne `recognize` z treścią w żądaniu; dłuższe i MP3 (bez długości w nagłówku): `batchRecognize` z adresu `gs://` z `BlobStore.uri()`. Batch nie mieści się w celu 30 s, więc dłuższe nagranie kończy się powiadomieniem |
-| Formaty | OGG z Opus, MP3, M4A, WAV; format rozpoznaje `inspect_audio` po bajtach, nie po typie MIME od użytkownika |
-| Limity | `MAX_AUDIO_BYTES` 20 MiB, `MAX_AUDIO_SECONDS` 600 s (sprawdzane, gdy kontener podaje długość: OGG, WAV, M4A) |
+| Tryby | do `SYNC_MAX_SECONDS` (55 s) i 10 MiB treści w base64: synchroniczne `recognize` z treścią w żądaniu; dłuższe: `batchRecognize` z adresu `gs://` z `BlobStore.uri()` (inny adres to `TranscriptionUnavailableError`). Batch nie mieści się w celu 30 s, więc dłuższe nagranie kończy się powiadomieniem |
+| Formaty | OGG z Opus, MP3, M4A, WAV; format i długość odczytuje `inspect_audio` z bajtów (granula ostatniej strony Ogg, chunki WAV, `mvhd` w M4A, ramka Xing/Info albo bitrate w MP3), nie z typu MIME od użytkownika; plik bez czytelnej długości jest odrzucany |
+| Limity | `MAX_AUDIO_BYTES` 20 MiB, `MAX_AUDIO_SECONDS` 600 s |
 | Koszt | cennik Standard to 0,016 USD za minutę; czy `chirp_3` jest tak rozliczany, nie potwierdziliśmy (załącznik B dokumentu produktowego) |
 | Retencja | nagranie w magazynie usuwa retencja `BlobStore` (`expires_at`, ADR-13); adapter niczego nie zapisuje po stronie dostawcy (wynik batch wraca w odpowiedzi, `inlineResponseConfig`) |
 

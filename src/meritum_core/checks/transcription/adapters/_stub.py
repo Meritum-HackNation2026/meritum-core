@@ -1,7 +1,7 @@
 """Stub transcriber: the fixture's transcript, no keys and no network.
 
 Features:
-    US-SPR-11, F-08
+    US-SPR-11, F-08, ADR-30
 """
 
 from meritum_core.checks.transcription.audio import inspect_audio
@@ -18,7 +18,7 @@ class StubTranscriber:
         transcript: The answer for every supported recording; None fails.
 
     Features:
-        US-SPR-11, F-08
+        US-SPR-11, F-08, ADR-30
     """
 
     def __init__(self, blobs: BlobStore, transcript: Transcript | None) -> None:
@@ -35,8 +35,10 @@ class StubTranscriber:
             The fixture transcript.
 
         Raises:
+            UnsupportedAudioError: Not a supported recording (``inspect_audio``).
             TranscriptionUnavailableError: The stub has no fixture.
-        """
+            BlobNotFoundError: No recording under ``audio_id``.
+        """  # ruff: ignore[docstring-extraneous-exception]  # raised by inspect_audio and the store
         inspect_audio(await self._blobs.get(audio_id))
         if self._transcript is None:
             msg = "stub has no transcript fixture"

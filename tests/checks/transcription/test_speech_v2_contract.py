@@ -4,6 +4,8 @@ import asyncio
 import base64
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import httpx2
 import pytest
@@ -16,7 +18,14 @@ from meritum_core.checks.transcription import (
     UnsupportedAudioError,
     build_transcriber,
 )
-from meritum_core.shared.blobs import BlobStore
+from meritum_core.shared.blobs import (
+    BlobKind,
+    BlobSettings,
+    BlobStore,
+    build_blob_store,
+)
+
+FIXTURES = Path(__file__).parent / "fixtures"
 
 RECOGNIZER = (
     "https://eu-speech.googleapis.com/v2/projects/meritum-test/locations/eu"
@@ -73,14 +82,26 @@ def test_long_recording_goes_to_batch_from_the_store_address(
     assert (poll.method, str(poll.url)) == ("GET", OPERATION)
 
 
-def test_mp3_without_a_stated_length_goes_to_batch(
-    recorded_speech: SpeechFactory, audio_id: StoreAudio
-) -> None:
-    speech, sent = recorded_speech(
-        [(200, "batch-running.json"), (200, "batch-done.json")]
+def test_batch_needs_a_gs_address_from_the_store() -> None:
+    memory = build_blob_store(BlobSettings(provider="memory"))
+    voice = asyncio.run(
+        memory.put(
+            (FIXTURES / "voice-90s.ogg").read_bytes(),
+            kind=BlobKind.AUDIO,
+            content_type="audio/ogg",
+            expires_at=datetime.now(UTC) + timedelta(hours=1),
+        )
     )
-    asyncio.run(speech.transcribe(audio_id("short-3s.mp3")))
-    assert str(sent[0].url) == f"{RECOGNIZER}:batchRecognize"
+    settings = TranscriptionSettings(provider="speech_v2", project="meritum-test")
+    sent: list[httpx2.Request] = []
+    client = httpx2.AsyncClient(
+        transport=httpx2.MockTransport(lambda r: sent.append(r) or httpx2.Response(500))
+    )
+    token = Credentials(token="recorded")  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
+    speech = build_transcriber(settings, memory, credentials=token, http_client=client)
+    with pytest.raises(TranscriptionUnavailableError, match="gs://"):
+        asyncio.run(speech.transcribe(voice.blob_id))
+    assert sent == []
 
 
 def test_unsupported_file_fails_before_anything_is_sent(

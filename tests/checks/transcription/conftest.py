@@ -5,6 +5,7 @@ import json
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import override
 
 import httpx2
 import pytest
@@ -17,10 +18,9 @@ from meritum_core.checks.transcription import (
 )
 from meritum_core.shared.blobs import (
     BlobKind,
-    BlobSettings,
     BlobStore,
-    build_blob_store,
 )
+from meritum_core.shared.blobs.adapters import MemoryBlobStore
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -29,9 +29,18 @@ type Sent = list[httpx2.Request]
 type SpeechFactory = Callable[[Replies, int], tuple[TranscriptionPort, Sent]]
 
 
+class GcsLikeStore(MemoryBlobStore):
+    """The in-memory store, but with the ``gs://`` addresses a GCS store gives."""
+
+    @override
+    async def uri(self, blob_id: str) -> str:
+        await super().uri(blob_id)
+        return f"gs://meritum-audio/{blob_id}"
+
+
 @pytest.fixture
 def blobs() -> BlobStore:
-    return build_blob_store(BlobSettings(provider="memory"))
+    return GcsLikeStore()
 
 
 @pytest.fixture

@@ -13,7 +13,7 @@ class TranscriptionError(Exception):
     """Base error of the transcription port and its adapters.
 
     Features:
-        US-SPR-11, F-08
+        US-SPR-11, F-08, ADR-30
     """
 
 
