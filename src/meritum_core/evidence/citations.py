@@ -20,7 +20,9 @@ def find_verbatim(fragment: str, source_text: str) -> tuple[int, int] | None:
     """Find ``fragment`` in ``source_text`` up to whitespace, quotes and dashes.
 
     No paraphrase and no fuzzy matching: letters, case and punctuation must be
-    identical (rules in :mod:`meritum_core.evidence.constants`).
+    identical (rules in :mod:`meritum_core.evidence.constants`), and the match
+    starts and ends on word boundaries, so "zamknięte" never matches inside
+    "niezamknięte".
 
     Args:
         fragment: The quoted fragment, e.g. from a model or a moderator.
@@ -36,6 +38,8 @@ def find_verbatim(fragment: str, source_text: str) -> tuple[int, int] | None:
     needle, _ = _fold(fragment.strip())
     haystack, positions = _fold(source_text)
     at = haystack.find(needle) if needle else -1
+    while at >= 0 and _cuts_a_word(haystack, at, at + len(needle)):
+        at = haystack.find(needle, at + 1)
     if at < 0:
         return None
     return positions[at], positions[at + len(needle) - 1] + 1
@@ -59,8 +63,10 @@ def verify_citation(
         US-ZRD-01, F-16, ADR-06
     """
     document = sources.get(draft.source_id)
-    span = find_verbatim(draft.fragment, document.text) if document else None
-    if document is None or span is None:
+    if document is None:
+        return None
+    span = find_verbatim(draft.fragment, document.text)
+    if span is None:
         return None
     try:
         return Citation(
@@ -71,6 +77,17 @@ def verify_citation(
         )
     except ValidationError:
         return None
+
+
+def _cuts_a_word(text: str, start: int, end: int) -> bool:
+    """Tell whether ``text[start:end]`` begins or ends in the middle of a word.
+
+    Returns:
+        True when a letter or digit on either edge continues past the match.
+    """
+    before = start > 0 and text[start - 1].isalnum() and text[start].isalnum()
+    after = end < len(text) and text[end - 1].isalnum() and text[end].isalnum()
+    return before or after
 
 
 def _fold(text: str) -> tuple[str, list[int]]:

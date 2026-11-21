@@ -61,11 +61,12 @@ def test_fragment_spanning_paragraphs_matches() -> None:
 
 
 def test_long_quote_matches() -> None:
-    long_text = " ".join(f"Zdanie numer {i} o łączności żółwia." for i in range(200))
-    fragment = long_text[1000:4000].strip()
+    sentences = [f"Zdanie numer {i} o łączności żółwia." for i in range(200)]
+    long_text = " ".join(sentences)
+    fragment = "\n".join(sentences[30:120])
     span = find_verbatim(fragment, long_text)
     assert span is not None
-    assert long_text[span[0] : span[1]] == fragment
+    assert long_text[span[0] : span[1]] == " ".join(sentences[30:120])
 
 
 @pytest.mark.parametrize(
@@ -76,10 +77,20 @@ def test_long_quote_matches() -> None:
         "Ostrzeżenie II stopnia obowiązuje do 18:00",  # paraphrase: words skipped
         "Szkoły są zamknięte do odwołania",
         "   ",
+        "rzeżenie II stopnia",  # starts inside a word
+        "Zalecamy ostrożn",  # ends inside a word
     ],
 )
 def test_anything_beyond_the_normalization_does_not_match(fragment: str) -> None:
     assert find_verbatim(fragment, TEXT) is None
+
+
+def test_fragment_inside_a_longer_word_does_not_match() -> None:
+    source = "Szkoły są niezamknięte do odwołania, a przedszkola zamknięte do piątku."
+    assert find_verbatim("zamknięte do odwołania", source) is None
+    span = find_verbatim("zamknięte do piątku", source)
+    assert span is not None
+    assert source[span[0] : span[1]] == "zamknięte do piątku"
 
 
 def test_verified_citation_takes_metadata_from_the_database_not_the_model() -> None:
