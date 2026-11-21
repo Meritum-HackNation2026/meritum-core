@@ -13,3 +13,11 @@ class UnknownCorpusVersionError(Exception):
     Features:
         US-KOR-02, F-12, ADR-19
     """
+
+
+class CorpusUnavailableError(Exception):
+    """The corpus database failed; callers map it to ``technical_failure``.
+
+    Features:
+        US-KOR-02, F-12, ADR-04
+    """

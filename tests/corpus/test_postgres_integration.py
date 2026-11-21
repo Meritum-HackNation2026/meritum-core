@@ -18,6 +18,7 @@ import pytest
 from meritum_core.corpus import (
     CorpusSearchPort,
     CorpusSettings,
+    CorpusUnavailableError,
     UnknownCorpusVersionError,
     build_corpus_search,
 )
@@ -122,15 +123,27 @@ def test_fresher_passage_ranks_higher(corpus: tuple[str, str]) -> None:
         url,
         version,
         [
-            ("stale", text, CLAIM_DATE - timedelta(days=400)),
+            ("aged", text, CLAIM_DATE - timedelta(days=400)),
             ("fresh", text, CLAIM_DATE - timedelta(days=3)),
         ],
     )
     found = search(url, "przymrozki na Mazowszu", version)
-    assert found.index("fresh") < found.index("stale")
+    assert found.index("fresh") < found.index("aged")
 
 
 @pytest.mark.integration
 def test_unknown_snapshot_is_an_error(url: str) -> None:
     with pytest.raises(UnknownCorpusVersionError):
         search(url, "burza", f"{uuid.uuid4().hex}-missing")
+
+
+@pytest.mark.integration
+def test_unreachable_database_is_corpus_unavailable() -> None:
+    port = build_corpus_search(
+        CorpusSettings(
+            provider="postgres", database_url="postgresql://x@127.0.0.1:1/x"
+        ),
+        build_embeddings(EmbeddingsSettings(provider="stub")),
+    )
+    with pytest.raises(CorpusUnavailableError):
+        asyncio.run(port.search("burza", claim_date=CLAIM_DATE, corpus_version="v"))

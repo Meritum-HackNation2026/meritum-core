@@ -66,7 +66,11 @@ class MemoryCorpusSearch:
         semantic = [_dot(query_vector, v) for v in vectors]
         stems = _stems(query)
         lexical = [len(stems & _stems(p.text)) for p in passages]
-        rankings = [_ranked(passages, semantic), _ranked(passages, lexical)]
+        # Nearest neighbours rank every passage, as pgvector does; words must match.
+        rankings = [
+            _ranked(passages, semantic, keep_all=True),
+            _ranked(passages, lexical, keep_all=False),
+        ]
         return fuse_rankings(rankings, claim_date=claim_date, limit=limit)
 
 
@@ -78,7 +82,10 @@ def _dot(a: Vector, b: Vector) -> float:
     return sum(x * y for x, y in zip(a, b, strict=True))
 
 
-def _ranked(passages: Sequence[Passage], scores: Sequence[float]) -> list[Passage]:
+def _ranked(
+    passages: Sequence[Passage], scores: Sequence[float], *, keep_all: bool
+) -> list[Passage]:
     # Stable sort: equal scores keep the snapshot's order.
     order = sorted(range(len(passages)), key=lambda i: -scores[i])
-    return [passages[i] for i in order if scores[i] > 0][:CANDIDATES_PER_RANKING]
+    kept = [passages[i] for i in order if keep_all or scores[i] > 0]
+    return kept[:CANDIDATES_PER_RANKING]

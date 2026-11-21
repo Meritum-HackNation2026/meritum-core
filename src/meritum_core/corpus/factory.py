@@ -30,13 +30,18 @@ def build_corpus_search(
     Returns:
         The in-memory or the PostgreSQL adapter.
 
+    Raises:
+        ValueError: postgres without a database URL (settings built unvalidated).
+
     Features:
         US-KOR-02, F-12, ADR-04, ADR-32
     """
     match settings.provider:
         case CorpusProvider.POSTGRES:
-            url = settings.database_url
-            conninfo = "" if url is None else url.get_secret_value()
+            if settings.database_url is None:
+                msg = "MERITUM_CORPUS_DATABASE_URL is required for postgres"
+                raise ValueError(msg)
+            conninfo = settings.database_url.get_secret_value()
             return PostgresCorpusSearch(conninfo, embeddings)
         case CorpusProvider.MEMORY:
             return MemoryCorpusSearch(snapshots or {}, embeddings)

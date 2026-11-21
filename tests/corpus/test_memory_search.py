@@ -59,14 +59,21 @@ def test_results_carry_source_id_and_dates() -> None:
     assert found.fetched_at.tzinfo is not None
 
 
-def test_unrelated_passages_are_not_returned() -> None:
-    search = memory({"v1": [passage("a", "Ceny paliw")]})
+def test_best_match_comes_first_like_nearest_neighbours() -> None:
+    search = memory({"v1": [passage("a", "Ceny paliw"), passage("b", "Burza gradowa")]})
     found = asyncio.run(
         search.search("burza gradowa", claim_date=CLAIM_DATE, corpus_version="v1")
     )
-    assert found == []
+    assert found[0].passage_id == "b"
 
 
 def test_postgres_provider_requires_a_database_url() -> None:
     with pytest.raises(ValueError, match="DATABASE_URL"):
         CorpusSettings(provider="postgres")
+
+
+def test_factory_refuses_postgres_without_a_database_url() -> None:
+    settings = CorpusSettings.model_construct(provider="postgres", database_url=None)
+    embeddings = build_embeddings(EmbeddingsSettings(provider="stub"))
+    with pytest.raises(ValueError, match="DATABASE_URL"):
+        build_corpus_search(settings, embeddings)

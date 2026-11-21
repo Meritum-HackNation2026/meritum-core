@@ -6,6 +6,8 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE SCHEMA IF NOT EXISTS corpus;
 
 -- A snapshot sees every passage added up to its taken_at (corpus_version).
+-- Passages are append-only: a changed document gets new passage ids, so old
+-- snapshots keep the text they saw. Only retention may delete rows.
 CREATE TABLE IF NOT EXISTS corpus.snapshots (
     version text PRIMARY KEY,
     taken_at timestamptz NOT NULL

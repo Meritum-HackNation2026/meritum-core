@@ -8,7 +8,10 @@ Features:
     US-KOR-02, US-ZRD-05, F-12, ADR-04, ADR-19, ADR-32
 """
 
-from meritum_core.corpus.errors import UnknownCorpusVersionError
+from meritum_core.corpus.errors import (
+    CorpusUnavailableError,
+    UnknownCorpusVersionError,
+)
 from meritum_core.corpus.factory import build_corpus_search
 from meritum_core.corpus.fusion import freshness_weight, fuse_rankings
 from meritum_core.corpus.models import Passage
@@ -19,6 +22,7 @@ __all__ = [
     "CorpusProvider",
     "CorpusSearchPort",
     "CorpusSettings",
+    "CorpusUnavailableError",
     "Passage",
     "UnknownCorpusVersionError",
     "build_corpus_search",

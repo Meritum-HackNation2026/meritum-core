@@ -8,7 +8,7 @@ from collections.abc import Mapping
 from datetime import date, datetime
 from typing import Final, LiteralString
 
-from psycopg import AsyncConnection
+from psycopg import AsyncConnection, Error
 from psycopg.rows import class_row
 
 from meritum_core.corpus.constants import (
@@ -16,7 +16,10 @@ from meritum_core.corpus.constants import (
     DEFAULT_LIMIT,
     TRIGRAM_THRESHOLD,
 )
-from meritum_core.corpus.errors import UnknownCorpusVersionError
+from meritum_core.corpus.errors import (
+    CorpusUnavailableError,
+    UnknownCorpusVersionError,
+)
 from meritum_core.corpus.fusion import fuse_rankings
 from meritum_core.corpus.models import Passage
 from meritum_core.shared.embeddings import EmbeddingsPort
@@ -91,28 +94,45 @@ class PostgresCorpusSearch:
             limit: Most passages to return.
 
         Returns:
-            Matching passages, best first; ``UnknownCorpusVersionError`` when
-            no snapshot has this version.
+            Matching passages, best first.
+
+        Raises:
+            UnknownCorpusVersionError: No snapshot has this version.
+            CorpusUnavailableError: PostgreSQL failed (connection or query).
         """
         vector = await self._embeddings.embed_query(query)
-        params = {
+        params: dict[str, object] = {
             "query": query,
             "embedding": "[" + ",".join(map(str, vector)) + "]",
             "candidates": CANDIDATES_PER_RANKING,
         }
+        try:
+            rankings = await self._rankings(corpus_version, params)
+        except Error as exc:
+            msg = "corpus search failed in PostgreSQL"
+            raise CorpusUnavailableError(msg) from exc
+        if rankings is None:
+            raise UnknownCorpusVersionError(corpus_version)
+        return fuse_rankings(rankings, claim_date=claim_date, limit=limit)
+
+    async def _rankings(
+        self, corpus_version: str, params: dict[str, object]
+    ) -> list[list[Passage]] | None:
         # shortcut: one connection per search; take a pool from the caller when
         # search latency matters (ADR-20 budget).
         async with (
             await AsyncConnection.connect(self._conninfo) as conn,
             conn.transaction(),
         ):
-            params["taken_at"] = await _snapshot_time(conn, corpus_version)
-            await _tune(conn)
-            rankings = [await _ranking(conn, sql, params) for sql in _RANKINGS]
-        return fuse_rankings(rankings, claim_date=claim_date, limit=limit)
+            taken_at = await _snapshot_time(conn, corpus_version)
+            if taken_at is None:
+                return None
+            await _set_search_options(conn)
+            snapshot = {**params, "taken_at": taken_at}
+            return [await _ranking(conn, sql, snapshot) for sql in _RANKINGS]
 
 
-async def _snapshot_time(conn: AsyncConnection, corpus_version: str) -> datetime:
+async def _snapshot_time(conn: AsyncConnection, corpus_version: str) -> datetime | None:
     cursor = await conn.execute(
         "SELECT taken_at FROM corpus.snapshots WHERE version = %s", (corpus_version,)
     )
@@ -120,10 +140,10 @@ async def _snapshot_time(conn: AsyncConnection, corpus_version: str) -> datetime
         case (datetime() as taken_at,):
             return taken_at
         case _:
-            raise UnknownCorpusVersionError(corpus_version)
+            return None
 
 
-async def _tune(conn: AsyncConnection) -> None:
+async def _set_search_options(conn: AsyncConnection) -> None:
     # Iterative HNSW scan: the snapshot filter runs after the index scan (pgvector 0.8).
     await conn.execute("SET LOCAL hnsw.iterative_scan = strict_order")
     await conn.execute(

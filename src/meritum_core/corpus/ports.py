@@ -40,6 +40,7 @@ class CorpusSearchPort(Protocol):
 
         Raises:
             UnknownCorpusVersionError: No snapshot has this version.
+            CorpusUnavailableError: The corpus store failed.
             EmbeddingsUnavailableError: The query could not be embedded.
         """
         ...

@@ -76,7 +76,7 @@ def given_fresh_and_stale(context: Context) -> None:
     """Same wording, different publication dates; the stale one is listed first."""
     text = "Komunikat IMGW o przymrozkach w województwie mazowieckim"
     context.passages = [
-        _passage("stale", text, CLAIM_DATE - timedelta(days=400)),
+        _passage("aged", text, CLAIM_DATE - timedelta(days=400)),
         _passage("fresh", text, CLAIM_DATE - timedelta(days=3)),
     ]
 
@@ -90,4 +90,4 @@ def when_system_searches_for_claim(context: Context) -> None:
 @then("świeższy fragment jest wyżej")
 def then_fresh_ranks_higher(context: Context) -> None:
     """Freshness weighting breaks the tie."""
-    assert context.found.index("fresh") < context.found.index("stale")
+    assert context.found.index("fresh") < context.found.index("aged")

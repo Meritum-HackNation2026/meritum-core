@@ -39,12 +39,13 @@ def test_each_passage_appears_once_with_its_fused_score() -> None:
     assert all(p.score > 0 for p in fused)
 
 
-def test_fresher_passage_ranks_higher_when_the_match_is_the_same() -> None:
-    stale, fresh = passage("stale", age_days=400), passage("fresh", age_days=3)
+def test_fresher_passage_beats_a_slightly_better_but_older_match() -> None:
+    # "aged" ranks first in both rankings and wins ties by id: only freshness lifts "fresh".
+    aged, fresh = passage("aged", age_days=400), passage("fresh", age_days=3)
     fused = fuse_rankings(
-        [[stale, fresh], [fresh, stale]], claim_date=CLAIM_DATE, limit=10
+        [[aged, fresh], [aged, fresh]], claim_date=CLAIM_DATE, limit=10
     )
-    assert ids(fused) == ["fresh", "stale"]
+    assert ids(fused) == ["fresh", "aged"]
 
 
 def test_much_better_match_still_wins_over_freshness() -> None:
