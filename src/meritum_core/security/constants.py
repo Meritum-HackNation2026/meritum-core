@@ -1,7 +1,7 @@
 """Patterns and markers of the personal-data masking (security/pii).
 
 Features:
-    US-BEZ-04, F-20, ADR-13
+    US-BEZ-04, F-20, ADR-13, ADR-35
 """
 
 import re
@@ -27,16 +27,24 @@ groups split by spaces or hyphens. A match without the prefix may be an amount;
 ``AMOUNT_HEAD_PATTERN`` and ``AMOUNT_TAIL_PATTERN`` decide (#102)."""
 
 AMOUNT_HEAD_PATTERN: Final = re.compile(
-    r"(?:(?<!\d[ \u00a0.-])(?<!\d)\d{1,3}(?P<separator>[ \u00a0.-])|[$€])$"
+    r"(?:(?<!\d[ \u00a0.-])(?<!\d)\d{1,3}(?P<separator>[ \u00a0.-])|[$€] ?)$"
 )
 """Text right before a phone-shaped match that makes it part of an amount: one
 leading digit group and a thousands separator ("1 450 000 000") or a currency sign
-("$850 000 000"). The separator must be the one inside the match, so
+("$850 000 000", "€ 850 000 000"). The separator must be the one inside the match, so
 "lokal 12 601-234-567" stays a phone; a second group before it ("601 234 567 601 234
 567") means two phones, not one 18-digit amount."""
 
 AMOUNT_HEAD_WINDOW: Final = 4
-"""Characters before a phone-shaped match that ``AMOUNT_HEAD_PATTERN`` reads."""
+"""Characters before a phone-shaped match that ``AMOUNT_HEAD_PATTERN`` reads: the
+longest head it accepts (three digits and a separator); widen both together."""
+
+AMOUNT_NEXT_GROUP_PATTERN: Final = re.compile(
+    r"(?P<separator>[ \u00a0.-])\d{3}(?![ \u00a0.-]?\d)"
+)
+"""Text right after a phone-shaped match that ends the same amount: one more
+three-digit group ("850 000 000 000"). A longer run ("601 234 567 601 234 567")
+is two phones, not one amount."""
 
 AMOUNT_UNITS: Final = (
     "zł",
@@ -55,7 +63,7 @@ AMOUNT_UNITS: Final = (
 """Words and signs after a number that make it an amount or a count, not a phone."""
 
 AMOUNT_TAIL_PATTERN: Final = re.compile(
-    r"(?:,\d|\s*(?i:" + "|".join(map(re.escape, AMOUNT_UNITS)) + r")(?!\w))"
+    r"(?:,\d|\s*(?i:" + "|".join(map(re.escape, AMOUNT_UNITS)) + r")(?![\w-]))"
 )
 """Text right after a phone-shaped match that makes it an amount: decimals or a unit.
 

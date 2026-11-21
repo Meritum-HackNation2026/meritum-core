@@ -62,6 +62,11 @@ Claims name public figures and institutions and quote places and dates; an
 institution's address ("Sejm, ul. Wiejska 4") is part of a claim too. None of
 them may enter ``INFO_TYPE_MARKERS``."""
 
+MARKERS: Final = tuple(dict.fromkeys(INFO_TYPE_MARKERS.values()))
+"""Every marker masking can leave in a text, each once: the gate's markers already
+include the phone, e-mail and PESEL markers of the patterns. Callers that must
+recognise masked text (the backend) read this tuple instead of their own copy."""
+
 MIN_LIKELIHOOD: Final = "LIKELY"
 """Lowest finding likelihood the gate masks; ``POSSIBLE`` hits amounts and dates."""
 

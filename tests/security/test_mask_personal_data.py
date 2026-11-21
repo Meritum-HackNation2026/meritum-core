@@ -51,12 +51,17 @@ CASES = [
     ("to 850 000 000 osób", "to 850 000 000 osób"),
     ("to 850 000 000 tys. zł", "to 850 000 000 tys. zł"),
     ("to 850 000 000 mln", "to 850 000 000 mln"),
+    ("dług 850 000 000 000 zł", "dług 850 000 000 000 zł"),
+    ("dług 850-000-000-000", "dług 850-000-000-000"),
+    ("koszt € 850 000 000", "koszt € 850 000 000"),
     # known limit: a house number before a space-grouped phone reads as an amount
     ("Długiej 5 601 234 567", "Długiej 5 601 234 567"),
     # phones stay masked next to digits and units that do not make them amounts
     ("tel. +48 601 234 567 zł", "tel. [telefon] zł"),
     ("Dzwoń na +48 601 234 567 albo 22 123 45 67", "Dzwoń na [telefon] albo [telefon]"),
     ("nr 5 601234567", "nr 5 [telefon]"),
+    ("tel 601 234 567 Euro-park", "tel [telefon] Euro-park"),
+    ("tel. 601 234 567 123-456", "tel. [telefon] 123-456"),
 ]
 
 

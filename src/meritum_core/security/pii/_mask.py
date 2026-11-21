@@ -10,6 +10,7 @@ import re
 from meritum_core.security.constants import (
     AMOUNT_HEAD_PATTERN,
     AMOUNT_HEAD_WINDOW,
+    AMOUNT_NEXT_GROUP_PATTERN,
     AMOUNT_TAIL_PATTERN,
     EMAIL_MARKER,
     EMAIL_PATTERN,
@@ -39,12 +40,16 @@ def _is_amount(match: re.Match[str]) -> bool:
     if match["prefix"]:
         return False
     text, start, end = match.string, match.start(), match.end()
+    separator = next((c for c in match["digits"] if not c.isdigit()), None)
     head = AMOUNT_HEAD_PATTERN.search(text, max(0, start - AMOUNT_HEAD_WINDOW), start)
-    inner = re.search(r"\D", match["digits"])
-    separator = inner[0] if inner else None
-    continues_a_number = head is not None and head["separator"] in {None, separator}
+    leading = head["separator"] if head else None  # None after a currency sign
+    same_leading = not isinstance(leading, str) or leading == separator
+    continues_a_number = head is not None and same_leading
+    next_group = AMOUNT_NEXT_GROUP_PATTERN.match(text, end)
+    following = next_group["separator"] if next_group else None
+    ends_a_number = isinstance(following, str) and following == separator
     has_unit = AMOUNT_TAIL_PATTERN.match(text, end) is not None
-    return continues_a_number or has_unit
+    return continues_a_number or ends_a_number or has_unit
 
 
 def _phone_or_keep(match: re.Match[str]) -> str:
