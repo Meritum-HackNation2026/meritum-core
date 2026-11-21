@@ -16,8 +16,9 @@ _log = logging.getLogger(__name__)
 class NullReranker:
     """Keeps the search order, cuts it to the limit and logs that reranking was skipped.
 
-    The relevance of each passage is its fused search score. The log line never
-    holds the claim or passage text.
+    Relevance is the reciprocal of the search rank (1, 1/2, 1/3, ...), so it
+    falls with the search order whatever scores the passages carry. The log
+    line never holds the claim or passage text.
 
     Features:
         US-KOR-02, US-SPR-04, F-12, ADR-35
@@ -47,4 +48,7 @@ class NullReranker:
             msg = f"limit must be at least 1, got {limit}"
             raise ValueError(msg)
         _log.info("reranker not configured; skipped for %d passages", len(passages))
-        return [RankedPassage(passage=p, relevance=p.score) for p in passages[:limit]]
+        return [
+            RankedPassage(passage=p, relevance=1 / rank)
+            for rank, p in enumerate(passages[:limit], start=1)
+        ]

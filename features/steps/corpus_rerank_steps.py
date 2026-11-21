@@ -62,7 +62,10 @@ def given_no_reranker(context: Context) -> None:
     context.reranker = NullReranker()
 
 
-def _rerank(context: Context) -> None:
+@when("przechodzą przez reranker")
+@when("fragmenty przechodzą przez bramkę")
+def when_reranked(context: Context) -> None:
+    """Pass the passages for the claim through the configured reranker."""
     records = _Records()
     logger = logging.getLogger("meritum_core")
     logger.addHandler(records)
@@ -74,18 +77,6 @@ def _rerank(context: Context) -> None:
         logger.removeHandler(records)
         logger.setLevel(previous)
     context.log = records.messages
-
-
-@when("przechodzą przez reranker")
-def when_reranked(context: Context) -> None:
-    """Rerank the passages for the claim."""
-    _rerank(context)
-
-
-@when("fragmenty przechodzą przez bramkę")
-def when_gated(context: Context) -> None:
-    """Pass the passages through the configured gate."""
-    _rerank(context)
 
 
 _TOP_K_STEP = "do oceny wymowy trafia najwyżej tyle fragmentów, ile mówi stała, w kolejności trafności"  # ruff: ignore[line-too-long]  # step text copied from the issue's Gherkin

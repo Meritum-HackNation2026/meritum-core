@@ -7,7 +7,12 @@ from collections.abc import Callable
 import pytest
 
 from meritum_core.corpus import Passage
-from meritum_core.corpus.rerank import NullReranker, RankedPassage, RerankerPort
+from meritum_core.corpus.rerank import (
+    RERANK_TOP_K,
+    NullReranker,
+    RankedPassage,
+    RerankerPort,
+)
 from meritum_core.corpus.rerank.contract import reranker_contract_violations
 from meritum_core.corpus.rerank.fakes import FakeReranker
 
@@ -30,7 +35,7 @@ class _Broken:
         claim: str,  # ruff: ignore[unused-method-argument]  # same signature as the port
         passages: list[Passage],
         *,
-        limit: int = 5,  # ruff: ignore[unused-method-argument]  # ignoring it is the bug
+        limit: int = RERANK_TOP_K,  # ruff: ignore[unused-method-argument]  # ignoring it is the bug
     ) -> list[RankedPassage]:
         doubled = [*passages, passages[0]] if passages else []
         return [RankedPassage(passage=p, relevance=i) for i, p in enumerate(doubled)]
@@ -38,9 +43,12 @@ class _Broken:
 
 def test_contract_reports_every_broken_rule() -> None:
     violations = asyncio.run(reranker_contract_violations(_Broken()))
-    assert (
-        len(violations) == 4
-    )  # over the limit, duplicate, wrong order, limit 0 accepted
+    assert violations == [
+        "returned 6 passages for limit 3",
+        "returned a passage twice",
+        "relevance is not non-increasing",
+        "accepted limit 0",
+    ]
 
 
 def test_null_gate_logs_the_skip_without_the_claim(
