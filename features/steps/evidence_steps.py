@@ -82,6 +82,8 @@ def then_claim_cannot_settle(context: Context) -> None:
         ClaimResult.model_validate(
             {
                 "claim": "Szkoły w Polsce są zamknięte do odwołania.",
+                "claim_date": "2026-11-21",
+                "claim_date_source": "today",
                 "verdict": "confirmed",
                 "strength": {
                     "level": "moderate",
