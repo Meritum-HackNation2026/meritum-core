@@ -9,7 +9,11 @@ Features:
 
 from urllib.parse import urlsplit
 
-from meritum_core.corpus.web_search.constants import CONTRACT_QUERY, WEB_SCHEMES
+from meritum_core.corpus.web_search.constants import (
+    CONTRACT_QUERY,
+    DEFAULT_RESULTS,
+    WEB_SCHEMES,
+)
 from meritum_core.corpus.web_search.ports import WebSearchProviderPort
 
 
@@ -31,7 +35,7 @@ async def provider_contract_violations(provider: WebSearchProviderPort) -> list[
     Features:
         US-KOR-04, US-WDR-02, F-13
     """
-    limit = 10
+    limit = DEFAULT_RESULTS
     several = await provider.search(CONTRACT_QUERY, limit=limit)
     one = await provider.search(CONTRACT_QUERY, limit=1)
     checks = {

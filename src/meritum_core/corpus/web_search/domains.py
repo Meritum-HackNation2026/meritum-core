@@ -19,17 +19,20 @@ def _segments(path: str) -> list[str]:
     return [part for part in path.split("/") if part]
 
 
-def _matches(host: str, path: list[str], entry: CatalogEntry) -> bool:
+def _split(entry: CatalogEntry) -> tuple[str, list[str]]:
     entry_host, _, entry_path = entry.domain.partition("/")
-    wanted = _host(entry_host)
+    return _host(entry_host), _segments(entry_path)
+
+
+def _matches(host: str, path: list[str], entry: CatalogEntry) -> bool:
+    wanted, prefix = _split(entry)
     same_site = host == wanted or host.endswith(f".{wanted}")
-    prefix = _segments(entry_path)
     return same_site and path[: len(prefix)] == prefix
 
 
 def _specificity(entry: CatalogEntry) -> tuple[int, int]:
-    entry_host, _, entry_path = entry.domain.partition("/")
-    return len(_segments(entry_path)), len(_host(entry_host))
+    wanted, prefix = _split(entry)
+    return len(prefix), len(wanted)
 
 
 def catalog_entry_for(url: str, catalog: Sequence[CatalogEntry]) -> CatalogEntry | None:

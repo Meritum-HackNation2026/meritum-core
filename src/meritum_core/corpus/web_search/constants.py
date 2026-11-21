@@ -13,7 +13,10 @@ SEARCH_TIMEOUT_S: Final = 10.0
 """Wall-clock budget of one search; past it the port raises WebSearchTimeoutError."""
 
 MAX_QUERIES_PER_MINUTE: Final = 60
-"""Searches one process sends in any 60 s window; more raise WebSearchRateLimitError."""
+"""Searches one built port sends in any 60 s window; more raise WebSearchRateLimitError.
+
+Build the port once per process (``build_web_search``) so this is a per-process cap.
+"""
 
 RATE_WINDOW_S: Final = 60.0
 """Length of the sliding window ``MAX_QUERIES_PER_MINUTE`` counts in."""

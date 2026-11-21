@@ -136,7 +136,7 @@ Przy świeżych twierdzeniach agent badawczy uzupełnia korpus wyszukiwaniem w s
 | Dostawca | Vertex AI Search (Discovery Engine v1, `:search` na `default_search`), basic website search z wzorcami INCLUDE dla domen katalogu. Data store, aplikację i wzorce zakłada Terraform w meritum-infra (infra#16) |
 | Region | basic website search działa tylko w lokalizacji `global`, czyli **poza UE**. Dlatego do zapytania trafia wyłącznie twierdzenie po maskowaniu danych osobowych (`MaskedText`); nic więcej nie wychodzi |
 | Filtr Meritum | druga kontrola po stronie dostawcy: `catalog_entry_for` dopasowuje host (z subdomenami, bez `www.`) i ścieżkę wpisu segment po segmencie (`www.gov.pl/web/gis/ostrzezenia`); wygrywa najdokładniejszy wpis. Wpisy wykluczone i listy `source_status` niczego nie przepuszczają |
-| Limity | `SEARCH_TIMEOUT_S` 10 s na jedno wyszukiwanie, `MAX_QUERIES_PER_MINUTE` 60 wyszukiwań na proces w oknie 60 s, `limit` od 1 do 25 (maksimum basic website search) |
+| Limity | `SEARCH_TIMEOUT_S` 10 s na jedno wyszukiwanie, `MAX_QUERIES_PER_MINUTE` 60 wyszukiwań w oknie 60 s na zbudowany port (budujemy go raz na proces), `limit` od 1 do 25 (maksimum basic website search) |
 | Koszt | edycja Enterprise, 4 USD za 1 000 zapytań po 10 000 darmowych miesięcznie |
 
 Błędy (wszystkie dziedziczą po `WebSearchError`, `check_status` = `technical_failure`): `WebSearchTimeoutError` (przekroczony czas), `WebSearchRateLimitError` (nasz limit zapytań albo 429 od dostawcy), `WebSearchUnavailableError` (inny błąd dostawcy, odrzucone dane logowania, nieczytelna odpowiedź). Komunikaty nie zawierają zapytania.

@@ -20,7 +20,8 @@ from meritum_core.security import MaskedText
 
 @pytest.mark.integration
 def test_real_search_returns_only_catalogue_addresses() -> None:
-    if os.environ.get("MERITUM_WEB_SEARCH_ENGINE") is None:
+    names = ("MERITUM_WEB_SEARCH_PROJECT", "MERITUM_WEB_SEARCH_ENGINE")
+    if any(os.environ.get(name) is None for name in names):
         pytest.skip("MERITUM_WEB_SEARCH_PROJECT and _ENGINE are not set")
     catalog = load_catalog()
     search = build_web_search(WebSearchSettings(provider="vertex_search"), catalog)
