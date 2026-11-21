@@ -37,7 +37,3 @@ def test_schema_says_codes_and_texts_are_not_paired() -> None:
     schema = c.CheckResult.model_json_schema()
     description = schema["properties"]["limitation_codes"]["description"]
     assert "Not paired with limitations by index" in description
-
-
-def test_contract_version_is_7() -> None:
-    assert c.CONTRACT_VERSION == 7

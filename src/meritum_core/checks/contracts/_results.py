@@ -15,7 +15,13 @@ from ._ai import AiMarker
 from ._base import _Model
 from ._claims import ClaimResult
 from ._context import SourceStatusWarning
-from ._types import CacheableStatus, CheckStatus, FailureCode, LimitationCode
+from ._types import (
+    CacheableStatus,
+    CheckStatus,
+    FailureCode,
+    LimitationCode,
+    OutOfScopeCode,
+)
 
 _Transcript = Annotated[
     str | None,
@@ -37,10 +43,22 @@ _LimitationCodes = Annotated[
     ),
 ]
 
+_OutOfScopeCode = Annotated[
+    OutOfScopeCode | None,
+    Field(
+        description="out_of_scope only: what is not handled; the channel picks the text from copy/pl.json and falls back to the generic one when it is empty. A rejected recording is audio; why it was rejected is in limitation_codes."
+    ),
+]
+
 
 def _require_marker(marker: AiMarker | None) -> None:
     if marker is None:
         raise ValueError("a finished check carries the AI marker")
+
+
+def _code_only_out_of_scope(status: CheckStatus, code: OutOfScopeCode | None) -> None:
+    if code is not None and status != "out_of_scope":
+        raise ValueError("only an out_of_scope result has an out_of_scope code")
 
 
 class Escalation(_Model):
@@ -80,6 +98,7 @@ class CheckResult(_Model):
         claims: one result per checked claim.
         message: for statuses that are not verdicts, what to do next.
         failure_code: why a technical failure happened; set only then.
+        out_of_scope_code: what is not handled; set only on out_of_scope.
         limitations: what the check could not cover.
         limitation_codes: the codes of those limitations.
         transcript: the masked automatic transcript of an audio input.
@@ -91,7 +110,7 @@ class CheckResult(_Model):
 
     Features:
         US-SPR-06, US-SPR-09, US-BEZ-03, US-BEZ-07, US-OBS-04, US-OBS-05,
-        US-WDR-06, US-SPR-11, F-08, F-20, ADR-02, ADR-34
+        US-WDR-06, US-SPR-11, F-08, F-18, F-20, ADR-02, ADR-34
     """
 
     check_id: Annotated[str, Field(min_length=1, max_length=40)]
@@ -105,6 +124,7 @@ class CheckResult(_Model):
         FailureCode | None,
         Field(description="technical_failure only; never names a key or a provider."),
     ] = None
+    out_of_scope_code: _OutOfScopeCode = None
     limitations: list[Annotated[str, Field(max_length=300)]] = []
     limitation_codes: _LimitationCodes = []
     transcript: _Transcript = None
@@ -126,6 +146,7 @@ class CheckResult(_Model):
         failed = self.status == "technical_failure"
         if failed != (self.failure_code is not None):
             raise ValueError("a technical failure, and only it, has a failure code")
+        _code_only_out_of_scope(self.status, self.out_of_scope_code)
         return self
 
     @model_validator(mode="after")
@@ -154,6 +175,7 @@ class CachedResult(_Model):
         status: the cached status; never a technical failure.
         claims: the cached claim results.
         message: the cached message for statuses that are not verdicts.
+        out_of_scope_code: the cached out-of-scope reason.
         limitations: the cached limitations.
         limitation_codes: the cached limitation codes.
         transcript: the cached masked transcript of an audio input.
@@ -165,12 +187,13 @@ class CachedResult(_Model):
         expires_at: when the entry expires.
 
     Features:
-        US-WTY-03, US-SPR-11, ADR-02
+        US-WTY-03, US-SPR-06, US-SPR-11, F-18, ADR-02
     """
 
     status: CacheableStatus
     claims: list[ClaimResult] = []
     message: Annotated[str | None, Field(max_length=400)] = None
+    out_of_scope_code: _OutOfScopeCode = None
     limitations: list[Annotated[str, Field(max_length=300)]] = []
     limitation_codes: _LimitationCodes = []
     transcript: _Transcript = None
@@ -187,6 +210,7 @@ class CachedResult(_Model):
     def _cache_rules(self) -> CachedResult:
         if self.status == "done":
             _require_marker(self.ai_marker)
+        _code_only_out_of_scope(self.status, self.out_of_scope_code)
         if self.expires_at <= self.cached_at:
             raise ValueError("a cache entry expires after it was stored")
         cited = {c.source.id for claim in self.claims for c in claim.citations}

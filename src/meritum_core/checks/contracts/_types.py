@@ -92,6 +92,10 @@ LimitationCode = Literal[
     "audio_format_unsupported",
     "audio_too_long",
 ]
+# Why a check is out_of_scope; the channel picks the text from copy/pl.json. audio is
+# one value for any rejected recording: the detail (format, length) stays in
+# limitation_codes, so the same fact is not stated twice.
+OutOfScopeCode = Literal["image", "audio", "not_informational"]
 # What would change the verdict, computed by a rule from the premises (US-ZRD-11).
 VerdictChange = Literal[
     "needs_primary_source",

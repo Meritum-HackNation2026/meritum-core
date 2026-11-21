@@ -112,3 +112,18 @@ Feature: Sprawdzanie treści
       | error                       | code                     |
       | UnsupportedAudioFormatError | audio_format_unsupported |
       | AudioTooLongError           | audio_too_long           |
+
+  Scenario: poza zakresem z powodem
+    Given wynik ze stanem "out_of_scope" dla obrazu
+    When kontrakt waliduje wynik
+    Then wynik ma kod powodu "image", z którego kanał wybiera tekst w copy/pl.json
+
+  Scenario: kod powodu tylko przy out_of_scope
+    Given wynik ze stanem "done"
+    When kontrakt waliduje wynik
+    Then kod powodu jest pusty
+
+  Scenario: kod powodu przy innym stanie
+    Given wynik ze stanem "done" z kodem powodu "image"
+    When kontrakt waliduje wynik
+    Then walidacja go odrzuca
