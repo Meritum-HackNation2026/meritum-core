@@ -57,6 +57,7 @@ Zasady kontraktu:
 - Backend zleca zadania tylko przez `JobQueue`, worker wykonuje je jako workflowy DBOS o nazwie i kolejce z `WorkflowSpec`.
 - Workflow publikuje postęp jako obiekty JSON: strumień `PROGRESS_KEY` (kolejne `AnalysisStatus`, ostatni z `result`) i zdarzenie `READINESS_KEY` (`ReadinessReport`); klucze są w `meritum_core.jobs.constants`.
 - Wejście nie niesie surowych danych: tekst jest zamaskowany przed zleceniem, a identyfikator użytkownika kanału trafia tylko jako solony skrót (`channel_user_hash`).
+- `CheckInput` odrzuca `request.session_id` różne od własnego `session_id`: sprawdzenie trafia tylko do sesji, z której przyszło.
 - Argument i wynik workflowu to jeden obiekt JSON (`model_dump(mode="json")`), serializowany jako `PORTABLE`, więc worker nie potrzebuje klas backendu, a backend klas workera.
 - Każde wejście i wyjście ma `contract_version`. Zmiana niezgodna wstecz podnosi `CONTRACT_VERSION`.
 - Worker przyjmuje tylko zadania ze swoim `application_version`, czyli nazwą środowiska (`dev`, `prd`, lokalnie `local`). Backend zleca z tą samą wartością.
