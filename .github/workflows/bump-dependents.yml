@@ -1,13 +1,13 @@
 name: Bump dependents
 
-# After a push to develop that changes the library, opens or updates PRs that move
+# After a push to main that changes the library, opens or updates PRs that move
 # meritum-backend and meritum-worker to this commit (rev in pyproject.toml and uv.lock) and
 # refresh the contract copy in meritum-design-system (scripts/open-bump-prs.sh).
 # Bump PRs only: their own CI runs lint and unit tests; nothing cross-component runs here.
 # Needs the repo secret MERITUM_BOT_TOKEN (on the Free plan org secrets do not reach private repos).
 on:
   push:
-    branches: [develop]
+    branches: [main]
     paths: ["src/**", "contracts/**", "pyproject.toml"]
 
 permissions:
@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: bump-dependents
-  cancel-in-progress: true # a newer develop commit supersedes the bump in flight
+  cancel-in-progress: true # a newer main commit supersedes the bump in flight
 
 jobs:
   bump:
