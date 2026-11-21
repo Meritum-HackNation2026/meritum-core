@@ -167,6 +167,10 @@ def test_location_outside_the_eu_is_refused(location: str) -> None:
         PiiGateSettings(gate="sdp", project="meritum-test", location=location)
 
 
+def test_location_is_not_checked_without_the_gate() -> None:
+    assert PiiGateSettings(location="us-central1").gate == "none"
+
+
 class _ReplacingGate:
     """A gate that masks one known address, like DLP would."""
 

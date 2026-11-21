@@ -36,7 +36,8 @@ class PiiGateSettings(BaseSettings):
             (Google Sensitive Data Protection).
         project: Google Cloud project billed for Sensitive Data Protection;
             required for ``sdp``.
-        location: EU region of the regional endpoint (``EU_LOCATIONS``).
+        location: EU region of the regional endpoint (``EU_LOCATIONS``); checked
+            for ``sdp`` only.
 
     Features:
         US-BEZ-04, F-20, ADR-13, ADR-14, ADR-35
@@ -49,11 +50,15 @@ class PiiGateSettings(BaseSettings):
     location: str = DEFAULT_LOCATION
 
     @model_validator(mode="after")
-    def _sdp_has_a_project_in_the_eu(self) -> Self:
-        if self.location not in EU_LOCATIONS:
-            msg = f"{ENV_PREFIX}LOCATION must be an EU region: {sorted(EU_LOCATIONS)}"
-            raise ValueError(msg)
+    def _sdp_has_a_project(self) -> Self:
         if self.gate is PiiGateProvider.SDP and self.project is None:
             msg = f"{ENV_PREFIX}PROJECT is required for sdp"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _sdp_runs_in_the_eu(self) -> Self:
+        if self.gate is PiiGateProvider.SDP and self.location not in EU_LOCATIONS:
+            msg = f"{ENV_PREFIX}LOCATION must be an EU region: {sorted(EU_LOCATIONS)}"
             raise ValueError(msg)
         return self

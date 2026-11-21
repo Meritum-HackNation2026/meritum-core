@@ -125,9 +125,10 @@ class SensitiveDataProtectionGate:
             raise PiiGateUnavailableError(msg)
         try:
             reply = _Reply.model_validate_json(response.content)
-        except ValidationError as exc:
+        except ValidationError:
             msg = "sensitive data protection reply did not parse"
-            raise PiiGateUnavailableError(msg) from exc
+            # from None: the validation error quotes the reply, which holds user text
+            raise PiiGateUnavailableError(msg) from None
         results = [r for s in reply.overview.summaries for r in s.results]
         if any(r.code != SUCCESS_CODE for r in results):
             msg = "sensitive data protection could not apply a transformation"
