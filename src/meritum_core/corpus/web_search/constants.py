@@ -57,3 +57,7 @@ CONTRACT_QUERY: Final = "ostrzeżenie przed burzami"
 DOT_SEGMENTS: Final = frozenset({".", ".."})
 """Path segments a client resolves away; a candidate holding one is dropped, or
 ``/allowed/../other`` would pass the path filter and fetch ``/other``."""
+
+PATH_SEPARATORS: Final = frozenset({"/", "\\", ";"})
+"""Separators a segment may not hold once decoded (``%2f``, ``%5c``, ``..;``): a
+server that splits on them would see other segments than the path filter did."""

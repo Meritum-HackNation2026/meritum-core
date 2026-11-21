@@ -52,6 +52,9 @@ def test_address_gets_its_most_specific_entry(url: str, publisher_id: str) -> No
         "https://www.gov.pl/web/gis/ostrzezenia/../../../web/obca",
         "https://www.gov.pl/web/gis/ostrzezenia/%2e%2e/x",
         "https://www.gov.pl/web/gis/./ostrzezenia",
+        "https://www.gov.pl/web/gis/ostrzezenia/%2e%2e%2f%2e%2e%2fobca",
+        "https://www.gov.pl/web/gis/ostrzezenia/..%5c..%5cobca",
+        "https://www.gov.pl/web/gis/ostrzezenia/..;/..;/obca",
         "",
     ],
 )

@@ -10,6 +10,7 @@ import os
 import shutil
 import tempfile
 from pathlib import Path
+from typing import NoReturn
 from unittest import mock
 
 import httpx2
@@ -74,7 +75,7 @@ def _forbid_network(context: Context) -> None:
     """Record every socket connection and DNS lookup instead of making it."""
     context.network_calls = []
 
-    def record(*args: object, **_: object) -> None:
+    def record(*args: object, **_: object) -> NoReturn:
         context.network_calls.append(args)
         msg = "network is forbidden in this scenario"
         raise OSError(msg)
