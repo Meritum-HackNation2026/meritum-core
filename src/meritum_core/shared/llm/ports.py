@@ -30,17 +30,20 @@ class Prompt(BaseModel):
 
 
 class LlmUsage(BaseModel):
-    """One call's provider, model, region and tokens, for ``ModelUsage``.
+    """One call's provider, model, region, tokens and cost, for ``ModelUsage``.
+
+    The fields match ``ModelUsage``, so ``ModelUsage(**usage.model_dump())`` works.
 
     Attributes:
-        provider: The provider name from settings (``vertex``, ``stub``).
-        model: The model version pinned in settings (``MERITUM_LLM_MODEL``).
+        provider: Provider name from settings (``openrouter``, ``vertex``, ``stub``).
+        model: The model ID from settings (``MERITUM_LLM_MODEL``).
         region: Where the data was processed.
         input_tokens: Prompt tokens.
-        output_tokens: Answer tokens.
+        output_tokens: Answer tokens, thinking included.
+        cost_usd: The call's cost in US dollars; 0 when the provider is free (stub).
 
     Features:
-        US-WDR-02, F-30, ADR-11, ADR-14
+        US-WDR-02, US-OBS-02, F-30, ADR-11, ADR-14
     """
 
     model_config = ConfigDict(frozen=True)
@@ -50,6 +53,7 @@ class LlmUsage(BaseModel):
     region: str
     input_tokens: int = Field(ge=0)
     output_tokens: int = Field(ge=0)
+    cost_usd: float = Field(default=0.0, ge=0)
 
 
 class LlmResult[T: BaseModel](BaseModel):

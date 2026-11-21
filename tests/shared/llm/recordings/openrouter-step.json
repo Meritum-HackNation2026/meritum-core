@@ -1,0 +1,58 @@
+{
+  "id": "gen-1795298852-5tPENOjjVJawap5Jl0Px",
+  "object": "chat.completion",
+  "created": 1795298852,
+  "model": "stepfun/step-3.7-flash",
+  "provider": "Novita",
+  "system_fingerprint": null,
+  "service_tier": null,
+  "choices": [
+    {
+      "index": 0,
+      "logprobs": null,
+      "finish_reason": "tool_calls",
+      "native_finish_reason": "tool_calls",
+      "message": {
+        "role": "assistant",
+        "content": null,
+        "refusal": null,
+        "reasoning": "Jedno twierdzenie.",
+        "tool_calls": [
+          {
+            "type": "function",
+            "index": 0,
+            "id": "chatcmpl-tool-bd8d1f5958062396",
+            "function": {
+              "name": "final_result",
+              "arguments": "{\"claims\": [\"Sejm przyjął ustawę o ochronie zwierząt.\"]}"
+            }
+          }
+        ],
+        "reasoning_details": []
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 272,
+    "completion_tokens": 170,
+    "total_tokens": 442,
+    "cost": 0.0002499,
+    "is_byok": false,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "cache_write_tokens": 0,
+      "audio_tokens": 0,
+      "video_tokens": 0
+    },
+    "cost_details": {
+      "upstream_inference_cost": 0.0002499,
+      "upstream_inference_prompt_cost": 0.0000544,
+      "upstream_inference_completions_cost": 0.0001955
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "image_tokens": 0,
+      "audio_tokens": 0
+    }
+  }
+}

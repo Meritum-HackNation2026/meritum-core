@@ -10,7 +10,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
 | `meritum_core.jobs.fakes` | `InMemoryJobQueue`: port w pamięci do testów backendu i workera (nagrywa zlecone zadania, odtwarza strumienie i zdarzenia) |
 | `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci, adaptery systemu plików i prywatnego bucketu GCS oraz fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (zob. [Magazyn plików](#magazyn-plików)); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
-| `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
+| `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów i koszt, instrukcje osobno od danych), adaptery OpenRouter, Vertex AI i stub, poziom rozumowania z konfiguracji, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
 | `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
@@ -63,18 +63,52 @@ Zasady kontraktu:
 
 ## Model językowy (`meritum_core.shared.llm`)
 
-Każdy krok workflowu woła model tylko przez `LlmPort`. Adapter wybiera konfiguracja, więc model albo dostawcę zmienia się bez przebudowy (US-WDR-02, ADR-11). Nazwa modelu, jego wersja i region są tylko w zmiennych środowiskowych, nigdy w kodzie.
+Każdy krok workflowu woła model tylko przez `LlmPort`. Adapter, model, region i poziom rozumowania wybiera konfiguracja, więc model albo dostawcę zmienia się bez przebudowy (US-WDR-02, ADR-11). Domyślne wartości są w `shared/llm/constants.py`: Claude Haiku 5.5 przez OpenRouter z wysokim poziomem rozumowania.
 
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |
-| `MERITUM_LLM_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
-| `MERITUM_LLM_MODEL` | brak | przypięta wersja modelu w Vertex AI, np. `gemini-2.0-flash-001`; wymagana dla `vertex` |
-| `MERITUM_LLM_REGION` | brak | lokalizacja Vertex AI w UE (lista w `EU_REGIONS`, np. `europe-west4`, `europe-central2`, `eu`), w której model jest dostępny (ADR-14); Londyn i Zurych są odrzucane; wymagany dla `vertex` |
+| `MERITUM_LLM_PROVIDER` | `openrouter` | `openrouter`, `vertex` (Gemini na Vertex AI) albo `stub` (bez kluczy i sieci) |
+| `MERITUM_LLM_MODEL` | `anthropic/claude-haiku-5.5` | identyfikator modelu u dostawcy (tabela niżej); dla `vertex` trzeba go podać |
+| `MERITUM_LLM_REGION` | `global` | dla `vertex` lokalizacja Vertex AI w UE (lista w `EU_REGIONS`, np. `europe-west3`, `eu`; Londyn i Zurych są odrzucane, ADR-14); dla `openrouter` `global` albo `eu` (`eu.openrouter.ai`, tylko na planie Business) |
+| `MERITUM_LLM_REASONING` | `high` | poziom rozumowania `low`, `medium` albo `high`; Pydantic AI tłumaczy go na `thinkingConfig.thinking_level` w Vertex AI i `reasoning.effort` w OpenRouter |
+| `OPENROUTER_API_KEY` | brak | klucz OpenRouter, wymagany dla `openrouter`; sekret, nigdy w repo ani w logach |
+| `MERITUM_LLM_OPENROUTER_ZDR` | `true` | tylko endpointy bez retencji danych (`provider.zdr`); `false` wyłącznie do ewaluacji na golden secie modelu bez takich endpointów, nigdy z danymi użytkowników. `provider.data_collection=deny` jest zawsze |
 | `MERITUM_LLM_PROJECT` | projekt z ADC | projekt Google Cloud |
 | `MERITUM_LLM_RETRIES` | `3` | liczba prób HTTP przy błędach przejściowych (z pierwszą). Niepoprawną odpowiedź model dostaje do poprawy raz. Gdy próby się skończą albo dane logowania są odrzucone, adapter rzuca `ProviderUnavailableError`, który workflow mapuje na `technical_failure` |
 | `MERITUM_LLM_STUB_FIXTURES` | brak | plik JSON dla stubu: nazwa klasy modelu wyjścia → odpowiedź, np. `{"ClaimList": {"claims": [...]}}` |
 
-Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Temperatura jest zawsze 0 (ADR-19). Przypięcie wersji to odpowiedzialność konfiguracji: podaj nazwę z wersją, nie alias. Adapter woła `generateContent`, więc obsługuje modele Gemini. Model partnerski z Model Garden (np. Mistral Small 3.1 z ADR-11) potrzebuje osobnego adaptera za tym samym portem. Brak odpowiedzi stubu dla danego typu też kończy się `ProviderUnavailableError` z nazwą typu, więc przy stubie ustaw `MERITUM_LLM_STUB_FIXTURES`. Testy w CI używają stubu i odpowiedzi w formacie Vertex AI podanej przez atrapę HTTP (`build_llm(..., http_client=...)`); prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER=vertex`.
+Bez `OPENROUTER_API_KEY` domyślna konfiguracja kończy się błędem walidacji przy starcie; testy i środowiska bez kluczy ustawiają `MERITUM_LLM_PROVIDER=stub`.
+
+### Modele
+
+Ceny w USD za milion tokenów (wejście / wyjście), sprawdzone 21 listopada 2026. Czas to mediana 5 wywołań krótkiego promptu z ekstrakcją twierdzeń, mierzona lokalnie z Polski.
+
+| Model | Konfiguracja | Gdzie przetwarzane | Cena | Czas |
+| --- | --- | --- | --- | --- |
+| Claude Haiku 5.5 (domyślny) | `openrouter`, `anthropic/claude-haiku-5.5`, `high` | tylko Amazon Bedrock (`provider.only`, bez fallbacku), endpoint ZDR | 0,10 / 0,50 | 0,9 s |
+| Gemini 3.5 Flash | `vertex`, `gemini-3.5-flash`, region `europe-west3` | Vertex AI, Frankfurt | 1,65 / 9,90 (stawka „Non-global”; globalna 1,50 / 9,00; wyjście liczy też tokeny rozumowania) | 4,9 s (`low`), 7,4 s (`high`) |
+| GPT-6.1 Terra | `openrouter`, `openai/gpt-6.1-terra`, `low` | endpoint ZDR wybrany przez OpenRouter (Azure) | 1,00 / 5,00 | 1,3 s |
+| Step 3.7 Flash | `openrouter`, `stepfun/step-3.7-flash`, `medium`, `MERITUM_LLM_OPENROUTER_ZDR=false` | StepFun albo Novita (OpenRouter nie ma dla niego endpointu ZDR) | 0,20 / 1,15 | 3,0 s |
+
+Źródła: [Claude Haiku 5.5 (Anthropic)](https://platform.claude.com/docs/en/about-claude/pricing), [Gemini 3.5 Flash na Vertex AI](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/models/gemini/3-5-flash) i [cennik Vertex AI](https://cloud.google.com/vertex-ai/generative-ai/pricing), strony modeli OpenRouter ([Haiku 5.5](https://openrouter.ai/anthropic/claude-haiku-5.5), [GPT-6.1 Terra](https://openrouter.ai/openai/gpt-6.1-terra), [Step 3.7 Flash](https://openrouter.ai/stepfun/step-3.7-flash)) i lista [endpointów ZDR](https://openrouter.ai/api/v1/endpoints/zdr).
+
+Koszt wywołania trafia do `LlmUsage.cost_usd`, a pola `LlmUsage` pasują do kontraktu `ModelUsage` w `CheckRecord`. OpenRouter podaje koszt w odpowiedzi; dla Vertex AI adapter liczy go z cennika `PRICES_USD_PER_MTOK` w `constants.py`. Model spoza cennika ma koszt 0 i adapter zapisuje ostrzeżenie w logu, więc nowy model dopisz do cennika. Region w `LlmUsage` dla OpenRouter to region routingu i dostawca, do którego OpenRouter skierował wywołanie, np. `global:Google`.
+
+Uwagi do dostawców:
+
+- GPT-6.1 Terra przez OpenRouter trafia na endpoint ZDR w Azure, a Step 3.7 Flash do StepFun albo Novita; OpenRouter nie podaje regionu tych dostawców.
+- Haiku 5.5 ma na OpenRouter endpointy ZDR tylko w Google Vertex AI i Amazon Bedrock, a Vertex AI przechowuje oflagowane prompty do 90 dni. Adapter przypina go więc do Amazon Bedrock (`provider.only=["amazon-bedrock"]`, `allow_fallbacks=false`, lista w `OPENROUTER_PINNED_PROVIDERS`); gdy Bedrock nie odpowiada, wywołanie kończy się `ProviderUnavailableError` zamiast trafić gdzie indziej.
+- Claude Haiku 5.5 nie jest włączony w Vertex AI naszego projektu (dostęp wymaga formularza Anthropic), więc idzie przez OpenRouter. OpenRouter działa z regionem `global`, bo routing EU wymaga planu Business; na razie służy przede wszystkim ewaluacji, dopóki zespół nie zdecyduje inaczej.
+- Gemini 3.5 Flash odpowiada w `europe-west3` i w multiregionie `eu`. Temperatura jest 0 (ADR-19). Modele rozumujące przez OpenRouter odrzucają parametry próbkowania, więc temperatura nie jest do nich wysyłana.
+- Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Adapter `vertex` woła `generateContent`, więc obsługuje modele Gemini.
+- Brak odpowiedzi stubu dla danego typu kończy się `ProviderUnavailableError` z nazwą typu, więc przy stubie ustaw `MERITUM_LLM_STUB_FIXTURES`.
+
+Testy w CI używają stubu i odpowiedzi nagranych od każdego dostawcy (`tests/shared/llm/recordings/`, skrócone myśli i podpisy), podanych przez atrapę HTTP (`build_llm(..., http_client=...)`). Prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER` i pozostałymi zmiennymi, np.:
+
+```bash
+MERITUM_LLM_PROVIDER=vertex MERITUM_LLM_MODEL=gemini-3.5-flash MERITUM_LLM_REGION=europe-west3 \
+  uv run pytest -m integration tests/shared/llm
+```
 
 ## Wyszukiwanie w korpusie (`meritum_core.corpus`)
 

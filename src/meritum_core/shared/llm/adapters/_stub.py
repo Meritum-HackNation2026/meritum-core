@@ -59,5 +59,6 @@ class StubLlm:
             region=STUB_REGION,
             input_tokens=0,
             output_tokens=0,
+            cost_usd=0.0,
         )
         return LlmResult[T](output=answer, usage=usage)
