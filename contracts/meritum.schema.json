@@ -915,7 +915,7 @@
         },
         "limitation_codes": {
           "default": [],
-          "description": "Codes of the limitations the channel words from copy/pl.json; they never change the status. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).",
+          "description": "Codes of the limitations the channel words from copy/pl.json; they never set the status, though the audio codes explain an out_of_scope recording. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).",
           "items": {
             "enum": [
               "fact_check_unavailable",
@@ -1043,7 +1043,7 @@
         },
         "limitation_codes": {
           "default": [],
-          "description": "Codes of the limitations the channel words from copy/pl.json; they never change the status. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).",
+          "description": "Codes of the limitations the channel words from copy/pl.json; they never set the status, though the audio codes explain an out_of_scope recording. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).",
           "items": {
             "enum": [
               "fact_check_unavailable",
