@@ -8,7 +8,9 @@ from meritum_core.checks.transcription import (
     MAX_AUDIO_BYTES,
     MAX_AUDIO_SECONDS,
     AudioFormat,
+    AudioTooLongError,
     UnsupportedAudioError,
+    UnsupportedAudioFormatError,
     inspect_audio,
 )
 
@@ -66,20 +68,20 @@ def test_ogg_length_comes_from_the_last_page_that_ends_a_packet() -> None:
     ],
 )
 def test_other_files_are_unsupported(data: bytes) -> None:
-    with pytest.raises(UnsupportedAudioError):
+    with pytest.raises(UnsupportedAudioFormatError):
         inspect_audio(data)
 
 
 def test_a_file_over_the_size_limit_is_unsupported() -> None:
     wav = (FIXTURES / "short-2s.wav").read_bytes()
-    with pytest.raises(UnsupportedAudioError, match="size"):
+    with pytest.raises(AudioTooLongError, match="size"):
         inspect_audio(wav + bytes(MAX_AUDIO_BYTES))
 
 
 def test_an_mp3_over_the_length_limit_is_unsupported() -> None:
     mp3 = (FIXTURES / "short-3s.mp3").read_bytes()
     padding = bytes(MAX_AUDIO_SECONDS * 40_000 // 8)  # its first frame states 40 kbit/s
-    with pytest.raises(UnsupportedAudioError, match="length"):
+    with pytest.raises(AudioTooLongError, match="length"):
         inspect_audio(mp3 + padding)
 
 
@@ -88,5 +90,11 @@ def test_a_recording_over_the_length_limit_is_unsupported() -> None:
     granule = ogg.rfind(b"OggS") + 6
     too_long = (MAX_AUDIO_SECONDS + 1) * 48_000
     ogg[granule : granule + 8] = too_long.to_bytes(8, "little")
-    with pytest.raises(UnsupportedAudioError, match="length"):
+    with pytest.raises(AudioTooLongError, match="length"):
         inspect_audio(bytes(ogg))
+
+
+@pytest.mark.parametrize("error", [AudioTooLongError, UnsupportedAudioFormatError])
+def test_subtypes_keep_the_parent_status(error: type[UnsupportedAudioError]) -> None:
+    assert issubclass(error, UnsupportedAudioError)
+    assert error.check_status == UnsupportedAudioError.check_status == "out_of_scope"
