@@ -17,6 +17,7 @@ APP_TABLES = {
     "high_risk_topics",
     "notifications",
     "removed_case_checks",
+    "staff_accounts",
     "schema_migrations",
 }
 LIST_TABLES = "SELECT table_name FROM information_schema.tables WHERE table_schema = %s"
@@ -53,6 +54,7 @@ def test_issue_scenario_migrations_on_an_empty_schema(
     assert apply_migrations(url) == [
         "0001_app_tables.sql",
         "0002_removed_checks_and_check_index.sql",
+        "0003_staff_accounts.sql",
     ]
     with psycopg.connect(url) as conn:
         tables = {row[0] for row in conn.execute(LIST_TABLES, (schema,)).fetchall()}
@@ -83,7 +85,8 @@ def test_issue_scenario_the_deploy_command_migrates_once(
     main()
     main()
     assert capsys.readouterr().out.splitlines() == [
-        "applied: 0001_app_tables.sql, 0002_removed_checks_and_check_index.sql",
+        "applied: 0001_app_tables.sql, 0002_removed_checks_and_check_index.sql,"
+        " 0003_staff_accounts.sql",
         "applied: nothing",
     ]
 

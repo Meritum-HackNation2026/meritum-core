@@ -6,8 +6,8 @@ Features:
 
 from collections.abc import Sequence
 
-from meritum_core.checks.contracts import CaseClaim, ModeratorCase
-from meritum_core.moderation.models import HighRiskTopic
+from meritum_core.checks.contracts import CaseClaim, ModeratorCase, StaffRole
+from meritum_core.moderation.models import HighRiskTopic, StaffAccount
 from meritum_core.moderation.ports import CaseState
 
 
@@ -127,3 +127,49 @@ class InMemoryHighRiskTopicRepository:
             name: the topic's name.
         """
         self._topics.pop(name, None)
+
+
+class InMemoryStaffRepository:
+    """StaffRepository fake that keeps the roles in a dict.
+
+    Features:
+        US-MOD-05, F-25
+    """
+
+    def __init__(self) -> None:
+        self._roles: dict[str, StaffRole] = {}
+
+    async def list_accounts(self) -> list[StaffAccount]:
+        """List every account, sorted by address.
+
+        Returns:
+            The accounts.
+        """
+        return [StaffAccount(email=e, role=self._roles[e]) for e in sorted(self._roles)]
+
+    async def save_account(self, account: StaffAccount) -> None:
+        """Grant a role, replacing the previous one.
+
+        Args:
+            account: the address and its role.
+        """
+        self._roles[account.email] = account.role
+
+    async def delete_account(self, email: str) -> None:
+        """Take the role away, if any.
+
+        Args:
+            email: the lower-cased address.
+        """
+        self._roles.pop(email, None)
+
+    async def role(self, email: str) -> StaffRole | None:
+        """Read the role granted to an address.
+
+        Args:
+            email: the lower-cased address.
+
+        Returns:
+            The role or None.
+        """
+        return self._roles.get(email)

@@ -9,10 +9,15 @@ from collections.abc import Iterator
 
 import pytest
 
-from meritum_core.moderation import HighRiskTopicRepository, ModeratorCaseRepository
+from meritum_core.moderation import (
+    HighRiskTopicRepository,
+    ModeratorCaseRepository,
+    StaffRepository,
+)
 from meritum_core.moderation.fakes import (
     InMemoryHighRiskTopicRepository,
     InMemoryModeratorCaseRepository,
+    InMemoryStaffRepository,
 )
 from meritum_core.observability import AppRepositories, build_app_repositories
 from meritum_core.shared.database import DatabaseProvider, DatabaseSettings
@@ -38,6 +43,13 @@ def topics(request: pytest.FixtureRequest) -> HighRiskTopicRepository:
     if request.param == "memory":
         return InMemoryHighRiskTopicRepository()
     return _postgres(request).topics
+
+
+@pytest.fixture(params=ADAPTERS)
+def staff(request: pytest.FixtureRequest) -> StaffRepository:
+    if request.param == "memory":
+        return InMemoryStaffRepository()
+    return _postgres(request).staff
 
 
 @pytest.fixture
