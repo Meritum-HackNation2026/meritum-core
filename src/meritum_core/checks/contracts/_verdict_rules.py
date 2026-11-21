@@ -76,8 +76,8 @@ def _conflict_rules(claim: ClaimResult, *, conflicting: bool) -> None:
         )
     if insufficient and _has_evidence(claim) and not conflicting:
         raise ValueError(
-            "'insufficient_evidence' carries citations only when credible sources "
-            "conflict"
+            "'insufficient_evidence' carries citations or ratings only when "
+            "credible sources conflict"
         )
 
 
@@ -90,7 +90,10 @@ def _settling_rules(claim: ClaimResult, stances: set[Stance]) -> None:
     if not settling:
         return
     if not _has_evidence(claim) or claim.strength is None:
-        raise ValueError(f"verdict {claim.verdict!r} needs citations and premises")
+        raise ValueError(
+            f"verdict {claim.verdict!r} needs citations or fact-checkers' ratings,"
+            " and premises"
+        )
     if claim.verdict == "confirmed" and "supports" not in stances:
         raise ValueError("'confirmed' needs a supporting citation")
     if claim.verdict == "false" and "refutes" not in stances:
