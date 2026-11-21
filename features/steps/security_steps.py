@@ -114,7 +114,7 @@ def then_number_is_kept(context: Context) -> None:
 @then("adres jest zastąpiony znacznikiem, a reszta tekstu jest bez zmian")
 def then_address_is_masked(context: Context) -> None:
     """The DLP marker stands where the address was; nothing else moved."""
-    expected = "Mieszkam przy [adres] i widziałem, że szczepionki zawierają chipy."
+    expected = "Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy."
     assert context.masked.text == expected, context.masked.text
     assert context.masked.replaced == 1
 

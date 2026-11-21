@@ -64,12 +64,13 @@ def test_address_is_masked_on_the_eu_regional_endpoint(
     gate = sdp_gate(reply("dlp-address.json"))
     result = asyncio.run(mask_personal_data(TEXT, gate))
     assert result == MaskedText(
-        text="Mieszkam przy [adres] i widziałem, że szczepionki zawierają chipy.",
+        text="Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy.",
         replaced=1,
     )
     [request] = sent
     assert str(request.url) == DEIDENTIFY
     assert request.headers["authorization"] == "Bearer recorded"
+    assert request.headers["x-goog-user-project"] == "meritum-test"
     body = json.loads(request.content)
     assert body["item"] == {"value": TEXT}
     assert body["inspectConfig"]["minLikelihood"] == "LIKELY"

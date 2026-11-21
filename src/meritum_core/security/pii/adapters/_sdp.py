@@ -21,6 +21,7 @@ from meritum_core.security.pii.constants import (
     HTTP_TIMEOUT_SECONDS,
     INFO_TYPE_MARKERS,
     MIN_LIKELIHOOD,
+    QUOTA_PROJECT_HEADER,
     SCOPES,
     SUCCESS_CODE,
 )
@@ -91,6 +92,7 @@ class SensitiveDataProtectionGate:
         self._credentials = credentials
         self._client = http_client or AsyncClient(timeout=HTTP_TIMEOUT_SECONDS)
         location = settings.location
+        self._project = str(settings.project)
         self._url = (
             f"{ENDPOINT.format(location=location)}/projects/{settings.project}"
             f"/locations/{location}/content:deidentify"
@@ -116,7 +118,10 @@ class SensitiveDataProtectionGate:
             "inspectConfig": _inspect_config(),
             "deidentifyConfig": _deidentify_config(),
         }
-        headers = {"Authorization": f"Bearer {await self._token()}"}
+        headers = {
+            "Authorization": f"Bearer {await self._token()}",
+            QUOTA_PROJECT_HEADER: self._project,
+        }
         try:
             response = await self._client.post(self._url, json=body, headers=headers)
         except TransportError as exc:

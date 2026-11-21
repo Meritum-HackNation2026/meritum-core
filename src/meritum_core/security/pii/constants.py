@@ -72,6 +72,10 @@ DEFAULT_LOCATION: Final = "europe-central2"
 ENDPOINT: Final = "https://dlp.{location}.rep.googleapis.com/v2"
 """Regional endpoint: data stays in the region at rest, in use and in transit."""
 
+QUOTA_PROJECT_HEADER: Final = "x-goog-user-project"
+"""Header naming the project billed for the call; DLP refuses user credentials
+(local Application Default Credentials) without it."""
+
 SCOPES: Final = ("https://www.googleapis.com/auth/cloud-platform",)
 """OAuth scopes the adapter asks Application Default Credentials for."""
 
