@@ -40,9 +40,8 @@ async def _robots_signal(root: str, fetcher: PageFetcherPort) -> _Reading:
         )
     except PageFetchError as error:
         return "none" if error.reason is FetchFailureReason.NOT_FOUND else None
-    if (
-        robots.content_type != PLAIN_TEXT_CONTENT_TYPE
-    ):  # an anti-bot page, not robots.txt
+    # anything but plain text here is an anti-bot page, not robots.txt
+    if robots.content_type != PLAIN_TEXT_CONTENT_TYPE:
         return None
     signals = content_signals(robots.untrusted_text)
     reserved = any(signal_denies(s, TDM_SIGNAL_USES) for s in signals)
@@ -59,9 +58,7 @@ async def _meta_signal(root: str, fetcher: PageFetcherPort) -> _Reading:
     return "reserved" if page.tdm_reserved else "none"
 
 
-def _recorded(
-    entry: CatalogEntry, reservation: Literal["none", "reserved"]
-) -> CatalogEntry:
+def _recorded(entry: CatalogEntry, reservation: _Reservation) -> CatalogEntry:
     excluded, reason = entry.excluded, entry.exclusion_reason
     reserved_secondary = reservation == "reserved" and entry.tier == "secondary"
     excluded_by_check = reason == TDM_EXCLUSION_REASON

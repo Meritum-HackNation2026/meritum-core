@@ -1,0 +1,8 @@
+# gitleaks config: the default rules plus justified false positives (see secrets.yml).
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public download link of the EU financial sanctions list (catalogue entry webgate.ec.europa.eu/fsd); its token is base64 of 'token-2017', published by the Commission, not a secret."
+regexTarget = "line"
+regexes = ['''webgate\.ec\.europa\.eu/fsd/fsf/public/files/csvFullSanctionsList_1_1/content\?token=dG9rZW4tMjAxNw''']
