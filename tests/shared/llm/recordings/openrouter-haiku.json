@@ -1,11 +1,11 @@
 {
-  "id": "gen-1795298605-VkO557IDzspTfeCpX7IQ",
+  "id": "gen-1795299096-wPkfGJtHADb5Q2Gcb0x5",
   "object": "chat.completion",
-  "created": 1795298605,
+  "created": 1795299096,
   "model": "anthropic/claude-haiku-5.5",
-  "provider": "Google",
+  "provider": "Amazon Bedrock",
   "system_fingerprint": null,
-  "service_tier": null,
+  "service_tier": "default",
   "choices": [
     {
       "index": 0,

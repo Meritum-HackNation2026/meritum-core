@@ -72,12 +72,14 @@ def test_openrouter_zdr_can_be_turned_off_for_evaluation_but_collection_stays_de
     recorded_llm: RecordedFactory,
     openrouter_settings: LlmSettings,
     claim_list: type[BaseModel],
+    caplog: pytest.LogCaptureFixture,
 ) -> None:
     settings = openrouter_settings.model_copy(update={"openrouter_zdr": False})
     llm, sent = recorded_llm(settings, "openrouter-terra", 200)
     asyncio.run(llm.complete(PROMPT, claim_list))
     request = json.loads(sent[0].content)
     assert request["provider"] == {"zdr": False, "data_collection": "deny"}
+    assert "ZDR is off for openai/gpt-6.1-terra" in caplog.text
 
 
 @pytest.mark.parametrize(
@@ -150,10 +152,15 @@ def test_default_claude_haiku_5_5_sends_high_reasoning_and_records_the_upstream(
         "anthropic/claude-haiku-5.5",
         "high",
     )
-    assert request["provider"] == {"zdr": True, "data_collection": "deny"}
+    assert request["provider"] == {
+        "zdr": True,
+        "data_collection": "deny",
+        "only": ["amazon-bedrock"],  # Vertex keeps flagged prompts up to 90 days
+        "allow_fallbacks": False,
+    }
     usage = result.usage
     assert (usage.region, usage.input_tokens, usage.output_tokens) == (
-        "global:Google",
+        "global:Amazon Bedrock",
         259,
         33,
     )

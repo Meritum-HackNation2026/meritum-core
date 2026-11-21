@@ -72,6 +72,11 @@ OPENROUTER_UPSTREAM_FIELD: Final = "downstream_provider"
 OPENROUTER_DATA_COLLECTION: Final = "deny"
 """Skip OpenRouter providers that store or train on prompts (ADR-14)."""
 
+OPENROUTER_PINNED_PROVIDERS: Final = MappingProxyType(
+    {"anthropic/claude-haiku-5.5": ("amazon-bedrock",)}
+)
+"""Only providers per model, no fallback; Vertex keeps flagged prompts 90 days."""
+
 PRICES_USD_PER_MTOK: Final = MappingProxyType(
     {
         "gemini-3.5-flash": (1.65, 9.90),

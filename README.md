@@ -85,8 +85,8 @@ Ceny w USD za milion tokenów (wejście / wyjście), sprawdzone 21 listopada 202
 
 | Model | Konfiguracja | Gdzie przetwarzane | Cena | Czas |
 | --- | --- | --- | --- | --- |
-| Claude Haiku 5.5 (domyślny) | `openrouter`, `anthropic/claude-haiku-5.5`, `high` | endpoint ZDR wybrany przez OpenRouter (Google Vertex AI global albo Amazon Bedrock) | 0,10 / 0,50 | 0,9 s |
-| Gemini 3.5 Flash | `vertex`, `gemini-3.5-flash`, region `europe-west3` | Vertex AI, Frankfurt | 1,65 / 9,90: cena globalna 1,50 / 9,00 (endpoint `google-vertex/global` w API OpenRouter) plus 10% za endpoint regionalny; strona cennika Google renderuje się skryptem i nie dało się jej odczytać, więc stawkę regionalną potwierdź w konsoli | 4,9 s (`low`), 7,4 s (`high`) |
+| Claude Haiku 5.5 (domyślny) | `openrouter`, `anthropic/claude-haiku-5.5`, `high` | tylko Amazon Bedrock (`provider.only`, bez fallbacku), endpoint ZDR | 0,10 / 0,50 | 0,9 s |
+| Gemini 3.5 Flash | `vertex`, `gemini-3.5-flash`, region `europe-west3` | Vertex AI, Frankfurt | 1,65 / 9,90 (stawka „Non-global”; globalna 1,50 / 9,00; wyjście liczy też tokeny rozumowania) | 4,9 s (`low`), 7,4 s (`high`) |
 | GPT-6.1 Terra | `openrouter`, `openai/gpt-6.1-terra`, `low` | endpoint ZDR wybrany przez OpenRouter (Azure) | 1,00 / 5,00 | 1,3 s |
 | Step 3.7 Flash | `openrouter`, `stepfun/step-3.7-flash`, `medium`, `MERITUM_LLM_OPENROUTER_ZDR=false` | StepFun albo Novita (OpenRouter nie ma dla niego endpointu ZDR) | 0,20 / 1,15 | 3,0 s |
 
@@ -96,6 +96,8 @@ Koszt wywołania trafia do `LlmUsage.cost_usd`, a pola `LlmUsage` pasują do kon
 
 Uwagi do dostawców:
 
+- GPT-6.1 Terra przez OpenRouter trafia na endpoint ZDR w Azure, a Step 3.7 Flash do StepFun albo Novita; OpenRouter nie podaje regionu tych dostawców.
+- Haiku 5.5 ma na OpenRouter endpointy ZDR tylko w Google Vertex AI i Amazon Bedrock, a Vertex AI przechowuje oflagowane prompty do 90 dni. Adapter przypina go więc do Amazon Bedrock (`provider.only=["amazon-bedrock"]`, `allow_fallbacks=false`, lista w `OPENROUTER_PINNED_PROVIDERS`); gdy Bedrock nie odpowiada, wywołanie kończy się `ProviderUnavailableError` zamiast trafić gdzie indziej.
 - Claude Haiku 5.5 nie jest włączony w Vertex AI naszego projektu (dostęp wymaga formularza Anthropic), więc idzie przez OpenRouter. OpenRouter działa z regionem `global`, bo routing EU wymaga planu Business; na razie służy przede wszystkim ewaluacji, dopóki zespół nie zdecyduje inaczej.
 - Gemini 3.5 Flash odpowiada w `europe-west3` i w multiregionie `eu`. Temperatura jest 0 (ADR-19). Modele rozumujące przez OpenRouter odrzucają parametry próbkowania, więc temperatura nie jest do nich wysyłana.
 - Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Adapter `vertex` woła `generateContent`, więc obsługuje modele Gemini.

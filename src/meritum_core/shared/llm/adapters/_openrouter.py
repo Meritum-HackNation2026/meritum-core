@@ -7,6 +7,7 @@ Features:
     US-WDR-02, US-OBS-02, F-30, ADR-11, ADR-14
 """
 
+import logging
 from typing import override
 
 from httpx2 import AsyncClient
@@ -14,18 +15,25 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 from pydantic_ai.agent import AgentRunResult
 from pydantic_ai.messages import ModelResponse
-from pydantic_ai.models.openrouter import OpenRouterModel, OpenRouterModelSettings
+from pydantic_ai.models.openrouter import (
+    OpenRouterModel,
+    OpenRouterModelSettings,
+    OpenRouterProviderConfig,
+)
 from pydantic_ai.providers.openrouter import OpenRouterProvider
 
 from meritum_core.shared.llm.constants import (
     OPENROUTER_BASE_URLS,
     OPENROUTER_COST_FIELD,
     OPENROUTER_DATA_COLLECTION,
+    OPENROUTER_PINNED_PROVIDERS,
     OPENROUTER_UPSTREAM_FIELD,
 )
 from meritum_core.shared.llm.settings import LlmProvider, LlmSettings
 
 from ._agent import AgentLlm
+
+_log = logging.getLogger(__name__)
 
 
 class OpenRouterLlm(AgentLlm):
@@ -49,6 +57,12 @@ class OpenRouterLlm(AgentLlm):
         if key is None:  # never let the SDK fall back to OPENAI_API_KEY
             msg = "OPENROUTER_API_KEY is required for openrouter"
             raise ValueError(msg)
+        if not settings.openrouter_zdr:
+            _log.warning(
+                "OpenRouter ZDR is off for %s: golden-set evaluation only, "
+                "never user data",
+                settings.model,
+            )
         client = AsyncOpenAI(
             base_url=OPENROUTER_BASE_URLS[settings.region],
             api_key=key.get_secret_value(),
@@ -61,10 +75,7 @@ class OpenRouterLlm(AgentLlm):
             ),
             OpenRouterModelSettings(
                 thinking=settings.reasoning,
-                openrouter_provider={
-                    "zdr": settings.openrouter_zdr,
-                    "data_collection": OPENROUTER_DATA_COLLECTION,
-                },
+                openrouter_provider=_routing(settings),
             ),
             provider=LlmProvider.OPENROUTER,
             region=settings.region,
@@ -80,6 +91,26 @@ class OpenRouterLlm(AgentLlm):
     def _cost(self, result: AgentRunResult[BaseModel]) -> float:
         costs = (d.get(OPENROUTER_COST_FIELD) for d in _details(result))
         return sum(cost for cost in costs if isinstance(cost, int | float))
+
+
+def _routing(settings: LlmSettings) -> OpenRouterProviderConfig:
+    """Build the ``provider`` routing object of every request.
+
+    Args:
+        settings: The openrouter settings.
+
+    Returns:
+        No data collection, ZDR as configured, and for a pinned model only its
+        providers with fallbacks off.
+    """
+    routing = OpenRouterProviderConfig(
+        zdr=settings.openrouter_zdr, data_collection=OPENROUTER_DATA_COLLECTION
+    )
+    pinned = OPENROUTER_PINNED_PROVIDERS.get(settings.model)
+    if pinned is not None:
+        routing["only"] = list(pinned)
+        routing["allow_fallbacks"] = False
+    return routing
 
 
 def _details(result: AgentRunResult[BaseModel]) -> list[dict[str, object]]:
