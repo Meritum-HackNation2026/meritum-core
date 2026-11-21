@@ -407,6 +407,7 @@ IMGW-PIB: meteo, hydro, baltyk. Ostrzeżenia bierzemy z oficjalnego API `danepub
 #### 5. Fact-checkerzy (punkt 2 listy organizatora)
 
 - **Google Fact Check Tools API** (`claims:search`) wyszukuje oceny ClaimReview do twierdzenia. Zwraca same metadane: wydawcę, ocenę, tytuł, datę i link. Ocenę fact-checkera z IFCN albo EFCSN pokazujemy jako przesłankę z linkiem (ADR-24, ADR-34). Nie przechowujemy jej dłużej, niż pozwalają nagłówki cache (Google APIs Terms §5(e)). Do ręcznego podglądu służy Fact Check Explorer (`toolbox.google.com/factcheck/explorer`).
+- **`signatory_of`** w katalogu: wydawca należy do IFCN, gdy jest na liście sygnatariuszy ze statusem Active (https://ifcncodeofprinciples.poynter.org/signatories), a do EFCSN, gdy jest na liście sygnatariuszy EFCSN (https://members.efcsn.com/signatories). Obie listy sprawdzone 2026-11-21. Reszta wydawców ma pustą listę.
 - **fakenews.pl** i **pravda.org.pl** to sygnatariusze IFCN bez blokad dla robotów. Pobieramy je z RSS jako źródła wtórne.
 - **AFP Sprawdzam** zwraca automatom 403. Jego ocena wchodzi tylko przez Fact Check API.
 
