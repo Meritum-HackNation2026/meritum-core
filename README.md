@@ -14,12 +14,13 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
 | `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
+| `meritum_core.security.pii` | `mask_personal_data(text, gate)`: najpierw bramka maskowania za portem `PiiGatePort` (Google Sensitive Data Protection w regionie UE albo `NullPiiGate`, która loguje pominięcie), potem wzorce telefonu, e-maila i PESEL-u; fabryka `build_pii_gate(PiiGateSettings())` według `MERITUM_PII_GATE` (zob. [Maskowanie danych osobowych](#maskowanie-danych-osobowych-meritum_coresecuritypii)) |
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie, po usuniętych sprawdzeniach i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
 | `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
 | `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
-| `meritum_core.evidence`, `security`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+| `meritum_core.evidence`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
 
@@ -178,6 +179,32 @@ Testy kontraktowe na prawdziwym PostgreSQL działają tylko lokalnie. Biorą adr
 ```bash
 docker run -d --rm --name app-db -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritum -p 55433:5432 <obraz meritum-postgres>
 MERITUM_TEST_DATABASE_URL=postgresql://postgres:test@localhost:55433/meritum uv run pytest -m integration tests/checks tests/moderation tests/notifications tests/observability tests/shared/database
+```
+
+## Maskowanie danych osobowych (`meritum_core.security.pii`)
+
+Backend woła `await mask_personal_data(text, gate)` przed startem workflowu, a worker na wynikach kroków (US-BEZ-04, ADR-13). Bramkę buduje raz `build_pii_gate(PiiGateSettings())`. Najpierw działa bramka, potem wzorce telefonu, e-maila i PESEL-u, które działają zawsze. Wynik jest idempotentny: znaczniki nie zawierają cyfr ani `@`.
+
+| Co | Wartość |
+| --- | --- |
+| Dostawca | Google Sensitive Data Protection (DLP API v2), `content:deidentify` na regionalnym endpoincie `dlp.<region>.rep.googleapis.com`, więc dane zostają w regionie także w tranzycie (ADR-14, ADR-35) |
+| Region | z `MERITUM_PII_LOCATION`, domyślnie `europe-central2` (Warszawa); dozwolone tylko regiony w UE (`EU_LOCATIONS`), bez Londynu i Zurychu |
+| Typy danych | `STREET_ADDRESS` → `[adres]`, `PHONE_NUMBER` → `[telefon]`, `EMAIL_ADDRESS` → `[e-mail]`, `POLAND_PESEL_NUMBER` → `[PESEL]`, `POLAND_NATIONAL_ID_NUMBER` → `[dowód osobisty]`, `POLAND_PASSPORT` → `[paszport]`, `IBAN_CODE` → `[numer konta]`, `CREDIT_CARD_NUMBER` → `[karta płatnicza]`, od prawdopodobieństwa `LIKELY` (`constants.py`). Bez `PERSON_NAME`: twierdzenia wymieniają osoby publiczne |
+| Koszt | według cennika Sensitive Data Protection za inspekcję treści; nie potwierdziliśmy stawki dla regionu (załącznik B dokumentu produktowego) |
+| Awaria | błąd dostawcy (`PiiGateUnavailableError`) nie zatrzymuje sprawdzenia: log zapisuje pominięcie bramki, a wzorce działają dalej (ADR-35) |
+
+Logi nigdy nie zawierają maskowanego tekstu.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_PII_GATE` | `none` | `none` (tylko wzorce, log zapisuje pominięcie) albo `sdp` |
+| `MERITUM_PII_PROJECT` | brak | projekt Google Cloud z włączonym Sensitive Data Protection API; wymagany dla `sdp` |
+| `MERITUM_PII_LOCATION` | `europe-central2` | region UE endpointu |
+
+Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na odpowiedziach w formacie DLP podanych przez atrapę HTTP (`tests/security/fixtures/`), bez sieci. Prawdziwe wywołanie (lokalnie, nigdy w CI):
+
+```bash
+MERITUM_PII_PROJECT=<projekt> uv run pytest -m integration tests/security/test_pii_gate_integration.py
 ```
 
 ## Użycie w innym repo
