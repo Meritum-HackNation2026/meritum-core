@@ -9,6 +9,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
 | `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci i fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (`memory`); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
+| `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Kontrakty dla TypeScriptu i design systemu
@@ -32,6 +33,21 @@ Zasady kontraktu:
 - Argument i wynik workflowu to jeden obiekt JSON (`model_dump(mode="json")`), serializowany jako `PORTABLE`, więc worker nie potrzebuje klas backendu, a backend klas workera.
 - Każde wejście i wyjście ma `contract_version`. Zmiana niezgodna wstecz podnosi `CONTRACT_VERSION`.
 - Worker przyjmuje tylko zadania ze swoim `application_version`, czyli nazwą środowiska (`dev`, `prd`, lokalnie `local`). Backend zleca z tą samą wartością.
+
+## Model językowy (`meritum_core.shared.llm`)
+
+Każdy krok workflowu woła model tylko przez `LlmPort`. Adapter wybiera konfiguracja, więc model albo dostawcę zmienia się bez przebudowy (US-WDR-02, ADR-11). Nazwa modelu, jego wersja i region są tylko w zmiennych środowiskowych, nigdy w kodzie.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_LLM_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
+| `MERITUM_LLM_MODEL` | brak | przypięta wersja modelu w Vertex AI, np. `gemini-2.5-flash-001`; wymagana dla `vertex` |
+| `MERITUM_LLM_REGION` | brak | region UE (`europe-*` albo `eu`), w którym model jest dostępny (ADR-14); wymagany dla `vertex` |
+| `MERITUM_LLM_PROJECT` | projekt z ADC | projekt Google Cloud |
+| `MERITUM_LLM_RETRIES` | `3` | liczba prób jednego wywołania (z pierwszą); po ostatniej adapter rzuca `ProviderUnavailableError`, który workflow mapuje na `technical_failure` |
+| `MERITUM_LLM_STUB_FIXTURES` | brak | plik JSON dla stubu: nazwa klasy modelu wyjścia → odpowiedź, np. `{"ClaimList": {"claims": [...]}}` |
+
+Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Temperatura jest zawsze 0 (ADR-19). Testy w CI używają stubu i nagranej odpowiedzi Vertex AI przez atrapę HTTP; prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER=vertex`.
 
 ## Użycie w innym repo
 

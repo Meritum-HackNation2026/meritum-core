@@ -14,7 +14,8 @@ PACKAGE = "meritum_core"
 # Modules that may use frameworks and adapters: adapters, factories, app wiring.
 WIRING = re.compile(r"^meritum_core(\.[a-z_]+)+\.(adapters|factory)(\.|$)")
 FRAMEWORKS = re.compile(
-    r"^(dbos|fastapi|starlette|slowapi|psycopg|uvicorn|httpx|cryptography)(\.|$)"
+    r"^(dbos|fastapi|starlette|slowapi|psycopg|uvicorn|httpx|httpx2|cryptography"
+    r"|pydantic_ai|google)(\.|$)"
 )
 ADAPTERS = re.compile(r"^meritum_[a-z]+(\.[a-z_]+)*\.adapters(\.|$)")
 
