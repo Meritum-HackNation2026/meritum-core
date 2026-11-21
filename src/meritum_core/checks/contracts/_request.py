@@ -1,7 +1,7 @@
 """The input every channel adapter sends to the verification core.
 
 Features:
-    US-SPR-01, US-WTY-08, US-BEZ-06, ADR-02
+    US-SPR-01, US-WTY-08, US-BEZ-05, US-BEZ-06, ADR-02
 """
 
 from __future__ import annotations
@@ -27,10 +27,12 @@ class CheckRequest(_Model):
         audio_id: an uploaded audio file or Discord voice message.
         channel_user_id: Discord, SMS and MCP only, the user id in that channel. The API
             turns it into the salted channel_user_hash (backend/027) and never stores it.
+        session_id: web and extension only, the random browser session id that the
+            API copies to CheckRecord.session_id.
 
     Features:
         US-SPR-01, US-SPR-07, US-SPR-11, US-WTY-01, US-WTY-02, US-WTY-06,
-        US-WTY-07, US-WTY-08, US-WTY-09, US-BEZ-02, US-BEZ-06, ADR-02
+        US-WTY-07, US-WTY-08, US-WTY-09, US-BEZ-02, US-BEZ-05, US-BEZ-06, ADR-02
     """
 
     channel: Channel
@@ -56,6 +58,14 @@ class CheckRequest(_Model):
             description="Discord, SMS and MCP only: user id, phone number or MCP client id. The API hashes it with a salt into channel_user_hash and never stores it.",
         ),
     ] = None
+    session_id: Annotated[
+        str | None,
+        Field(
+            min_length=8,
+            max_length=64,
+            description="Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.",
+        ),
+    ] = None
 
     @model_validator(mode="after")
     def _text_url_or_audio(self) -> CheckRequest:
@@ -71,4 +81,6 @@ class CheckRequest(_Model):
             raise ValueError(
                 "only Discord, SMS and MCP requests carry a channel user id"
             )
+        if self.session_id is not None and sessionless:
+            raise ValueError("Discord, SMS and MCP requests carry no session id")
         return self

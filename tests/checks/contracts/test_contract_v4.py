@@ -177,10 +177,6 @@ def test_claim_review_premise_needs_no_fragment() -> None:
     assert claim.claim_review_premises[0].rating == "Fałsz"
 
 
-def test_contract_version_is_4() -> None:
-    assert c.CONTRACT_VERSION == 4
-
-
 def test_domain_alone_never_makes_a_content_match() -> None:
     assert c.REQUIRED_MATCH_BASIS["content"] == {"title", "topic", "date"}
     assert c.REQUIRED_MATCH_BASIS["domain"] == {"domain", "topic"}

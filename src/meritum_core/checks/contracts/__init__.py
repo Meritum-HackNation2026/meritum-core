@@ -39,6 +39,8 @@ Rules from the MSZ brief that the models enforce:
 - Discord, SMS and MCP have no browser session: their session_id is the salted hash of
   the channel user id; only their requests may carry that id, which the API hashes and
   never stores;
+- only web and extension requests carry a session id, the random browser session id
+  that becomes CheckRecord.session_id;
 - the result cache keeps only the substantive part of a result and never a technical
   failure; escalation is computed per request.
 """
