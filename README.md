@@ -124,6 +124,8 @@ docker run -d --rm --name corpus -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritu
 MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum uv run pytest -m integration tests/corpus
 ```
 
+Migracja `0002_euvsdisinfo_copy.sql` dodaje tabele lokalnej kopii EUvsDisinfo (`euvsdisinfo_entries`, `euvsdisinfo_flagged_domains`), które zapisuje tylko workflow synchronizacji w meritum-worker (worker#59). Test `test_migrations_integration.py` uruchamia wszystkie migracje corpus dwa razy. Późniejsza zmiana tych tabel to nowy plik migracji (`ADD COLUMN IF NOT EXISTS`), bo poprawiony `CREATE TABLE` w 0002 nie dotrze do istniejącej bazy.
+
 ## Transkrypcja nagrań (`meritum_core.checks.transcription`)
 
 Nagranie z formularza albo wiadomość głosowa z Discorda leży w `BlobStore` (ADR-31). Workflow woła `TranscriptionPort.transcribe(audio_id)` i dostaje `Transcript` (tekst i język), który sprawdza jak zwykły tekst (US-SPR-11, F-08).
