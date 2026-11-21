@@ -15,8 +15,8 @@ from meritum_core.evidence.strength import (
     compute_strength,
     settle_verdict,
 )
-from meritum_core.evidence.verdict_changes import compute_verdict_changes
 from meritum_core.evidence.validity import EvidenceFacts, assign_validity
+from meritum_core.evidence.verdict_changes import compute_verdict_changes
 
 __all__ = [
     "CitationDraft",
