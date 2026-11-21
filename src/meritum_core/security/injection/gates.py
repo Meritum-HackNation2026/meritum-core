@@ -1,7 +1,7 @@
 """The null classifier gate: used until a provider is picked (worker/032).
 
 Features:
-    US-BEZ-01, F-19, ADR-35
+    US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
 """
 
 import logging
@@ -17,7 +17,7 @@ class NullInjectionGate:
     The log line never holds the scanned text.
 
     Features:
-        US-BEZ-01, F-19, ADR-35
+        US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
     """
 
     async def screen(self, text: str) -> tuple[TextRange, ...]:  # ruff: ignore[unused-method-argument, no-self-use]  # null object: same signature as a real gate

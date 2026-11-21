@@ -6,11 +6,11 @@ Features:
 
 import unicodedata
 
-from meritum_core.security.injection.constants import FORMAT_CATEGORY, HOMOGLYPHS
+from meritum_core.security.injection.constants import DROPPED_CATEGORIES, HOMOGLYPHS
 
 
 def fold(text: str) -> tuple[str, tuple[int, ...]]:
-    """Lower-case ``text``, drop diacritics and invisible characters, unify look-alikes.
+    """Lower-case ``text``, drop marks and invisible characters, unify look-alikes.
 
     Args:
         text: The original text.
@@ -25,10 +25,8 @@ def fold(text: str) -> tuple[str, tuple[int, ...]]:
     chars: list[str] = []
     origin: list[int] = []
     for index, char in enumerate(text):
-        if unicodedata.category(char) == FORMAT_CATEGORY:
-            continue
         for part in unicodedata.normalize("NFKD", char):
-            if unicodedata.combining(part):
+            if unicodedata.category(part) in DROPPED_CATEGORIES:
                 continue
             folded = part.casefold().translate(HOMOGLYPHS)
             chars.append(folded)

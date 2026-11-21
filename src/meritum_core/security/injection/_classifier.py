@@ -9,6 +9,15 @@ from meritum_core.security.injection.models import InjectionClassification, Text
 from meritum_core.shared.llm import LlmPort, Prompt
 
 
+def _occurrences(text: str, quote: str) -> list[TextRange]:
+    ranges: list[TextRange] = []
+    start = text.find(quote)
+    while start >= 0:
+        ranges.append(TextRange(start, start + len(quote)))
+        start = text.find(quote, start + 1)
+    return ranges
+
+
 class LlmClassifierGate:
     """Asks a model whether text holds instructions, and where.
 
@@ -32,16 +41,16 @@ class LlmClassifierGate:
             text: User or source text.
 
         Returns:
-            The range of each quoted instruction; the whole text when the model
-            flags an injection it does not quote verbatim.
+            Every occurrence of each quoted instruction; the whole text when the
+            model flags an injection and any quote is missing from the text.
         """
         prompt = Prompt(instructions=CLASSIFIER_TASK, data=(text,))
         answer = (await self._llm.complete(prompt, InjectionClassification)).output
         if not answer.injected:
             return ()
-        found = tuple(
-            TextRange(start, start + len(quote))
-            for quote in answer.instructions
-            if quote and (start := text.find(quote)) >= 0
-        )
-        return found or (TextRange(0, len(text)),)
+        quotes = [quote for quote in answer.instructions if quote.strip()]
+        found = [_occurrences(text, quote) for quote in quotes]
+        if not quotes or not all(found):
+            # An instruction the model did not quote verbatim cannot be located.
+            return (TextRange(0, len(text)),)
+        return tuple(r for ranges in found for r in ranges)

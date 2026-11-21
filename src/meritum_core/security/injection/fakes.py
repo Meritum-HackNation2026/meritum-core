@@ -1,7 +1,7 @@
 """A configurable classifier gate for tests of the detector and of worker workflows.
 
 Features:
-    US-BEZ-01, F-19, ADR-35
+    US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
 """
 
 from meritum_core.security.injection.models import TextRange
@@ -17,7 +17,7 @@ class FakeInjectionGate:
         ranges: Ranges returned for every text.
 
     Features:
-        US-BEZ-01, F-19, ADR-35
+        US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
     """
 
     screened: list[str]

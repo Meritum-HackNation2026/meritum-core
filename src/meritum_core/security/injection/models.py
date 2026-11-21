@@ -16,7 +16,7 @@ class DetectionLayer(StrEnum):
     """The detector layer that found an instruction.
 
     Features:
-        US-BEZ-01, F-19, ADR-12, ADR-35
+        US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
     """
 
     PATTERNS = "patterns"
@@ -32,7 +32,7 @@ class TextRange(NamedTuple):
         end: Index after the last character.
 
     Features:
-        US-BEZ-01, F-19
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
 
     start: int
@@ -48,7 +48,7 @@ class InjectionSpan(BaseModel):
         layer: The layer that found it.
 
     Features:
-        US-BEZ-01, F-19, ADR-23
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
 
     model_config = ConfigDict(frozen=True)
@@ -90,7 +90,7 @@ class InjectionClassification(BaseModel):
         instructions: Each instruction copied verbatim from the text.
 
     Features:
-        US-BEZ-01, F-19, ADR-12
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
 
     model_config = ConfigDict(frozen=True)
@@ -107,7 +107,7 @@ class CleanedInput(BaseModel):
         events: ``instruction_removed`` events for the check result.
 
     Features:
-        US-BEZ-01, F-19, ADR-23
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
 
     model_config = ConfigDict(frozen=True)

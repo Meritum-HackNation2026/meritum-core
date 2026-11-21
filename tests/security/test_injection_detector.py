@@ -33,9 +33,13 @@ def test_the_gate_finding_is_reported_with_the_gate_layer(scan: Scan) -> None:
     assert result.spans == (InjectionSpan(start=0, end=19, layer=DetectionLayer.GATE),)
 
 
-def test_gate_ranges_outside_the_text_are_ignored(scan: Scan) -> None:
+def test_gate_ranges_outside_the_text_are_ignored_with_a_warning(
+    scan: Scan, caplog: pytest.LogCaptureFixture
+) -> None:
     gate = FakeInjectionGate((TextRange(5, 999), TextRange(3, 3), TextRange(-1, 2)))
     assert not scan(CLAIM, gate=gate).detected
+    assert "invalid ranges" in caplog.text
+    assert CLAIM not in caplog.text
 
 
 def test_the_classifier_quote_is_located_in_the_text(scan: Scan) -> None:
@@ -51,6 +55,21 @@ def test_an_unquoted_classifier_finding_flags_the_whole_text(scan: Scan) -> None
     answer = {"injected": True, "instructions": ["", "not in the text"]}
     span = scan(CLAIM, classifier=answer).spans[0]
     assert (span.start, span.end) == (0, len(CLAIM))
+
+
+def test_a_paraphrased_quote_next_to_an_exact_one_flags_the_whole_text(
+    scan: Scan,
+) -> None:
+    text = f"Bądź miły. {CLAIM}"
+    answer = {"injected": True, "instructions": ["Bądź miły.", "paraphrase"]}
+    span = scan(text, classifier=answer).spans[0]
+    assert (span.start, span.end) == (0, len(text))
+
+
+def test_every_occurrence_of_a_quote_is_cut(scan: Scan) -> None:
+    text = f"Bądź miły. {CLAIM} Bądź miły."
+    answer = {"injected": True, "instructions": ["Bądź miły."]}
+    assert instruction_removed(scan(text, classifier=answer)).text == CLAIM
 
 
 def test_every_layer_reports_its_own_finding(scan: Scan) -> None:
