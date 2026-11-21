@@ -1,7 +1,7 @@
 """The MSZ rules a ClaimResult must satisfy, one small check per rule.
 
 Features:
-    US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02, ADR-34
+    US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, US-ZRD-11, ADR-02, ADR-34
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ def check_verdict_rules(claim: ClaimResult) -> None:
         ValueError: the claim breaks a rule; the message names it.
 
     Features:
-        US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02, ADR-34
+        US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, US-ZRD-11, ADR-02, ADR-34
     """
     current = [c for c in claim.citations if c.validity != "superseded"]
     _superseded_next_to_newer(claim.citations, current)
@@ -47,16 +47,7 @@ def check_verdict_rules(claim: ClaimResult) -> None:
             "'insufficient_evidence' must say what could not be established"
         )
     _age_rules(claim)
-    allowed = verdict_changes_for(
-        claim.verdict,
-        claim.strength.premises if claim.strength else None,
-        claim.unresolved,
-        conflicting=conflicting,
-    )
-    if not set(claim.would_change_verdict) <= set(allowed):
-        raise ValueError(
-            f"what would change the verdict must follow from the premises: {allowed}"
-        )
+    _changes_rules(claim, conflicting=conflicting)
 
 
 def _superseded_next_to_newer(
@@ -156,4 +147,18 @@ def _age_rules(claim: ClaimResult) -> None:
         raise ValueError(
             "evidence that does not expire (law in force, page updated in place, past"
             " event) is never archival"
+        )
+
+
+def _changes_rules(claim: ClaimResult, *, conflicting: bool) -> None:
+    # Subset, not equality: a channel may name fewer codes, never one the premises deny.
+    allowed = verdict_changes_for(
+        claim.verdict,
+        claim.strength.premises if claim.strength else None,
+        claim.unresolved,
+        conflicting=conflicting,
+    )
+    if not set(claim.would_change_verdict) <= set(allowed):
+        raise ValueError(
+            f"what would change the verdict must follow from the premises: {allowed}"
         )
