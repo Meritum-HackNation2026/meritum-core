@@ -5,10 +5,12 @@ Features:
 """
 
 from ._cases import PostgresModeratorCaseRepository, remove_case_checks
+from ._staff import PostgresStaffRepository
 from ._topics import PostgresHighRiskTopicRepository
 
 __all__ = [
     "PostgresHighRiskTopicRepository",
     "PostgresModeratorCaseRepository",
+    "PostgresStaffRepository",
     "remove_case_checks",
 ]

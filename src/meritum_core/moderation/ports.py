@@ -1,4 +1,4 @@
-"""Ports of the moderation slice: moderator cases and the high-risk topic list.
+"""Ports of the moderation slice: moderator cases, high-risk topics and staff roles.
 
 Features:
     US-MOD-01, US-MOD-05, US-BEZ-05, F-20, F-25
@@ -7,8 +7,8 @@ Features:
 from collections.abc import Sequence
 from typing import Literal, Protocol
 
-from meritum_core.checks.contracts import ModeratorCase
-from meritum_core.moderation.models import HighRiskTopic
+from meritum_core.checks.contracts import ModeratorCase, StaffRole
+from meritum_core.moderation.models import HighRiskTopic, StaffAccount
 
 type CaseState = Literal["open", "answered", "closed"]
 """The states of ``ModeratorCase.state``."""
@@ -113,5 +113,53 @@ class HighRiskTopicRepository(Protocol):
 
         Args:
             name: the topic's name.
+        """
+        ...
+
+
+class StaffRepository(Protocol):
+    """Stores the panel roles administrators grant (port).
+
+    The backend's admin API changes it and its staff gate reads it. Addresses
+    are lower-cased (``StaffAccount.email``); callers pass them lower-cased to
+    ``role`` and ``delete_account``. Every adapter passes the contract test in
+    ``tests/moderation/``.
+
+    Features:
+        US-MOD-05, F-25
+    """
+
+    async def list_accounts(self) -> list[StaffAccount]:
+        """List every account, sorted by address.
+
+        Returns:
+            The accounts.
+        """
+        ...
+
+    async def save_account(self, account: StaffAccount) -> None:
+        """Grant a role, replacing the address's previous one.
+
+        Args:
+            account: the address and its role.
+        """
+        ...
+
+    async def delete_account(self, email: str) -> None:
+        """Take the role away; an unknown address does nothing.
+
+        Args:
+            email: the lower-cased address.
+        """
+        ...
+
+    async def role(self, email: str) -> StaffRole | None:
+        """Read the role granted to an address.
+
+        Args:
+            email: the lower-cased address.
+
+        Returns:
+            The role, or None when the address has no account.
         """
         ...

@@ -161,7 +161,7 @@ Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga proj
 
 ## Baza aplikacji
 
-Zapisy sprawdzeń, sprawy moderatora, tematy wysokiego ryzyka i powiadomienia leżą w schemacie aplikacji środowiska (`app_dev` albo `app_prd`, infra#12). Kod nie zna nazwy schematu: bierze ją z `search_path` w adresie bazy. Każda tabela trzyma cały model kontraktu jako `jsonb` i kolumny, po których repozytoria filtrują i sortują.
+Zapisy sprawdzeń, sprawy moderatora, tematy wysokiego ryzyka, powiadomienia i role personelu panelu (`StaffRepository`, adresy małymi literami) leżą w schemacie aplikacji środowiska (`app_dev` albo `app_prd`, infra#12). Kod nie zna nazwy schematu: bierze ją z `search_path` w adresie bazy. Każda tabela trzyma cały model kontraktu jako `jsonb` i kolumny, po których repozytoria filtrują i sortują.
 
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |

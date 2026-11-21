@@ -1,13 +1,17 @@
 """Models of the observability slice.
 
 Features:
-    US-OBS-01, US-MOD-01, US-BEZ-05, F-22, F-24
+    US-OBS-01, US-MOD-01, US-MOD-05, US-BEZ-05, F-22, F-24, F-25
 """
 
 from dataclasses import dataclass
 
 from meritum_core.checks import CheckRecordRepository
-from meritum_core.moderation import HighRiskTopicRepository, ModeratorCaseRepository
+from meritum_core.moderation import (
+    HighRiskTopicRepository,
+    ModeratorCaseRepository,
+    StaffRepository,
+)
 from meritum_core.notifications import NotificationRepository
 from meritum_core.observability.ports import SubjectEraser
 
@@ -20,15 +24,17 @@ class AppRepositories:
         records: the check records.
         cases: the moderator cases.
         topics: the high-risk topic list.
+        staff: the panel roles administrators grant.
         notifications: the inbox notifications.
         eraser: erases one person from all of them in one go.
 
     Features:
-        US-OBS-01, US-MOD-01, US-BEZ-05, F-22, F-24
+        US-OBS-01, US-MOD-01, US-MOD-05, US-BEZ-05, F-22, F-24, F-25
     """
 
     records: CheckRecordRepository
     cases: ModeratorCaseRepository
     topics: HighRiskTopicRepository
+    staff: StaffRepository
     notifications: NotificationRepository
     eraser: SubjectEraser
