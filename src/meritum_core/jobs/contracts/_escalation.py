@@ -9,7 +9,7 @@ from typing import Annotated, Literal, Self
 from pydantic import Field, model_validator
 
 from meritum_core.checks import Escalation
-from meritum_core.jobs.constants import MAX_JUSTIFICATION_CHARS
+from meritum_core.jobs.constants import CHECK_ID_MAX_CHARS, MAX_JUSTIFICATION_CHARS
 from meritum_core.jobs.contracts._base import JobModel
 
 EscalationReason = Literal["recommended_clicked", "user_dispute", "cache_hit"]
@@ -29,7 +29,7 @@ class EscalateClaimInput(JobModel):
         US-MOD-03, ADR-03
     """
 
-    check_id: Annotated[str, Field(min_length=1, max_length=40)]
+    check_id: Annotated[str, Field(min_length=1, max_length=CHECK_ID_MAX_CHARS)]
     claim_index: Annotated[int, Field(ge=0)]
     reason: EscalationReason
     justification_masked: Annotated[

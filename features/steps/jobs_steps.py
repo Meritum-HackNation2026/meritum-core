@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 
 from behave import given, then, when
 from behave.runner import Context
+from pydantic import ValidationError
 
 from meritum_core.checks import AnalysisStatus, CheckRequest, CheckResult
 from meritum_core.jobs.constants import PROGRESS_KEY
@@ -52,6 +53,16 @@ def then_input_has_no_raw_id(context: Context) -> None:
     assert built.request.text == context.request.text
     assert built.session_id == built.channel_user_hash == context.user_hash
     assert context.raw_user_id not in built.model_dump_json()
+    leaked = built.model_dump(mode="json") | {
+        "session_id": context.raw_user_id,
+        "channel_user_hash": context.raw_user_id,
+    }
+    rejected = False
+    try:
+        CheckInput.model_validate(leaked)
+    except ValidationError:
+        rejected = True
+    assert rejected, "the contract accepted a raw channel user id"
 
 
 def _status(check_id: str, step: str, *, result: CheckResult | None) -> AnalysisStatus:

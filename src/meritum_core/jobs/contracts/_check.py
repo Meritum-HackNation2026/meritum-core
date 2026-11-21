@@ -11,9 +11,7 @@ from pydantic import Field, model_validator
 
 from meritum_core.checks import SESSIONLESS_CHANNELS, CheckRequest, CheckResult
 from meritum_core.jobs.constants import HASH_PATTERN
-from meritum_core.jobs.contracts._base import JobModel
-
-_Id = Annotated[str, Field(min_length=8, max_length=64)]
+from meritum_core.jobs.contracts._base import Identifier, JobModel
 
 
 class CheckInput(JobModel):
@@ -35,8 +33,8 @@ class CheckInput(JobModel):
     """
 
     request: CheckRequest
-    session_id: _Id | None = None
-    user_id: _Id | None = None
+    session_id: Identifier | None = None
+    user_id: Identifier | None = None
     channel_user_hash: Annotated[str | None, Field(pattern=HASH_PATTERN)] = None
     received_at: datetime
 

@@ -4,9 +4,14 @@ Features:
     ADR-03
 """
 
-from pydantic import BaseModel, ConfigDict
+from typing import Annotated
 
-from meritum_core.jobs.constants import CONTRACT_VERSION
+from pydantic import BaseModel, ConfigDict, Field
+
+from meritum_core.jobs.constants import CONTRACT_VERSION, ID_MAX_CHARS, ID_MIN_CHARS
+
+Identifier = Annotated[str, Field(min_length=ID_MIN_CHARS, max_length=ID_MAX_CHARS)]
+"""A session id, a user id or a channel user hash."""
 
 
 class JobModel(BaseModel):

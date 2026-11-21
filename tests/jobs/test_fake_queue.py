@@ -1,10 +1,18 @@
 import asyncio
 from collections.abc import AsyncIterator
 
+import pytest
+
 from meritum_core.checks import AnalysisStatus
 from meritum_core.jobs.constants import PROGRESS_KEY, READINESS_KEY
-from meritum_core.jobs.contracts import PING, READINESS, PingInput, ReadinessReport
-from meritum_core.jobs.fakes import InMemoryJobQueue
+from meritum_core.jobs.contracts import (
+    CHECK,
+    PING,
+    READINESS,
+    PingInput,
+    ReadinessReport,
+)
+from meritum_core.jobs.fakes import EnqueuedJob, InMemoryJobQueue
 from meritum_core.jobs.ports import JobQueue
 
 
@@ -23,11 +31,24 @@ def test_fake_records_enqueued_jobs_and_reports_their_state() -> None:
     payload = PingInput(message="hej")
     workflow_id = asyncio.run(queue.enqueue(PING, payload, workflow_id="w1"))
     assert workflow_id == "w1"
-    assert fake.enqueued == [(PING, payload, "w1")]
+    assert fake.enqueued == [EnqueuedJob(PING, payload, "w1")]
     state = asyncio.run(queue.state("w1"))
     assert state is not None
     assert state.status == "ENQUEUED"
     assert asyncio.run(queue.state("unknown")) is None
+
+
+def test_fake_treats_a_repeated_workflow_id_as_one_job() -> None:
+    queue = InMemoryJobQueue()
+    asyncio.run(queue.enqueue(PING, PingInput(), workflow_id="w1"))
+    asyncio.run(queue.enqueue(PING, PingInput(), workflow_id="w1"))
+    assert len(queue.enqueued) == 1
+
+
+def test_fake_rejects_a_payload_of_another_workflow() -> None:
+    queue = InMemoryJobQueue()
+    with pytest.raises(TypeError):
+        asyncio.run(queue.enqueue(CHECK, PingInput()))  # ty: ignore[invalid-argument-type]  # the wrong payload is the point
 
 
 def test_fake_generates_distinct_ids() -> None:

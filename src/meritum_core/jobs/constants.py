@@ -29,3 +29,12 @@ HASH_PATTERN: Final = r"^[0-9a-f]{64}$"
 
 MAX_JUSTIFICATION_CHARS: Final = 1000
 """Longest masked justification of a "Zgłoś błąd" dispute (US-MOD-03)."""
+
+ID_MIN_CHARS: Final = 8
+"""Shortest session or user id, as in the checks contracts (CheckRecord)."""
+
+ID_MAX_CHARS: Final = 64
+"""Longest session or user id, as in the checks contracts (CheckRecord)."""
+
+CHECK_ID_MAX_CHARS: Final = 40
+"""Longest check id, as in CheckResult.check_id."""
