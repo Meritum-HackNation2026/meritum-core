@@ -691,12 +691,14 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://fakenews.pl/
 - Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
 - Uwagi: RSS https://fakenews.pl/feed/, mapa https://fakenews.pl/sitemap_index.xml. robots.txt bez blokad AI.
+- Członkostwo: lista IFCN (Active) 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, profil https://www.ifcncodeofprinciples.poynter.org/profile/fundacja-%22przeciwdzia%C5%82amy-dezinformacji%22; `signatory_of: [ifcn]`. Brak na liście EFCSN 2026-11-21 — https://members.efcsn.com/signatories.
 
 #### `pravda.org.pl`
 
 - Wejście: https://pravda.org.pl/
 - Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
 - Uwagi: RSS https://pravda.org.pl/rss/, mapa https://pravda.org.pl/sitemap.xml.
+- Członkostwo: IFCN (Active) i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]`.
 
 #### `euvsdisinfo.eu`
 
@@ -715,15 +717,18 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://demagog.org.pl/
 - Podstawa prawna: zastrzeżenie TDM z art. 4 dyrektywy 2019/790
 - Uwagi: publisher_id potrzebny do rozpoznania wydawcy oceny ClaimReview.
+- Członkostwo: IFCN (Active) i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]` (wykluczenie dotyczy treści, nie rozpoznania wydawcy w Fact Check API).
 
 #### `sprawdzam.afp.com`
 
 - Wejście: https://sprawdzam.afp.com/
 - Uwagi: robots.txt, RSS i tdmrep zwracają 403 (Akamai). Nie pobieramy treści.
+- Członkostwo: AFP Fact Check na liście IFCN (Active) i AFP na liście EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]` dla polskiego serwisu Sprawdzam.
 
 #### `konkret24.tvn24.pl`
 
 - Wejście: https://konkret24.tvn24.pl/
+- Członkostwo: brak na listach IFCN i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of` puste.
 
 #### `www.gov.pl/web/dyplomacja/bip`
 
