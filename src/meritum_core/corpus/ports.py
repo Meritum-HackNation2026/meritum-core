@@ -36,9 +36,12 @@ class CorpusSearchPort(Protocol):
             limit: Most passages to return.
 
         Returns:
-            Passages with source id, dates and fused score; empty when none match.
+            Passages with source id, dates and fused score. The vector ranking
+            always yields nearest neighbours, so only an empty snapshot gives
+            an empty list.
 
         Raises:
+            ValueError: ``limit`` is below 1.
             UnknownCorpusVersionError: No snapshot has this version.
             CorpusUnavailableError: The corpus store failed.
             EmbeddingsUnavailableError: The query could not be embedded.

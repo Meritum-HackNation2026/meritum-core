@@ -82,3 +82,9 @@ def test_freshness_weight_decays_with_age_but_never_below_the_floor() -> None:
     assert weights == sorted(weights, reverse=True)
     assert weights[1] == pytest.approx(0.75)
     assert weights[-1] >= 0.5
+
+
+@pytest.mark.parametrize("limit", [0, -1])
+def test_limit_below_one_is_rejected(limit: int) -> None:
+    with pytest.raises(ValueError, match="limit"):
+        fuse_rankings([[passage("a")]], claim_date=CLAIM_DATE, limit=limit)

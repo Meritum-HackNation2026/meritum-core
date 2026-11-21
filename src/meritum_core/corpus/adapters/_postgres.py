@@ -4,7 +4,7 @@ Features:
     US-KOR-02, US-ZRD-05, F-12, ADR-04, ADR-19, ADR-32
 """
 
-from collections.abc import Mapping
+from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import Final, LiteralString
 
@@ -30,6 +30,7 @@ _RANKINGS: Final[tuple[LiteralString, ...]] = (
     SELECT passage_id, source_id, text, published_on, fetched_at
     FROM corpus.passages
     WHERE added_at <= %(taken_at)s
+      AND (retired_at IS NULL OR retired_at > %(taken_at)s)
     ORDER BY embedding <=> %(embedding)s::vector
     LIMIT %(candidates)s
     """,
@@ -45,7 +46,9 @@ _RANKINGS: Final[tuple[LiteralString, ...]] = (
     )
     SELECT passage_id, source_id, text, published_on, fetched_at
     FROM corpus.passages, q
-    WHERE added_at <= %(taken_at)s AND search_vector @@ q.ts
+    WHERE added_at <= %(taken_at)s
+      AND (retired_at IS NULL OR retired_at > %(taken_at)s)
+      AND search_vector @@ q.ts
     ORDER BY ts_rank_cd(search_vector, q.ts) DESC
     LIMIT %(candidates)s
     """,
@@ -53,13 +56,31 @@ _RANKINGS: Final[tuple[LiteralString, ...]] = (
     """
     SELECT passage_id, source_id, text, published_on, fetched_at
     FROM corpus.passages
-    WHERE added_at <= %(taken_at)s AND %(query)s <%% text
+    WHERE added_at <= %(taken_at)s
+      AND (retired_at IS NULL OR retired_at > %(taken_at)s)
+      AND %(query)s <%% text
     ORDER BY word_similarity(%(query)s, text) DESC
     LIMIT %(candidates)s
     """,
 )
 """One query per ranking, each best first; ``fuse_rankings`` merges them.
-A snapshot sees the passages added up to its ``taken_at`` (ADR-19)."""
+A snapshot sees the passages added by and not retired at its ``taken_at`` (ADR-19)."""
+
+
+@dataclass(frozen=True)
+class _Params:
+    query: str
+    embedding: str
+    candidates: int
+    taken_at: datetime | None = None
+
+    def bind(self) -> dict[str, str | int | datetime | None]:
+        return {
+            "query": self.query,
+            "embedding": self.embedding,
+            "candidates": self.candidates,
+            "taken_at": self.taken_at,
+        }
 
 
 class PostgresCorpusSearch:
@@ -101,11 +122,11 @@ class PostgresCorpusSearch:
             CorpusUnavailableError: PostgreSQL failed (connection or query).
         """
         vector = await self._embeddings.embed_query(query)
-        params: dict[str, object] = {
-            "query": query,
-            "embedding": "[" + ",".join(map(str, vector)) + "]",
-            "candidates": CANDIDATES_PER_RANKING,
-        }
+        params = _Params(
+            query=query,
+            embedding="[" + ",".join(map(str, vector)) + "]",
+            candidates=CANDIDATES_PER_RANKING,
+        )
         try:
             rankings = await self._rankings(corpus_version, params)
         except Error as exc:
@@ -116,7 +137,7 @@ class PostgresCorpusSearch:
         return fuse_rankings(rankings, claim_date=claim_date, limit=limit)
 
     async def _rankings(
-        self, corpus_version: str, params: dict[str, object]
+        self, corpus_version: str, params: _Params
     ) -> list[list[Passage]] | None:
         # shortcut: one connection per search; take a pool from the caller when
         # search latency matters (ADR-20 budget).
@@ -128,7 +149,7 @@ class PostgresCorpusSearch:
             if taken_at is None:
                 return None
             await _set_search_options(conn)
-            snapshot = {**params, "taken_at": taken_at}
+            snapshot = replace(params, taken_at=taken_at)
             return [await _ranking(conn, sql, snapshot) for sql in _RANKINGS]
 
 
@@ -153,8 +174,8 @@ async def _set_search_options(conn: AsyncConnection) -> None:
 
 
 async def _ranking(
-    conn: AsyncConnection, sql: LiteralString, params: Mapping[str, object]
+    conn: AsyncConnection, sql: LiteralString, params: _Params
 ) -> list[Passage]:
     async with conn.cursor(row_factory=class_row(Passage)) as cursor:
-        await cursor.execute(sql, params)
+        await cursor.execute(sql, params.bind())
         return await cursor.fetchall()

@@ -5,9 +5,12 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 CREATE SCHEMA IF NOT EXISTS corpus;
 
--- A snapshot sees every passage added up to its taken_at (corpus_version).
--- Passages are append-only: a changed document gets new passage ids, so old
--- snapshots keep the text they saw. Only retention may delete rows.
+-- A snapshot (corpus_version) sees the passages with added_at <= taken_at and
+-- no retired_at at or before taken_at. Passages are append-only: a changed or
+-- withdrawn document gets retired_at (and new passage ids for new text), so
+-- old snapshots keep the text they saw; only retention deletes rows.
+-- The snapshot workflow writes taken_at after the ingestion transactions it
+-- covers have committed, so a later commit cannot change a published snapshot.
 CREATE TABLE IF NOT EXISTS corpus.snapshots (
     version text PRIMARY KEY,
     taken_at timestamptz NOT NULL
@@ -20,6 +23,7 @@ CREATE TABLE IF NOT EXISTS corpus.passages (
     published_on date,
     fetched_at timestamptz NOT NULL,
     added_at timestamptz NOT NULL DEFAULT now(),
+    retired_at timestamptz,
     -- 768 = DEFAULT_DIMENSIONS in meritum_core.shared.embeddings.constants
     embedding vector(768) NOT NULL,
     search_vector tsvector

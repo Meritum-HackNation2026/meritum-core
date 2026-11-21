@@ -24,8 +24,10 @@ FRESHNESS_HALF_LIFE_DAYS: Final = 180
 (US-ZRD-05): a 180-day-old passage keeps 75% of its fused score."""
 
 FRESHNESS_FLOOR: Final = 0.5
-"""Lowest freshness weight, also used for passages without a publication date:
-an old but much better match still beats a fresh weak one."""
+"""Lowest freshness weight, also used for passages without a publication date.
+With RRF_K = 60 a passage 400 days old that tops all three rankings (score
+~0.030) loses to a fresh one ranked about 30th in all three (~0.033) and beats
+one found by a single ranking. Tune both on the golden set (ADR-28)."""
 
 TRIGRAM_THRESHOLD: Final = 0.3
 """Lowest pg_trgm word similarity for the typo ranking (pg_trgm default 0.6

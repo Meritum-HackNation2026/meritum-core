@@ -18,10 +18,12 @@ RECORDED = {"predictions": [{"embeddings": {"values": [0.6, 0.8]}}]}
 UNAVAILABLE = {"error": {"code": 503, "message": "down", "status": "UNAVAILABLE"}}
 
 
-def vertex(status: int, sent: list[httpx2.Request]) -> EmbeddingsPort:
+def vertex(
+    status: int, sent: list[httpx2.Request], recorded: object = RECORDED
+) -> EmbeddingsPort:
     def reply(request: httpx2.Request) -> httpx2.Response:
         sent.append(request)
-        body = RECORDED if status == httpx2.codes.OK else UNAVAILABLE
+        body = recorded if status == httpx2.codes.OK else UNAVAILABLE
         return httpx2.Response(status, json=body)
 
     settings = EmbeddingsSettings(
@@ -60,3 +62,11 @@ def test_documents_use_the_document_task_type() -> None:
 def test_provider_failure_raises_embeddings_unavailable() -> None:
     with pytest.raises(EmbeddingsUnavailableError):
         asyncio.run(vertex(503, []).embed_query("burza"))
+
+
+def test_wrong_number_of_vectors_raises_embeddings_unavailable() -> None:
+    two = {"predictions": RECORDED["predictions"] * 2}
+    with pytest.raises(EmbeddingsUnavailableError):
+        asyncio.run(vertex(200, [], two).embed_query("burza"))
+    with pytest.raises(EmbeddingsUnavailableError):
+        asyncio.run(vertex(200, [], two).embed_documents(["a", "b", "c"]))

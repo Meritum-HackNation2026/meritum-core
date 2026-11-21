@@ -47,7 +47,7 @@ class VertexEmbeddings:
             retry_options=HttpRetryOptions(attempts=settings.retries),
         )
         model = GoogleEmbeddingModel(
-            str(settings.model),
+            settings.model,
             provider=provider,
             settings=EmbeddingSettings(dimensions=settings.dimensions),
         )
@@ -62,7 +62,7 @@ class VertexEmbeddings:
         Returns:
             The query vector.
         """
-        (vector,) = _vectors(await self._call(self._embedder.embed_query(text)))
+        (vector,) = _vectors(await self._call(self._embedder.embed_query(text)), 1)
         return vector
 
     async def embed_documents(self, texts: Sequence[str]) -> list[Vector]:
@@ -74,7 +74,8 @@ class VertexEmbeddings:
         Returns:
             One vector per text.
         """
-        return _vectors(await self._call(self._embedder.embed_documents(texts)))
+        result = await self._call(self._embedder.embed_documents(texts))
+        return _vectors(result, len(texts))
 
     @staticmethod
     async def _call(pending: Awaitable[EmbeddingResult]) -> EmbeddingResult:
@@ -85,5 +86,9 @@ class VertexEmbeddings:
             raise EmbeddingsUnavailableError(msg) from exc
 
 
-def _vectors(result: EmbeddingResult) -> list[Vector]:
-    return [tuple(vector) for vector in result.embeddings]
+def _vectors(result: EmbeddingResult, expected: int) -> list[Vector]:
+    vectors = [tuple(vector) for vector in result.embeddings]
+    if len(vectors) != expected:
+        msg = f"vertex returned {len(vectors)} vectors for {expected} texts"
+        raise EmbeddingsUnavailableError(msg)
+    return vectors

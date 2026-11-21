@@ -9,6 +9,10 @@ from typing import Final
 ENV_PREFIX: Final = "MERITUM_EMBEDDINGS_"
 """Prefix of every embeddings setting in the environment (ADR-04)."""
 
+DEFAULT_MODEL: Final = "gemini-embedding-001"
+"""Vertex AI model when ``MERITUM_EMBEDDINGS_MODEL`` is unset (ADR-04); adapters
+never name a model, they take it from settings."""
+
 DEFAULT_DIMENSIONS: Final = 768
 """Vector size; must match ``vector(768)`` in the corpus migrations (pgvector HNSW
 indexes at most 2000 dimensions, gemini-embedding-001 gives 3072 unless reduced)."""

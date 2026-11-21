@@ -70,14 +70,14 @@ Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth
 
 ## Wyszukiwanie w korpusie (`meritum_core.corpus`)
 
-Agenty badawcze w workerze i narzędzie MCP `search_sources` w backendzie wołają `CorpusSearchPort.search(query, claim_date=..., corpus_version=...)` w swoim procesie (ADR-32). Adapter PostgreSQL układa trzy rankingi w przypiętej migawce: podobieństwo wektorów (pgvector, HNSW), pełny tekst w konfiguracji `public.polish` (słownik hunspell-pl, dowolne słowo zapytania może pasować) i podobieństwo trigramów (`pg_trgm`, literówki). `fuse_rankings` łączy je przez reciprocal rank fusion i mnoży wynik przez wagę świeżości liczoną od daty twierdzenia, a nie od dzisiaj (US-ZRD-05). Wagi i progi są w `corpus/constants.py`. Migawka widzi fragmenty dodane do jej `taken_at`; nieznana wersja kończy się `UnknownCorpusVersionError`, a nie pustą listą (ADR-19).
+Agenty badawcze w workerze i narzędzie MCP `search_sources` w backendzie wołają `CorpusSearchPort.search(query, claim_date=..., corpus_version=...)` w swoim procesie (ADR-32). Adapter PostgreSQL układa trzy rankingi w przypiętej migawce: podobieństwo wektorów (pgvector, HNSW), pełny tekst w konfiguracji `public.polish` (słownik hunspell-pl, dowolne słowo zapytania może pasować) i podobieństwo trigramów (`pg_trgm`, literówki). `fuse_rankings` łączy je przez reciprocal rank fusion i mnoży wynik przez wagę świeżości liczoną od daty twierdzenia, a nie od dzisiaj (US-ZRD-05). Wagi i progi są w `corpus/constants.py`. Migawka widzi fragmenty dodane do jej `taken_at` i niewycofane przed nim (`retired_at`); fragmentów się nie nadpisuje, zmieniony albo usunięty dokument dostaje `retired_at`. Workflow migawek zapisuje `taken_at` dopiero po zatwierdzeniu objętych nią transakcji pobierania. Nieznana wersja kończy się `UnknownCorpusVersionError`, a nie pustą listą (ADR-19).
 
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |
 | `MERITUM_CORPUS_PROVIDER` | `memory` | `memory` (migawki w procesie: testy, behave, praca bez bazy) albo `postgres` |
 | `MERITUM_CORPUS_DATABASE_URL` | brak | adres libpq bazy ze schematem `corpus`; wymagany dla `postgres` |
 | `MERITUM_EMBEDDINGS_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
-| `MERITUM_EMBEDDINGS_MODEL` | brak | model embeddingów w Vertex AI; domyślny wybór projektu to `gemini-embedding-001` (ADR-04), wymagany dla `vertex` |
+| `MERITUM_EMBEDDINGS_MODEL` | `gemini-embedding-001` | model embeddingów w Vertex AI (ADR-04); adaptery biorą go tylko z ustawień |
 | `MERITUM_EMBEDDINGS_REGION` | brak | lokalizacja Vertex AI w UE (`EU_REGIONS`, np. `europe-west4`); dostępność modelu w `europe-central2` do sprawdzenia; wymagany dla `vertex` |
 | `MERITUM_EMBEDDINGS_PROJECT` | projekt z ADC | projekt Google Cloud |
 | `MERITUM_EMBEDDINGS_DIMENSIONS` | `768` | rozmiar wektora; tabele korpusu mają `vector(768)`, więc zmiana wymaga migracji i ponownego zwektoryzowania |

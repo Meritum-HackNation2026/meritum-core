@@ -52,9 +52,15 @@ def fuse_rankings(
     Returns:
         Distinct passages, best first, each with its ``score``; ties by id.
 
+    Raises:
+        ValueError: ``limit`` is below 1 (the MCP tool passes model-built input).
+
     Features:
         US-ZRD-05, F-12, ADR-04
     """
+    if limit < 1:
+        msg = f"limit must be at least 1, got {limit}"
+        raise ValueError(msg)
     rrf: dict[str, float] = {}
     passages: dict[str, Passage] = {}
     for ranking in rankings:

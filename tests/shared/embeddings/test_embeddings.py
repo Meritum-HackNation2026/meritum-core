@@ -47,9 +47,9 @@ def test_stub_text_without_words_is_a_zero_vector() -> None:
     assert set(asyncio.run(stub(4).embed_query("?!"))) == {0.0}
 
 
-def test_vertex_needs_model_and_eu_region() -> None:
-    with pytest.raises(ValidationError, match="MODEL"):
-        EmbeddingsSettings(provider="vertex", region="europe-west4")
+def test_vertex_needs_an_eu_region() -> None:
+    with pytest.raises(ValidationError, match="REGION"):
+        EmbeddingsSettings(provider="vertex")
     with pytest.raises(ValidationError, match="EU region"):
         EmbeddingsSettings(provider="vertex", model="m", region="us-central1")
 
@@ -60,3 +60,8 @@ def test_settings_come_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> 
     monkeypatch.setenv("MERITUM_EMBEDDINGS_REGION", "europe-west4")
     settings = EmbeddingsSettings()
     assert (settings.provider, settings.model) == ("vertex", "gemini-embedding-001")
+
+
+def test_vertex_defaults_to_gemini_embedding_001() -> None:
+    settings = EmbeddingsSettings(provider="vertex", region="europe-west4")
+    assert settings.model == "gemini-embedding-001"

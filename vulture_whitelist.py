@@ -17,8 +17,8 @@ from meritum_core.jobs.contracts import (
 from meritum_core.jobs.fakes import InMemoryJobQueue
 from meritum_core.jobs.ports import JobQueue
 from meritum_core.shared.blobs import BlobRef, BlobSettings
-from meritum_core.shared.llm import LlmResult, LlmSettings, LlmUsage, Prompt
 from meritum_core.shared.embeddings import EmbeddingsSettings
+from meritum_core.shared.llm import LlmResult, LlmSettings, LlmUsage, Prompt
 
 DbosJobQueue  # built by meritum-backend's composition root
 DbosJobQueue.enqueue  # called by meritum-backend through the JobQueue port
@@ -61,5 +61,5 @@ constants.CASE_KINDS
 CorpusSettings.model_config  # read by pydantic-settings
 CorpusSettings._postgres_has_a_database  # ruff: ignore[private-member-access]  # Pydantic validator
 EmbeddingsSettings.model_config  # read by pydantic-settings
-EmbeddingsSettings._vertex_is_named_and_in_the_eu  # ruff: ignore[private-member-access]  # Pydantic validator
+EmbeddingsSettings._vertex_is_in_the_eu  # ruff: ignore[private-member-access]  # Pydantic validator
 Passage.model_config  # read by pydantic
