@@ -36,14 +36,15 @@ with warnings.catch_warnings():
 
 
 @dataclass(frozen=True)
-class Response:
-    """What the transport read: final URL, status, media type and body text.
+class RawResponse:
+    """What the transport read for one hop, before any page rule.
 
     Attributes:
-        url: the final URL as the caller sees it (host name, not IP).
+        url: the URL as the caller sees it (host name, not the pinned IP).
         status: the HTTP status.
         content_type: the media type without parameters, lower case.
         text: the decoded body; empty when it was not read.
+        location: the redirect target; empty when this is not a redirect.
 
     Features:
         US-SPR-07, F-06
@@ -51,19 +52,36 @@ class Response:
 
     url: str
     status: int
-    content_type: str
-    text: str
+    content_type: str = ""
+    text: str = ""
+    location: str = ""
+
+    @property
+    def is_success(self) -> bool:
+        """Whether the status is in the 2xx class.
+
+        Features:
+            US-SPR-07, F-06
+        """
+        return 200 <= self.status < 300  # ruff: ignore[magic-value-comparison]  # the 2xx class
+
+    @property
+    def is_client_error(self) -> bool:
+        """Whether the status is in the 4xx class.
+
+        Features:
+            F-06
+        """
+        return 400 <= self.status < 500  # ruff: ignore[magic-value-comparison]  # the 4xx class
 
 
-def _check_walls(response: Response) -> None:
-    if (
-        LOGIN_PATH.search(urlsplit(response.url).path)
-        or response.status in LOGIN_WALL_STATUSES
-    ):
+def _check_walls(response: RawResponse) -> None:
+    landed_on_login = LOGIN_PATH.search(urlsplit(response.url).path) is not None
+    if landed_on_login or response.status in LOGIN_WALL_STATUSES:
         raise LoginWallError(FetchFailureReason.LOGIN_WALL)
     if response.status in PAYWALL_STATUSES:
         raise LoginWallError(FetchFailureReason.PAYWALL)
-    if not 200 <= response.status < 300:  # ruff: ignore[magic-value-comparison]  # the 2xx class
+    if not response.is_success:
         raise PageFetchError(FetchFailureReason.HTTP_ERROR)
     if response.content_type not in ALLOWED_CONTENT_TYPES:
         raise PageFetchError(FetchFailureReason.UNSUPPORTED_CONTENT)
@@ -81,7 +99,7 @@ def _main_text(html: str) -> str:
     return text
 
 
-def to_page(response: Response) -> FetchedPage:
+def to_page(response: RawResponse) -> FetchedPage:
     """Check the response for walls and errors and extract its main text.
 
     Args:
@@ -90,12 +108,14 @@ def to_page(response: Response) -> FetchedPage:
     Returns:
         The page; its text is untrusted data.
 
-    A login or paywall raises ``LoginWallError``, HTML without main text
-    ``JavaScriptRequiredError``, an error status or media type ``PageFetchError``.
+    Raises:
+        LoginWallError: A login or paywall stands in front of the content.
+        JavaScriptRequiredError: The HTML has no main text without JavaScript.
+        PageFetchError: An error status or an unsupported media type.
 
     Features:
         US-SPR-07, F-06, ADR-12
-    """
+    """  # ruff: ignore[docstring-extraneous-exception]  # raised by the helpers it calls
     _check_walls(response)
     is_html = response.content_type in HTML_CONTENT_TYPES
     text = _main_text(response.text) if is_html else response.text.strip()

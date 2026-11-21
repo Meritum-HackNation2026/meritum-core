@@ -21,7 +21,8 @@ def _signals(robots_txt: str) -> list[str]:
         key, _, value = raw.split("#", 1)[0].partition(":")
         key, value = key.strip().lower(), value.strip()
         if key == "user-agent":
-            agents = set() if in_rules else agents
+            if in_rules:  # a User-agent line after rules starts a new group
+                agents = set()
             agents.add(value.lower())
             in_rules = False
         elif key:

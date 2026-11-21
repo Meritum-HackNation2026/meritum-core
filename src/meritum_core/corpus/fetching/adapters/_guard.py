@@ -11,7 +11,11 @@ from collections.abc import Awaitable, Callable
 
 import httpx
 
-from meritum_core.corpus.fetching.constants import ALLOWED_SCHEMES, NAT64_PREFIX
+from meritum_core.corpus.fetching.constants import (
+    ALLOWED_SCHEMES,
+    IPV4_BITS,
+    IPV4_EMBEDDING_PREFIXES,
+)
 from meritum_core.corpus.fetching.errors import (
     BlockedAddressError,
     FetchFailureReason,
@@ -31,9 +35,12 @@ async def system_resolver(host: str) -> list[IpAddress]:
     Returns:
         The addresses, in resolver order.
 
+    Raises:
+        OSError: The name does not resolve (``socket.gaierror``).
+
     Features:
         US-SPR-07, F-06
-    """
+    """  # ruff: ignore[docstring-extraneous-exception]  # raised by the helpers it calls
     loop = asyncio.get_running_loop()
     infos = await loop.getaddrinfo(host, None, type=socket.SOCK_STREAM)
     return [ipaddress.ip_address(info[4][0]) for info in infos]
@@ -67,8 +74,8 @@ def checked_url(url: str | httpx.URL) -> httpx.URL:
 def _embedded_ipv4(address: IpAddress) -> ipaddress.IPv4Address | None:
     if isinstance(address, ipaddress.IPv4Address):
         return None
-    if address in NAT64_PREFIX:
-        return ipaddress.IPv4Address(int(address) & 0xFFFFFFFF)
+    if any(address in prefix for prefix in IPV4_EMBEDDING_PREFIXES):
+        return ipaddress.IPv4Address(int(address) & IPV4_BITS)
     return address.ipv4_mapped or address.sixtofour
 
 
@@ -82,8 +89,9 @@ def _literal(host: str) -> list[IpAddress]:
 def is_public(address: IpAddress) -> bool:
     """Whether ``address`` is globally routable unicast, embedded IPv4 included.
 
-    Private, loopback, link-local, shared (CGNAT), reserved and multicast
-    addresses, and IPv6 forms that embed them (mapped, 6to4, NAT64), are not.
+    Private, loopback, link-local, site-local, shared (CGNAT), reserved and
+    multicast addresses, and IPv6 forms that embed them (mapped, translated,
+    compatible, 6to4, NAT64), are not.
 
     Args:
         address: one resolved address.
@@ -97,7 +105,10 @@ def is_public(address: IpAddress) -> bool:
     embedded = _embedded_ipv4(address)
     if embedded is not None and not is_public(embedded):
         return False
-    return address.is_global and not address.is_multicast
+    is_site_local = isinstance(address, ipaddress.IPv6Address) and (
+        address.is_site_local
+    )
+    return address.is_global and not (address.is_multicast or is_site_local)
 
 
 async def pinned_address(

@@ -59,14 +59,27 @@ PAYWALL_MARKER: Final = re.compile(
 )
 """schema.org flag that publishers set on paywalled articles."""
 
-NAT64_PREFIX: Final = ipaddress.IPv6Network("64:ff9b::/96")
-"""Well-known NAT64 prefix: its last 32 bits are an IPv4 address, checked as such."""
+IPV4_EMBEDDING_PREFIXES: Final = (
+    ipaddress.IPv6Network("64:ff9b::/96"),
+    ipaddress.IPv6Network("::ffff:0:0:0/96"),
+    ipaddress.IPv6Network("::/96"),
+)
+"""IPv6 prefixes whose last 32 bits are an IPv4 address, checked as such.
 
-USER_AGENT: Final = "MeritumBot/0.1 (+https://github.com/Meritum-HackNation2026)"
-"""User-Agent header of every request; robots.txt groups match its product token."""
+NAT64 well-known prefix, IPv4-translated (SIIT) and deprecated IPv4-compatible.
+"""
+
+IPV4_BITS: Final = 0xFFFFFFFF
+"""Mask of the IPv4 address in the last 32 bits of an embedding IPv6 address."""
 
 ROBOTS_AGENT: Final = "MeritumBot"
 """Product token looked up in robots.txt ``User-agent`` groups."""
+
+USER_AGENT: Final = f"{ROBOTS_AGENT}/0.1 (+https://github.com/Meritum-HackNation2026)"
+"""User-Agent header of every request; robots.txt groups match its product token."""
+
+ROBOTS_PATH: Final = "/robots.txt"
+"""Where each host's robots.txt lives (RFC 9309)."""
 
 CONTENT_SIGNAL_USE: Final = "ai-input"
 """Content-Signal use that covers sources quoted as evidence by a model (RFC draft)."""

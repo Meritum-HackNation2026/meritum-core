@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 
 import httpx
 
-from meritum_core.corpus.fetching.adapters._extract import Response, to_page
+from meritum_core.corpus.fetching.adapters._extract import RawResponse, to_page
 from meritum_core.corpus.fetching.adapters._guard import (
     Resolver,
     checked_url,
@@ -25,6 +25,7 @@ from meritum_core.corpus.fetching.constants import (
     MAX_REDIRECTS,
     MAX_RESPONSE_BYTES,
     REDIRECT_STATUSES,
+    ROBOTS_PATH,
     USER_AGENT,
 )
 from meritum_core.corpus.fetching.errors import (
@@ -99,9 +100,8 @@ class HttpxPageFetcher:
         target = checked_url(url)
         try:
             async with asyncio.timeout(FETCH_TIMEOUT_S), self._client() as client:
-                if purpose is FetchPurpose.SOURCE:
-                    await self._check_robots(client, target)
-                response = await self._follow(client, target)
+                honour_robots = purpose is FetchPurpose.SOURCE
+                response = await self._follow(client, target, robots=honour_robots)
         except TimeoutError, httpx.TimeoutException:
             raise PageFetchError(FetchFailureReason.TIMEOUT) from None
         except httpx.HTTPError:
@@ -120,25 +120,30 @@ class HttpxPageFetcher:
             yield client
 
     async def _check_robots(self, client: httpx.AsyncClient, url: httpx.URL) -> None:
-        robots = url.copy_with(path="/robots.txt", query=None, fragment=None)
-        response = await self._follow(client, robots)
-        if 400 <= response.status < 500:  # ruff: ignore[magic-value-comparison]  # RFC 9309: no robots.txt
+        robots = url.copy_with(path=ROBOTS_PATH, query=None, fragment=None)
+        response = await self._follow(client, robots, robots=False)
+        if response.is_client_error:  # RFC 9309: no robots.txt, all allowed
             return
-        is_ok = 200 <= response.status < 300  # ruff: ignore[magic-value-comparison]  # the 2xx class
-        if not is_ok or not robots_allow(response.text, str(url)):
+        if not response.is_success or not robots_allow(response.text, str(url)):
             raise RobotsDisallowedError
 
-    async def _follow(self, client: httpx.AsyncClient, url: httpx.URL) -> Response:
+    async def _follow(
+        self, client: httpx.AsyncClient, url: httpx.URL, *, robots: bool
+    ) -> RawResponse:
+        checked_hosts: set[bytes] = set()
         for hop in range(MAX_REDIRECTS + 1):
-            response, location = await self._get(client, url, redirected=hop > 0)
-            if location is None:
+            if robots and url.netloc not in checked_hosts:
+                await self._check_robots(client, url)  # every host on the path
+                checked_hosts.add(url.netloc)
+            response = await self._get(client, url, redirected=hop > 0)
+            if not response.location:
                 return response
-            url = checked_url(url.join(location))
+            url = checked_url(url.join(response.location))
         raise PageFetchError(FetchFailureReason.TOO_MANY_REDIRECTS)
 
     async def _get(
         self, client: httpx.AsyncClient, url: httpx.URL, *, redirected: bool
-    ) -> tuple[Response, str | None]:
+    ) -> RawResponse:
         address = await pinned_address(url, self._resolver, redirected=redirected)
         request = client.build_request(
             "GET",
@@ -153,13 +158,11 @@ class HttpxPageFetcher:
             await response.aclose()
 
     @staticmethod
-    async def _read(
-        response: httpx.Response, url: httpx.URL
-    ) -> tuple[Response, str | None]:
+    async def _read(response: httpx.Response, url: httpx.URL) -> RawResponse:
         location = _header(response, "location")
         if response.status_code in REDIRECT_STATUSES and location:
-            return Response(str(url), response.status_code, "", ""), location
+            return RawResponse(str(url), response.status_code, location=location)
         media = _media_type(response)
         is_readable = response.is_success and media in ALLOWED_CONTENT_TYPES
         text = await _read_limited(response) if is_readable else ""
-        return Response(str(url), response.status_code, media, text), None
+        return RawResponse(str(url), response.status_code, media, text)
