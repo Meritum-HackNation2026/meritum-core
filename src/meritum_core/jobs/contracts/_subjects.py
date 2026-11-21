@@ -5,15 +5,13 @@ Features:
 """
 
 import re
-from typing import Annotated, Literal, Self
+from typing import Annotated, Self
 
 from pydantic import Field, model_validator
 
+from meritum_core.checks import SubjectKind
 from meritum_core.jobs.constants import HASH_PATTERN
 from meritum_core.jobs.contracts._base import Identifier, JobModel
-
-SubjectKind = Literal["session_id", "user_id", "channel_user_hash"]
-"""Which identifier names the person whose data is deleted."""
 
 
 class DeleteSubjectInput(JobModel):

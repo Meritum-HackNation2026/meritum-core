@@ -4,7 +4,7 @@ Features:
     US-POW-01, US-BEZ-05, F-22
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import datetime
 
 from meritum_core.checks.contracts import Notification
@@ -63,6 +63,18 @@ class InMemoryNotificationRepository:
             How many were deleted.
         """
         return self._delete_where(lambda n: getattr(n, kind) == value)
+
+    async def delete_for_checks(self, check_ids: Sequence[str]) -> int:
+        """Delete notifications about the given checks.
+
+        Args:
+            check_ids: the deleted checks.
+
+        Returns:
+            How many were deleted.
+        """
+        gone = set(check_ids)
+        return self._delete_where(lambda n: n.check_id in gone)
 
     async def delete_expired(self, now: datetime) -> int:
         """Delete notifications past retention.
