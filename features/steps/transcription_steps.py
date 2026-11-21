@@ -17,7 +17,7 @@ from meritum_core.checks.transcription import (
     TranscriptionError,
     TranscriptionSettings,
     TranscriptionUnavailableError,
-    UnsupportedAudioError,
+    UnsupportedAudioFormatError,
     build_transcriber,
 )
 from meritum_core.shared.blobs import BlobKind, BlobSettings, build_blob_store
@@ -96,7 +96,7 @@ def then_gets_polish_transcript(context: Context) -> None:
 @then('port rzuca błąd nieobsługiwanego formatu, który workflow mapuje na "{status}"')
 def then_unsupported_format(context: Context, status: str) -> None:
     """The port refuses the file, and the error names the check status."""
-    assert isinstance(context.error, UnsupportedAudioError)
+    assert isinstance(context.error, UnsupportedAudioFormatError)
     assert context.error.check_status == status
 
 

@@ -43,7 +43,10 @@ from meritum_core.checks.transcription.constants import (
     WAV_FMT_CHUNK,
     WAVE_MAGIC,
 )
-from meritum_core.checks.transcription.errors import UnsupportedAudioError
+from meritum_core.checks.transcription.errors import (
+    AudioTooLongError,
+    UnsupportedAudioFormatError,
+)
 from meritum_core.checks.transcription.models import AudioFormat, AudioInfo
 
 
@@ -58,23 +61,24 @@ def inspect_audio(data: bytes) -> AudioInfo:
         bitrate for MP3).
 
     Raises:
-        UnsupportedAudioError: Not OGG Opus, MP3, M4A or WAV, no readable
-            length, or over ``MAX_AUDIO_BYTES`` / ``MAX_AUDIO_SECONDS``.
+        UnsupportedAudioFormatError: Not OGG Opus, MP3, M4A or WAV, or no
+            readable length.
+        AudioTooLongError: Over ``MAX_AUDIO_BYTES`` / ``MAX_AUDIO_SECONDS``.
 
     Features:
         US-SPR-11, F-08, ADR-30
     """
     if len(data) > MAX_AUDIO_BYTES:
         msg = f"recording size {len(data)} B is over {MAX_AUDIO_BYTES} B"
-        raise UnsupportedAudioError(msg)
+        raise AudioTooLongError(msg)
     audio_format, seconds = _probe(data)
     if audio_format is None or seconds is None:
         formats = ", ".join(sorted(SUPPORTED_FORMATS))
         msg = f"recording is not one of {formats} with a readable length"
-        raise UnsupportedAudioError(msg)
+        raise UnsupportedAudioFormatError(msg)
     if seconds > MAX_AUDIO_SECONDS:
         msg = f"recording length {seconds:.0f} s is over {MAX_AUDIO_SECONDS} s"
-        raise UnsupportedAudioError(msg)
+        raise AudioTooLongError(msg)
     return AudioInfo(format=audio_format, duration_seconds=seconds)
 
 

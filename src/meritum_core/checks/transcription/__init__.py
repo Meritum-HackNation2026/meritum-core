@@ -13,9 +13,11 @@ from meritum_core.checks.transcription.constants import (
     SUPPORTED_FORMATS,
 )
 from meritum_core.checks.transcription.errors import (
+    AudioTooLongError,
     TranscriptionError,
     TranscriptionUnavailableError,
     UnsupportedAudioError,
+    UnsupportedAudioFormatError,
 )
 from meritum_core.checks.transcription.factory import build_transcriber
 from meritum_core.checks.transcription.models import AudioFormat, AudioInfo, Transcript
@@ -31,6 +33,7 @@ __all__ = [
     "SUPPORTED_FORMATS",
     "AudioFormat",
     "AudioInfo",
+    "AudioTooLongError",
     "Transcript",
     "TranscriptionError",
     "TranscriptionPort",
@@ -38,6 +41,7 @@ __all__ = [
     "TranscriptionSettings",
     "TranscriptionUnavailableError",
     "UnsupportedAudioError",
+    "UnsupportedAudioFormatError",
     "build_transcriber",
     "inspect_audio",
 ]

@@ -32,6 +32,24 @@ class UnsupportedAudioError(TranscriptionError):
     check_status: ClassVar[CheckStatus] = "out_of_scope"
 
 
+class UnsupportedAudioFormatError(UnsupportedAudioError):
+    """Not OGG Opus, MP3, M4A or WAV, or no readable length.
+
+    Features:
+        US-SPR-11, F-08, ADR-30
+    """
+
+
+class AudioTooLongError(UnsupportedAudioError):
+    """Over ``MAX_AUDIO_SECONDS``, or over ``MAX_AUDIO_BYTES``.
+
+    The size cap counts as length: for the user both mean "recording too long".
+
+    Features:
+        US-SPR-11, F-08, ADR-30
+    """
+
+
 class TranscriptionUnavailableError(TranscriptionError):
     """The provider failed after all retries or refused the credentials.
 
