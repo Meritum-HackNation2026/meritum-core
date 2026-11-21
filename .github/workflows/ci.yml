@@ -1,0 +1,41 @@
+name: CI
+
+# lint and tests run in parallel on the GCP runners (labels self-hosted, meritum).
+# A newer push to the same branch cancels them, except on main and develop.
+# No deploy: meritum-core is a library that meritum-backend and meritum-worker
+# pin in their uv.lock.
+on:
+  push:
+    branches: ["**"] # one run per commit; a PR shows the run of its head commit
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' }}
+
+jobs:
+  lint:
+    runs-on: [self-hosted, meritum]
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false # ~/.cache/uv stays on the self-hosted runner
+      - run: uv sync --locked
+      - run: uv run ruff check --output-format=github .
+      - run: uv run ruff format --check .
+      - run: uv run ty check
+
+  tests:
+    runs-on: [self-hosted, meritum]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          enable-cache: false
+      - run: uv sync --locked
+      - run: uv run pytest
