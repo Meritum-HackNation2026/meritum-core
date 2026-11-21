@@ -84,11 +84,35 @@ Agenty badawcze w workerze i narzędzie MCP `search_sources` w backendzie wołaj
 | `MERITUM_CORPUS_DATABASE_URL` | brak | adres libpq bazy ze schematem `corpus`; wymagany dla `postgres` |
 | `MERITUM_EMBEDDINGS_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
 | `MERITUM_EMBEDDINGS_MODEL` | `gemini-embedding-001` | model embeddingów w Vertex AI (ADR-04); adaptery biorą go tylko z ustawień |
-| `MERITUM_EMBEDDINGS_REGION` | brak | lokalizacja Vertex AI w UE (`EU_REGIONS`, np. `europe-west4`); dostępność modelu w `europe-central2` do sprawdzenia; wymagany dla `vertex` |
+| `MERITUM_EMBEDDINGS_REGION` | `europe-central2` | lokalizacja Vertex AI w UE (`EU_REGIONS`); region spoza UE (np. `us-central1`, `global`) kończy się błędem ustawień |
 | `MERITUM_EMBEDDINGS_PROJECT` | projekt z ADC | projekt Google Cloud |
 | `MERITUM_EMBEDDINGS_DIMENSIONS` | `768` | rozmiar wektora; tabele korpusu mają `vector(768)`, więc zmiana wymaga migracji i ponownego zwektoryzowania |
 
 Dostawca embeddingów to Vertex AI (Google Cloud) w regionie UE, uwierzytelniony przez Application Default Credentials. Zapytania idą z typem `RETRIEVAL_QUERY`, fragmenty z `RETRIEVAL_DOCUMENT`. Korpus i zapytania muszą używać tego samego modelu i rozmiaru wektora.
+
+### Model i region embeddingów (core#64)
+
+Embeddingi liczymy tylko w UE (ADR-14): `gemini-embedding-001` w `europe-central2` (Warszawa), 768 wymiarów. Porównanie z 21.11.2026:
+
+| | `gemini-embedding-001` | `text-multilingual-embedding-002` |
+| --- | --- | --- |
+| Jakość (MTEB Multilingual) | 1. miejsce w publikacji modelu (arXiv 2503.07891) | starsza generacja, niżej |
+| Nasz test po polsku (12 pytań, 16 fragmentów, `europe-central2`) | recall@1 12/12, średni odstęp od najlepszego błędnego fragmentu 0,146 | recall@1 12/12, odstęp 0,115 |
+| Działa w `europe-central2` | tak (sprawdzone wywołaniem) | tak (sprawdzone wywołaniem) |
+| Wymiar | do 3072, u nas 768 (MRL) | 768 |
+| Cena online (SKU Vertex AI) | 0,15 USD za 1 mln tokenów | 0,025 USD za 1 mln znaków |
+| Koszt 10 mln znaków polskiego tekstu (~3 znaki na token) | ok. 0,50 USD | ok. 0,25 USD |
+
+Wybraliśmy `gemini-embedding-001`: lepiej rozdziela polskie fragmenty, a różnica w koszcie przeliczenia całego korpusu to centy. Wymiar się nie zmienia, więc migracja `vector(768)` zostaje bez zmian. `gemini-embedding-2` nie jest dostępny w `europe-central2`.
+
+Ponowne przeliczenie korpusu to lokalny skrypt, nigdy CI. Nadpisuje wektor każdego fragmentu w `corpus.passages` i wypisuje jedną linię JSON z modelem, regionem, wymiarem, liczbą fragmentów i czasem przebiegu:
+
+```bash
+MERITUM_EMBEDDINGS_PROVIDER=vertex MERITUM_CORPUS_DATABASE_URL=postgresql://... \
+  uv run python scripts/reembed_corpus.py
+```
+
+Skrypt odmawia pracy ze stubem, bez bazy, z regionem spoza UE, z innym modelem niż `gemini-embedding-001` i z rozmiarem wektora innym niż 768. Zatwierdza wektory po każdej paczce, więc przerwany przebieg trzeba uruchomić ponownie, a linię JSON z wynikiem wkleić do PR albo zgłoszenia. Wektory zmienia też we fragmentach wycofanych, więc stare migawki widzą ten sam tekst, ale szukają już nowym modelem. Test integracyjny skryptu bierze adres z `MERITUM_TEST_DATABASE_URL` i przelicza tylko wstawione przez siebie wiersze.
 
 Migracje leżą w `src/meritum_core/corpus/migrations/` (SQL, w kolejności numerów) i trafiają do pakietu. Są tylko wstecznie zgodne (dodajemy, nie usuwamy i nie zmieniamy nazw), bo schemat `corpus` czytają dev i prd; uruchamia je deploy z `main` (infra/004). Wymagają obrazu `meritum-postgres` z meritum-infra (pgvector, `pg_trgm`, `public.polish`).
 

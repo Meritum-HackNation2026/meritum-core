@@ -13,6 +13,10 @@ DEFAULT_MODEL: Final = "gemini-embedding-001"
 """Vertex AI model when ``MERITUM_EMBEDDINGS_MODEL`` is unset (ADR-04); adapters
 never name a model, they take it from settings."""
 
+DEFAULT_REGION: Final = "europe-central2"
+"""Vertex AI location when ``MERITUM_EMBEDDINGS_REGION`` is unset: Warsaw, in the
+EU (ADR-14) and serving ``DEFAULT_MODEL``; the choice is explained in the README."""
+
 DEFAULT_DIMENSIONS: Final = 768
 """Vector size; must match ``vector(768)`` in the corpus migrations (pgvector HNSW
 indexes at most 2000 dimensions, gemini-embedding-001 gives 3072 unless reduced)."""

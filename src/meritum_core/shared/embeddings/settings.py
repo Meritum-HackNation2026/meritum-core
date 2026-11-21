@@ -13,6 +13,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from meritum_core.shared.embeddings.constants import (
     DEFAULT_DIMENSIONS,
     DEFAULT_MODEL,
+    DEFAULT_REGION,
     DEFAULT_RETRIES,
     ENV_PREFIX,
     EU_REGIONS,
@@ -36,7 +37,8 @@ class EmbeddingsSettings(BaseSettings):
     Attributes:
         provider: ``stub`` (default, no keys, no network) or ``vertex``.
         model: Vertex AI embedding model; ``DEFAULT_MODEL`` when unset.
-        region: Vertex AI location in the EU, one of ``EU_REGIONS``.
+        region: Vertex AI location in the EU, one of ``EU_REGIONS``;
+            ``DEFAULT_REGION`` when unset.
         project: Google Cloud project; ADC's default project when None.
         dimensions: Vector size; the corpus tables are built for the default.
         retries: HTTP attempts per call on transient errors, the first included.
@@ -49,7 +51,7 @@ class EmbeddingsSettings(BaseSettings):
 
     provider: EmbeddingsProvider = EmbeddingsProvider.STUB
     model: str = Field(default=DEFAULT_MODEL, min_length=1)
-    region: str | None = Field(default=None, min_length=1)
+    region: str = Field(default=DEFAULT_REGION, min_length=1)
     project: str | None = None
     dimensions: int = Field(default=DEFAULT_DIMENSIONS, ge=1)
     retries: int = Field(default=DEFAULT_RETRIES, ge=1)
@@ -58,9 +60,6 @@ class EmbeddingsSettings(BaseSettings):
     def _vertex_is_in_the_eu(self) -> Self:
         if self.provider is not EmbeddingsProvider.VERTEX:
             return self
-        if self.region is None:
-            msg = f"{ENV_PREFIX}REGION is required for vertex"
-            raise ValueError(msg)
         if self.region not in EU_REGIONS:
             msg = f"{ENV_PREFIX}REGION must be an EU region, got {self.region!r}"
             raise ValueError(msg)

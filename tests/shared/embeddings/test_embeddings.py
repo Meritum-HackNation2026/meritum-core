@@ -47,11 +47,15 @@ def test_stub_text_without_words_is_a_zero_vector() -> None:
     assert set(asyncio.run(stub(4).embed_query("?!"))) == {0.0}
 
 
-def test_vertex_needs_an_eu_region() -> None:
-    with pytest.raises(ValidationError, match="REGION"):
-        EmbeddingsSettings(provider="vertex")
+def test_vertex_defaults_to_warsaw(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MERITUM_EMBEDDINGS_REGION", raising=False)
+    assert EmbeddingsSettings(provider="vertex").region == "europe-central2"
+
+
+@pytest.mark.parametrize("region", ["us-central1", "global", "europe-west2"])
+def test_vertex_refuses_a_region_outside_the_eu(region: str) -> None:
     with pytest.raises(ValidationError, match="EU region"):
-        EmbeddingsSettings(provider="vertex", model="m", region="us-central1")
+        EmbeddingsSettings(provider="vertex", model="m", region=region)
 
 
 def test_settings_come_from_the_environment(monkeypatch: pytest.MonkeyPatch) -> None:

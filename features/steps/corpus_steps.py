@@ -5,10 +5,14 @@ the same scenarios run against the real database in tests/corpus (integration).
 """
 
 import asyncio
+import os
 from datetime import UTC, date, datetime, timedelta
 
+import httpx2
 from behave import given, then, when
 from behave.runner import Context
+from google.oauth2.credentials import Credentials
+from pydantic import ValidationError
 
 from meritum_core.corpus import CorpusSettings, Passage, build_corpus_search
 from meritum_core.shared.embeddings import EmbeddingsSettings, build_embeddings
@@ -91,3 +95,62 @@ def when_system_searches_for_claim(context: Context) -> None:
 def then_fresh_ranks_higher(context: Context) -> None:
     """Freshness weighting breaks the tie."""
     assert context.found.index("fresh") < context.found.index("aged")
+
+
+@given("korpus po ponownym przeliczeniu")
+def given_corpus_reembedded(context: Context) -> None:
+    """Re-embed passages with the default Vertex settings, Vertex answering offline."""
+    for name in ("MERITUM_EMBEDDINGS_MODEL", "MERITUM_EMBEDDINGS_REGION"):
+        context.add_cleanup(_restore_env, name, os.environ.pop(name, None))
+    context.settings = EmbeddingsSettings(provider="vertex", project="meritum-test")
+    context.sent = []
+    texts = DISTRACTORS[:3]
+
+    def reply(request: httpx2.Request) -> httpx2.Response:
+        context.sent.append(request)
+        return httpx2.Response(200, json={"predictions": [_PREDICTION] * len(texts)})
+
+    client = httpx2.AsyncClient(transport=httpx2.MockTransport(reply), timeout=60)
+    token = Credentials(token="recorded")  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
+    port = build_embeddings(context.settings, credentials=token, http_client=client)
+    asyncio.run(port.embed_documents(texts))
+
+
+@when("sprawdzam metadane przebiegów embeddingów i logi Vertex AI")
+def when_checking_run_metadata(context: Context) -> None:
+    """Collect the run's model and region and every Vertex request path."""
+    context.run = (context.settings.model, context.settings.region)
+    context.paths = [request.url.path for request in context.sent]
+
+
+@then(
+    "każdy wektor pochodzi z regionu UE wybranego modelu, "
+    "a wektory z us-central1 są usunięte"
+)
+def then_vectors_come_from_the_eu(context: Context) -> None:
+    """Warsaw and gemini-embedding-001 by default; us-central1 cannot be configured.
+
+    The script overwrites every vector, so no us-central1 vector survives a run.
+    """
+    assert context.run == ("gemini-embedding-001", "europe-central2")
+    assert context.paths
+    for path in context.paths:
+        assert "/locations/europe-central2/" in path
+        assert path.endswith("/models/gemini-embedding-001:predict")
+    assert not _accepts_region("us-central1")
+
+
+def _accepts_region(region: str) -> bool:
+    try:
+        EmbeddingsSettings(provider="vertex", region=region)
+    except ValidationError:
+        return False
+    return True
+
+
+def _restore_env(name: str, value: str | None) -> None:
+    if value is not None:
+        os.environ[name] = value
+
+
+_PREDICTION = {"embeddings": {"values": [0.6, 0.8]}}

@@ -11,3 +11,8 @@ Feature: Wyszukiwanie w korpusie
     Given dwa fragmenty o podobnym dopasowaniu, opublikowane 3 dni i 400 dni przed datą twierdzenia
     When system szuka dla tego twierdzenia
     Then świeższy fragment jest wyżej
+
+  Scenario: korpus ma tylko embeddingi policzone w UE
+    Given korpus po ponownym przeliczeniu
+    When sprawdzam metadane przebiegów embeddingów i logi Vertex AI
+    Then każdy wektor pochodzi z regionu UE wybranego modelu, a wektory z us-central1 są usunięte
