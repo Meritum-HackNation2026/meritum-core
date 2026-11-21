@@ -58,7 +58,8 @@ def _superseded_next_to_newer(
             for n in current
         ):
             raise ValueError(
-                "superseded evidence is shown only next to newer evidence that replaced it"
+                "superseded evidence is shown only next to newer evidence that "
+                "replaced it"
             )
 
 
@@ -66,11 +67,13 @@ def _conflict_rules(claim: ClaimResult, *, conflicting: bool) -> None:
     insufficient = claim.verdict == "insufficient_evidence"
     if conflicting and (not insufficient or claim.strength is not None):
         raise ValueError(
-            "conflicting sources give 'insufficient_evidence' with both sides cited and no strength"
+            "conflicting sources give 'insufficient_evidence' with both sides cited "
+            "and no strength"
         )
     if insufficient and claim.citations and not conflicting:
         raise ValueError(
-            "'insufficient_evidence' carries citations only when credible sources conflict"
+            "'insufficient_evidence' carries citations only when credible sources "
+            "conflict"
         )
 
 
@@ -108,7 +111,8 @@ def _premises_rules(
         raise ValueError("agreement must follow from the citation stances")
     if (p.independent_sources, p.primary_sources) != (len(publishers), len(primary)):
         raise ValueError(
-            "independent and primary sources are counted per publisher among the citations that agree with the verdict"
+            "independent and primary sources are counted per publisher among the "
+            "citations that agree with the verdict"
         )
     if p.validity != "expires" and p.validity not in {c.validity for c in agreeing}:
         raise ValueError("the premises' validity must come from an agreeing citation")
@@ -123,5 +127,6 @@ def _age_rules(claim: ClaimResult) -> None:
         )
     if claim.archival and claim.strength.premises.validity != "expires":
         raise ValueError(
-            "evidence that does not expire (law in force, page updated in place, past event) is never archival"
+            "evidence that does not expire (law in force, page updated in place, past"
+            " event) is never archival"
         )

@@ -90,11 +90,12 @@ def is_stale(p: Premises) -> bool:
 
 
 def strength_for(p: Premises) -> Strength:
-    """The one rule that turns premises into strength. Shown to the user next to the premises.
+    """The one rule that turns premises into strength. Shown next to the premises.
 
-    Counts cover only publishers whose citations agree with the verdict. Strong: 2+ agreeing
-    independent publishers, 1+ of them primary, fresh evidence. Moderate: 2+ agreeing publishers
-    or 1 primary, fresh evidence. Weak: one non-primary publisher, or archival evidence.
+    Counts cover only publishers whose citations agree with the verdict. Strong: 2+
+    agreeing independent publishers, 1+ of them primary, fresh evidence. Moderate: 2+
+    agreeing publishers or 1 primary, fresh evidence. Weak: one non-primary publisher,
+    or archival evidence.
 
     Args:
         p: the premises of a verdict.

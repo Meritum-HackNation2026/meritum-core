@@ -3,6 +3,7 @@
 Run: ``uv run vulture`` (paths come from ``[tool.vulture]`` in pyproject.toml).
 """
 
+from meritum_core.checks import constants
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
     CheckInput,
@@ -44,3 +45,14 @@ DeleteSubjectOutput.deleted
 ReadinessReport.missing_env
 ReadinessReport.unavailable_providers
 ReadinessReport.checked_at
+
+# Contract constants: read by the models in checks/contracts/, which vulture skips.
+constants.MIN_TEXT_CHARS
+constants.STRONG_MIN_SOURCES
+constants.SETTLING
+constants.AGREEING_STANCE
+constants.PER_EVIDENCE_VALIDITY
+constants.DEFAULT_MAX_AGE_HOURS
+constants.SESSIONLESS_CHANNELS
+constants.CHECK_KINDS
+constants.CASE_KINDS

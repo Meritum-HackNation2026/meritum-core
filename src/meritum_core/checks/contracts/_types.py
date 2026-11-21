@@ -22,22 +22,25 @@ CheckStatus = Literal[
 SourceKind = Literal[
     "akt_prawny", "dane_publiczne", "instytucja", "fact_check", "media"
 ]
-SourceTier = Literal[
-    "primary", "secondary"
-]  # primary: official documents and public data; secondary: fact-checkers (media only if the catalogue admits them)
-SourceVia = Literal[
-    "corpus", "rss", "web_search", "mcp"
-]  # how the document reached the corpus; mcp: the local EUvsDisinfo copy synced through its MCP server
+# primary: official documents and public data; secondary: fact-checkers (media only if
+# the catalogue admits them).
+SourceTier = Literal["primary", "secondary"]
+# How the document reached the corpus; mcp: the local EUvsDisinfo copy synced through
+# its MCP server.
+SourceVia = Literal["corpus", "rss", "web_search", "mcp"]
 Stance = Literal["supports", "refutes", "context"]
 Agreement = Literal["consistent", "conflicting"]
-# Overrides of the age rule. expires: age counts; in_force: e.g. a legal act in force; updated_in_place: standing official
-# guidance edited in place (passenger rights, contact pages); past_event: evidence explicitly about a past event;
-# superseded: newer evidence replaced it by the claim date, so it neither conflicts nor counts towards strength.
+# Overrides of the age rule. expires: age counts; in_force: e.g. a legal act in force;
+# updated_in_place: standing official guidance edited in place (passenger rights,
+# contact pages); past_event: evidence explicitly about a past event; superseded: newer
+# evidence replaced it by the claim date, so it neither conflicts nor counts towards
+# strength.
 Validity = Literal[
     "expires", "in_force", "updated_in_place", "past_event", "superseded"
 ]
 Strength = Literal["strong", "moderate", "weak"]
-# Where the claim date comes from: a date in the checked text, the publication date of the input (e.g. the post), or today.
+# Where the claim date comes from: a date in the checked text, the publication date of
+# the input (e.g. the post), or today.
 ClaimDateSource = Literal["text", "input_published_at", "today"]
 PublisherId = Annotated[str, Field(pattern=r"^[a-z0-9][a-z0-9-]{1,79}$")]
 
@@ -54,7 +57,8 @@ TechniqueCode = Literal[
 
 CacheableStatus = Literal["done", "needs_clarification", "out_of_scope"]
 
-# repeated_unanswered: the second similar unanswered claim from anyone, in any channel. user_dispute: „Zgłoś błąd”.
+# repeated_unanswered: the second similar unanswered claim from anyone, in any channel.
+# user_dispute: „Zgłoś błąd”.
 CaseReason = Literal[
     "insufficient_evidence", "high_risk", "repeated_unanswered", "user_dispute"
 ]

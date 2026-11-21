@@ -162,7 +162,8 @@ class CheckRecord(_Model):
         sessionless = self.channel in SESSIONLESS_CHANNELS
         if sessionless != (self.channel_user_hash is not None):
             raise ValueError(
-                "only Discord, SMS and MCP checks carry a hashed channel user id, and they always do"
+                "only Discord, SMS and MCP checks carry a hashed channel user id, and"
+                " they always do"
             )
         hashed = self.channel_user_hash
         if hashed is not None and self.session_id != hashed:

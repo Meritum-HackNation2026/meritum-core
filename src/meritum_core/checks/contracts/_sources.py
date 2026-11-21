@@ -1,4 +1,4 @@
-"""Sources from the audited corpus, the citations cut from them and the source catalogue.
+"""Corpus sources, the citations cut from them and the open source catalogue.
 
 Features:
     US-ZRD-01, US-ZRD-12, US-KOR-01, ADR-02
@@ -150,12 +150,14 @@ class CatalogEntry(_Model):
             raise ValueError("an excluded source needs a reason")
         if self.validity in PER_EVIDENCE_VALIDITY:
             raise ValueError(
-                f"{self.validity!r} describes one piece of evidence, not a whole catalogue entry"
+                f"{self.validity!r} describes one piece of evidence, not a whole "
+                "catalogue entry"
             )
         reserved = self.tdm_reservation == "reserved"
         if self.tier == "secondary" and reserved and not self.excluded:
             raise ValueError(
-                "a secondary source whose owner reserved text and data mining is excluded"
+                "a secondary source whose owner reserved text and data mining is "
+                "excluded"
             )
         if self.validity != "expires" and self.max_age_hours is not None:
             raise ValueError("a source that does not expire has no maximum age")

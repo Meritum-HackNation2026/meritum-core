@@ -58,13 +58,24 @@ ignore = [
 "features/**/*.py" = ["implicit-namespace-package", "assert"]  # behave loads steps by path; steps assert like tests
 # Bare names tell vulture they are used; the file is never imported.
 "vulture_whitelist.py" = ["implicit-namespace-package", "useless-expression"]
-# Check contracts: class docstrings and Field descriptions are published in
-# contracts/meritum.schema.json, so rewrapping them would change the generated files;
-# Pydantic validators raise ValueError with the rule itself as the message.
-"src/meritum_core/checks/contracts/_*.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
-# Pydantic copies list defaults per instance; ruff cannot see that _Model (in _base.py)
-# is a BaseModel, and default_factory would drop "default": [] from the published schema.
-"src/meritum_core/checks/contracts/{_claims,_records,_results}.py" = ["mutable-class-default"]
+# Check contracts. line-too-long: class docstrings and Field descriptions are published
+# in contracts/meritum.schema.json, so rewrapping them would change the generated files.
+"src/meritum_core/checks/contracts/_claims.py" = ["line-too-long", "mutable-class-default"]
+"src/meritum_core/checks/contracts/_context.py" = ["line-too-long"]
+"src/meritum_core/checks/contracts/_progress.py" = ["line-too-long"]
+# EM101/EM102/TRY003 too: Pydantic validators raise ValueError with the rule itself as
+# the message, which ValidationError shows.
+"src/meritum_core/checks/contracts/_moderation.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
+"src/meritum_core/checks/contracts/_notifications.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_request.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
+"src/meritum_core/checks/contracts/_sources.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_strength.py" = ["line-too-long", "raise-vanilla-args", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_verdict_rules.py" = ["raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+# mutable-class-default: Pydantic copies list defaults per instance; ruff cannot see
+# that _Model (in _base.py) is a BaseModel, and default_factory would drop
+# "default": [] from the published schema.
+"src/meritum_core/checks/contracts/_records.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "mutable-class-default"]
+"src/meritum_core/checks/contracts/_results.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception", "mutable-class-default"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"  # also turns off D203/D213 and the other non-Google rules
@@ -132,8 +143,8 @@ max-lines = 250
 [tool.vulture]
 paths = ["src", "scripts", "tests", "features", "vulture_whitelist.py"]
 # Contract models: their fields are read through JSON and in meritum-backend/worker,
-# never as attributes here; checks/constants.py is read only by those models.
-exclude = ["src/meritum_core/checks/contracts/", "src/meritum_core/checks/constants.py"]
+# never as attributes here.
+exclude = ["src/meritum_core/checks/contracts/"]
 min_confidence = 60
 ignore_decorators = ["@given", "@when", "@then", "@model_validator"]  # behave calls step functions, Pydantic calls validators
 

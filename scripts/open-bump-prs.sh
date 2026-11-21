@@ -65,7 +65,8 @@ if cmp -s contracts/examples.json "$c/examples.json" &&
   echo "meritum-design-system: contracts unchanged"
   exit 0
 fi
-# Same output as contracts/sync.sh in meritum-design-system; keep the two in step.
+# Mirrors contracts/sync.sh in meritum-design-system; keep the two in step (sync.sh still
+# fetches the former checks/contracts.py and must drop it too).
 cp contracts/examples.json contracts/meritum.schema.json contracts/meritum.ts "$c/"
 printf 'meritum-core %s\n' "$sha" >"$c/SOURCE"
 (cd "$c" && sha256sum examples.json meritum.schema.json meritum.ts >SHA256SUMS)
