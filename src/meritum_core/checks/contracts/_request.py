@@ -62,6 +62,10 @@ class CheckRequest(_Model):
         has_text = self.text is not None and len(self.text.strip()) >= MIN_TEXT_CHARS
         if self.url is None and self.audio_id is None and not has_text:
             raise ValueError("send text (3+ characters), a URL or an audio file")
+        return self
+
+    @model_validator(mode="after")
+    def _channel_user_id_only_when_sessionless(self) -> CheckRequest:
         sessionless = self.channel in SESSIONLESS_CHANNELS
         if self.channel_user_id is not None and not sessionless:
             raise ValueError(

@@ -108,10 +108,14 @@ class CheckResult(_Model):
     ai_disclosure: Literal[True] = True
 
     @model_validator(mode="after")
-    def _status_rules(self) -> CheckResult:
+    def _failure_code_only_on_failure(self) -> CheckResult:
         failed = self.status == "technical_failure"
         if failed != (self.failure_code is not None):
             raise ValueError("a technical failure, and only it, has a failure code")
+        return self
+
+    @model_validator(mode="after")
+    def _status_rules(self) -> CheckResult:
         if self.status == "done":
             if not self.claims:
                 raise ValueError("a finished check has at least one claim")

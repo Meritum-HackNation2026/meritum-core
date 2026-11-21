@@ -11,10 +11,10 @@ from typing import Annotated, Literal
 
 from pydantic import Field, HttpUrl, model_validator
 
-from meritum_core.checks.constants import CONTENT_MATCH_BASIS
+from meritum_core.checks.constants import REQUIRED_MATCH_BASIS
 
 from ._base import _Model
-from ._types import MatchBasis
+from ._types import MatchBasis, MatchedOn
 
 
 class IncidentMatch(_Model):
@@ -48,7 +48,7 @@ class IncidentMatch(_Model):
         ),
     ] = "organiser"
     incident_id: Annotated[str, Field(min_length=1, max_length=80)]
-    matched_on: Literal["content", "domain"] = "content"
+    matched_on: MatchedOn = "content"
     match_basis: Annotated[
         list[MatchBasis],
         Field(min_length=1, description="What agreed; shown with the match."),
@@ -59,10 +59,13 @@ class IncidentMatch(_Model):
     similarity: Annotated[float, Field(ge=0, le=1)]
 
     @model_validator(mode="after")
-    def _content_needs_title_topic_date(self) -> IncidentMatch:
-        is_content = self.matched_on == "content"
-        if is_content and not CONTENT_MATCH_BASIS.issubset(self.match_basis):
-            raise ValueError("a content match needs a matching title, topic and date")
+    def _basis_fits_the_match(self) -> IncidentMatch:
+        required = REQUIRED_MATCH_BASIS[self.matched_on]
+        if not required.issubset(self.match_basis):
+            raise ValueError(
+                "a content match needs a matching title, topic and date; a domain"
+                " match needs the domain and the topic"
+            )
         return self
 
 

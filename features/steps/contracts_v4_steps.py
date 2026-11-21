@@ -20,20 +20,8 @@ EXAMPLES: dict[str, Any] = json.loads(
 )
 DONE: dict[str, Any] = EXAMPLES["CheckResult.done"]
 CLAIM: dict[str, Any] = DONE["claims"][0]
-INCIDENT: dict[str, Any] = {
-    "database": "fact_check",
-    "incident_id": "demagog-1",
-    "matched_on": "content",
-    "match_basis": ["domain"],
-    "title": "Trzecia kadencja prezydenta",
-    "date": "2026-11-01T00:00:00+01:00",
-    "url": "https://demagog.org.pl/wypowiedzi/test/",
-    "similarity": 0.9,
-}
-
-
-def _done_with_claim(**changes: object) -> dict[str, Any]:
-    return DONE | {"claims": [CLAIM | changes]}
+REVIEWED: dict[str, Any] = EXAMPLES["CheckResult.claim_review"]
+REVIEW_CLAIM: dict[str, Any] = REVIEWED["claims"][0]
 
 
 @given("żądanie z channel = web i identyfikatorem użytkownika kanału")
@@ -41,6 +29,7 @@ def given_web_request_with_user_id(context: Context) -> None:
     """A browser-channel request that still carries a channel user id."""
     context.model = CheckRequest
     context.payload = EXAMPLES["CheckRequest"] | {"channel_user_id": "123456789"}
+    context.reason = "only Discord, SMS and MCP requests carry a channel user id"
 
 
 @given(
@@ -60,7 +49,7 @@ def given_done_without_fact_checks(context: Context) -> None:
 def given_claim_review_premise(context: Context) -> None:
     """A false verdict whose only premise is the Demagog ClaimReview."""
     context.model = CheckResult
-    context.payload = EXAMPLES["CheckResult.claim_review"]
+    context.payload = REVIEWED
 
 
 @given(
@@ -70,7 +59,9 @@ def given_claim_review_premise(context: Context) -> None:
 def given_domain_only_content_match(context: Context) -> None:
     """A content match whose only basis is the domain."""
     context.model = CheckResult
-    context.payload = _done_with_claim(incident=INCIDENT)
+    incident = REVIEW_CLAIM["incident"] | {"match_basis": ["domain"]}
+    context.payload = REVIEWED | {"claims": [REVIEW_CLAIM | {"incident": incident}]}
+    context.reason = "a content match needs a matching title, topic and date"
 
 
 @given('wynik "done" z twierdzeniem bez claim_date')
@@ -79,6 +70,7 @@ def given_claim_without_date(context: Context) -> None:
     context.model = CheckResult
     claim = {k: v for k, v in CLAIM.items() if k != "claim_date"}
     context.payload = DONE | {"claims": [claim]}
+    context.reason = "claims.0.claim_date\n  Field required"
 
 
 @when("kontrakt waliduje żądanie")
@@ -100,8 +92,9 @@ def when_contract_validates(context: Context) -> None:
     "walidacja je odrzuca, bo dopasowanie treści wymaga zgodnego tytułu, tematu i daty"
 )
 def then_validation_rejects(context: Context) -> None:
-    """The contract refused the payload."""
+    """The contract refused the payload for the rule the scenario names."""
     assert context.error is not None
+    assert context.reason in str(context.error), context.error
 
 
 @then("walidacja go przyjmuje, choć przesłanka nie ma fragmentu strony")

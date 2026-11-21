@@ -96,5 +96,7 @@ VerdictChange = Literal[
 ]
 # What an incident match agreed on; a content match needs title, topic and date.
 MatchBasis = Literal["title", "topic", "date", "domain"]
+# Whether an incident matched the claim's content or the checked URL's domain.
+MatchedOn = Literal["content", "domain"]
 # Networks whose signatories' ClaimReview ratings may be premises (ADR-34).
 FactCheckNetwork = Literal["ifcn", "efcsn"]

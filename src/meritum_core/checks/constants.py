@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from meritum_core.checks.contracts import (
         Channel,
         MatchBasis,
+        MatchedOn,
         NotificationKind,
         Stance,
         Validity,
@@ -124,7 +125,8 @@ CASE_KINDS: Final[frozenset[NotificationKind]] = frozenset(
 )
 """Notification kinds that name the moderator case they are about."""
 
-CONTENT_MATCH_BASIS: Final[frozenset[MatchBasis]] = frozenset(
-    {"title", "topic", "date"}
-)
-"""What an incident content match must agree on; the domain alone is never enough."""
+REQUIRED_MATCH_BASIS: Final[dict[MatchedOn, frozenset[MatchBasis]]] = {
+    "content": frozenset({"title", "topic", "date"}),
+    "domain": frozenset({"domain", "topic"}),
+}
+"""What an incident match must agree on; a domain alone never makes a content match."""

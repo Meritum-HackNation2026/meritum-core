@@ -76,6 +76,9 @@ MUST_REJECT: dict[str, Callable[[], object]] = {
     "content match without the date": reviewed(
         incident=INCIDENT | {"match_basis": ["title", "topic"]}
     ),
+    "domain match without the domain in its basis": reviewed(
+        incident=INCIDENT | {"matched_on": "domain", "match_basis": ["title", "topic"]}
+    ),
     "incident match without a basis": reviewed(incident=INCIDENT | {"match_basis": []}),
     "rating of a publisher outside IFCN and EFCSN": reviewed(
         claim_review_premises=[REVIEW | {"signatory_of": []}]
@@ -178,5 +181,6 @@ def test_contract_version_is_4() -> None:
     assert c.CONTRACT_VERSION == 4
 
 
-def test_content_match_needs_title_topic_and_date() -> None:
-    assert {"title", "topic", "date"} == c.CONTENT_MATCH_BASIS
+def test_domain_alone_never_makes_a_content_match() -> None:
+    assert c.REQUIRED_MATCH_BASIS["content"] == {"title", "topic", "date"}
+    assert c.REQUIRED_MATCH_BASIS["domain"] == {"domain", "topic"}
