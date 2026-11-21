@@ -21,12 +21,12 @@ from meritum_core.corpus.fetching.constants import (
     PAYWALL_STATUSES,
 )
 from meritum_core.corpus.fetching.errors import (
-    FetchFailureReason,
     JavaScriptRequiredError,
     LoginWallError,
     PageFetchError,
+    PaywallError,
 )
-from meritum_core.corpus.fetching.models import FetchedPage
+from meritum_core.corpus.fetching.models import FetchedPage, FetchFailureReason
 
 with warnings.catch_warnings():
     # trafilatura's own downloader imports urllib3's optional SOCKS support; we
@@ -45,6 +45,7 @@ class RawResponse:
         content_type: the media type without parameters, lower case.
         text: the decoded body; empty when it was not read.
         location: the redirect target; empty when this is not a redirect.
+        redirected: whether a redirect led here.
 
     Features:
         US-SPR-07, F-06
@@ -55,6 +56,7 @@ class RawResponse:
     content_type: str = ""
     text: str = ""
     location: str = ""
+    redirected: bool = False
 
     @property
     def is_success(self) -> bool:
@@ -76,11 +78,12 @@ class RawResponse:
 
 
 def _check_walls(response: RawResponse) -> None:
-    landed_on_login = LOGIN_PATH.search(urlsplit(response.url).path) is not None
+    on_login_path = LOGIN_PATH.search(urlsplit(response.url).path) is not None
+    landed_on_login = response.redirected and on_login_path
     if landed_on_login or response.status in LOGIN_WALL_STATUSES:
         raise LoginWallError(FetchFailureReason.LOGIN_WALL)
     if response.status in PAYWALL_STATUSES:
-        raise LoginWallError(FetchFailureReason.PAYWALL)
+        raise PaywallError
     if not response.is_success:
         raise PageFetchError(FetchFailureReason.HTTP_ERROR)
     if response.content_type not in ALLOWED_CONTENT_TYPES:
@@ -90,7 +93,7 @@ def _check_walls(response: RawResponse) -> None:
 def _main_text(html: str) -> str:
     text = (trafilatura.extract(html) or "").strip()
     if PAYWALL_MARKER.search(html):
-        raise LoginWallError(FetchFailureReason.PAYWALL)
+        raise PaywallError
     is_login_form = PASSWORD_INPUT.search(html) is not None
     if is_login_form and len(text) < LOGIN_WALL_MAX_TEXT_CHARS:
         raise LoginWallError(FetchFailureReason.LOGIN_WALL)

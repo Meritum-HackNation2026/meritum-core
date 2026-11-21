@@ -1,4 +1,4 @@
-"""Page fetcher content rules: main text, walls, media types, limits, robots.txt."""
+"""Page fetcher content rules: main text, walls, media types and limits."""
 
 import asyncio
 from collections.abc import AsyncIterator, Callable, Mapping
@@ -14,7 +14,7 @@ from meritum_core.corpus.fetching import (
     JavaScriptRequiredError,
     LoginWallError,
     PageFetchError,
-    RobotsDisallowedError,
+    PaywallError,
     build_page_fetcher,
 )
 from meritum_core.corpus.fetching.constants import MAX_RESPONSE_BYTES
@@ -82,6 +82,22 @@ def test_login_form_without_main_text_is_a_login_wall(web: Web) -> None:
     assert failure(web, {"example.org/post": web.html(form)}).reason == "login_wall"
 
 
+def test_article_under_a_login_like_path_is_read_when_not_redirected(web: Web) -> None:
+    fetcher, _ = web.build({"example.org/auth/post": web.html(web.article)})
+    url = "https://example.org/auth/post"
+    page = asyncio.run(fetcher.fetch(url, purpose=FetchPurpose.USER_LINK))
+    assert page.untrusted_text
+
+
+def test_unknown_charset_falls_back_to_utf8(web: Web) -> None:
+    body = f"<html><body>{web.article}</body></html>".encode()
+    headers = {"content-type": "text/html; charset=bogus"}
+    route = {
+        "example.org/post": lambda _: httpx.Response(200, content=body, headers=headers)
+    }
+    assert fetch(web, route).untrusted_text.startswith("Sejm uchwalił")
+
+
 def test_article_with_a_login_box_in_the_header_is_read(web: Web) -> None:
     body = '<header><input type="password"></header>' + web.article
     assert fetch(web, {"example.org/post": web.html(body)}).untrusted_text
@@ -102,7 +118,7 @@ def test_paywall_is_reported_separately(
     web: Web, route: Callable[[Web], Route]
 ) -> None:
     error = failure(web, {"example.org/post": route(web)})
-    assert isinstance(error, LoginWallError)
+    assert isinstance(error, PaywallError)
     assert error.reason is FetchFailureReason.PAYWALL
 
 
@@ -153,80 +169,6 @@ def test_timeout_is_reported_without_details(web: Web) -> None:
 
     error = failure(web, {"example.org/post": slow})
     assert (error.reason, str(error)) == (FetchFailureReason.TIMEOUT, "timeout")
-
-
-def robots(text: str, status: int = 200) -> Route:
-    return lambda _: httpx.Response(status, text=text)
-
-
-@pytest.mark.parametrize(
-    ("robots_route", "allowed"),
-    [
-        (robots("User-agent: *\nDisallow: /post"), False),
-        (
-            robots("User-agent: MeritumBot\nDisallow: /\n\nUser-agent: *\nAllow: /"),
-            False,
-        ),
-        (robots("User-agent: OtherBot\nDisallow: /\n"), True),
-        (
-            robots("User-agent: *\nContent-Signal: search=yes, ai-input=no\nAllow: /"),
-            False,
-        ),
-        (robots("User-agent: *\nContent-Signal: ai-train=no, ai-input=yes\n"), True),
-        (robots("User-agent: OtherBot\nContent-Signal: ai-input=no\n"), True),
-        (robots("", 404), True),
-        (robots("", 503), False),
-    ],
-    ids=[
-        "disallow",
-        "own-group",
-        "other-bot",
-        "signal-no",
-        "signal-yes",
-        "signal-other-bot",
-        "missing",
-        "server-error",
-    ],
-)
-def test_sources_honour_robots_txt_and_content_signal(
-    web: Web,
-    robots_route: Route,
-    allowed: bool,  # ruff: ignore[boolean-type-hint-positional-argument]  # parametrized
-) -> None:
-    routes = {
-        "example.org/robots.txt": robots_route,
-        "example.org/post": web.html(web.article),
-    }
-    if allowed:
-        assert fetch(web, routes, FetchPurpose.SOURCE).untrusted_text
-    else:
-        assert isinstance(
-            failure(web, routes, FetchPurpose.SOURCE), RobotsDisallowedError
-        )
-
-
-def test_robots_txt_of_every_host_on_the_redirect_path_is_honoured(web: Web) -> None:
-    routes = {
-        "example.org/robots.txt": robots("User-agent: *\nAllow: /"),
-        "example.org/post": web.redirect("https://mirror.example/post"),
-        "mirror.example/robots.txt": robots("User-agent: *\nDisallow: /"),
-        "mirror.example/post": web.html(web.article),
-    }
-    dns = {"example.org": [["93.184.215.14"]], "mirror.example": [["93.184.215.15"]]}
-    fetcher, seen = web.build(routes, dns)
-    with pytest.raises(RobotsDisallowedError):
-        asyncio.run(fetcher.fetch(URL, purpose=FetchPurpose.SOURCE))
-    assert "mirror.example/post" not in [r.headers["host"] + r.url.path for r in seen]
-
-
-def test_a_pasted_link_is_fetched_on_the_citizens_behalf_without_robots(
-    web: Web,
-) -> None:
-    routes = {
-        "example.org/robots.txt": robots("User-agent: *\nDisallow: /"),
-        "example.org/post": web.html(web.article),
-    }
-    assert fetch(web, routes).untrusted_text
 
 
 def test_factory_builds_a_fetcher_that_refuses_internal_addresses() -> None:

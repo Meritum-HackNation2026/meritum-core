@@ -4,9 +4,17 @@ Features:
     US-SPR-07, F-06
 """
 
+import ipaddress
+from collections.abc import Awaitable, Callable
 from typing import Protocol
 
 from meritum_core.corpus.fetching.models import FetchedPage, FetchPurpose
+
+type IpAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
+"""One resolved address."""
+
+type Resolver = Callable[[str], Awaitable[list[IpAddress]]]
+"""DNS lookup: a host name to every A and AAAA address (tests substitute one)."""
 
 
 class PageFetcherPort(Protocol):

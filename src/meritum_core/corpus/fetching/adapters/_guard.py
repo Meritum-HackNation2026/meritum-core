@@ -7,7 +7,6 @@ Features:
 import asyncio
 import ipaddress
 import socket
-from collections.abc import Awaitable, Callable
 
 import httpx
 
@@ -16,14 +15,9 @@ from meritum_core.corpus.fetching.constants import (
     IPV4_BITS,
     IPV4_EMBEDDING_PREFIXES,
 )
-from meritum_core.corpus.fetching.errors import (
-    BlockedAddressError,
-    FetchFailureReason,
-    PageFetchError,
-)
-
-type IpAddress = ipaddress.IPv4Address | ipaddress.IPv6Address
-type Resolver = Callable[[str], Awaitable[list[IpAddress]]]
+from meritum_core.corpus.fetching.errors import BlockedAddressError, PageFetchError
+from meritum_core.corpus.fetching.models import FetchFailureReason
+from meritum_core.corpus.fetching.ports import IpAddress, Resolver
 
 
 async def system_resolver(host: str) -> list[IpAddress]:

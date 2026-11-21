@@ -16,7 +16,8 @@ def _applies(agents: set[str]) -> bool:
 def _signals(robots_txt: str) -> list[str]:
     # Content-Signal values of groups that apply to us (or of no group at all).
     agents: set[str] = set()
-    in_rules, found = False, list[str]()
+    in_rules = False
+    found: list[str] = []
     for raw in robots_txt.splitlines():
         key, _, value = raw.split("#", 1)[0].partition(":")
         key, value = key.strip().lower(), value.strip()

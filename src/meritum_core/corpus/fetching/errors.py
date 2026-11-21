@@ -59,6 +59,17 @@ class LoginWallError(PageFetchError):
     """
 
 
+class PaywallError(LoginWallError):
+    """The page sits behind a paywall; a ``LoginWallError`` with reason ``paywall``.
+
+    Features:
+        US-SPR-07, F-06
+    """
+
+    def __init__(self) -> None:
+        super().__init__(FetchFailureReason.PAYWALL)
+
+
 class JavaScriptRequiredError(PageFetchError):
     """The HTML has no main text without JavaScript; core/025 renders such pages.
 

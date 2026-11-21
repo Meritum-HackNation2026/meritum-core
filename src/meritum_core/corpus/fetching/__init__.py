@@ -8,15 +8,19 @@ Features:
 
 from meritum_core.corpus.fetching.errors import (
     BlockedAddressError,
-    FetchFailureReason,
     JavaScriptRequiredError,
     LoginWallError,
     PageFetchError,
+    PaywallError,
     RobotsDisallowedError,
 )
 from meritum_core.corpus.fetching.factory import build_page_fetcher
-from meritum_core.corpus.fetching.models import FetchedPage, FetchPurpose
-from meritum_core.corpus.fetching.ports import PageFetcherPort
+from meritum_core.corpus.fetching.models import (
+    FetchedPage,
+    FetchFailureReason,
+    FetchPurpose,
+)
+from meritum_core.corpus.fetching.ports import PageFetcherPort, Resolver
 
 __all__ = [
     "BlockedAddressError",
@@ -27,6 +31,8 @@ __all__ = [
     "LoginWallError",
     "PageFetchError",
     "PageFetcherPort",
+    "PaywallError",
+    "Resolver",
     "RobotsDisallowedError",
     "build_page_fetcher",
 ]

@@ -5,6 +5,8 @@ Features:
 """
 
 import asyncio
+import codecs
+import dataclasses
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -12,15 +14,14 @@ import httpx
 
 from meritum_core.corpus.fetching.adapters._extract import RawResponse, to_page
 from meritum_core.corpus.fetching.adapters._guard import (
-    Resolver,
     checked_url,
     pinned_address,
     system_resolver,
 )
 from meritum_core.corpus.fetching.adapters._robots import robots_allow
 from meritum_core.corpus.fetching.constants import (
-    ALLOWED_CONTENT_TYPES,
     CONNECT_TIMEOUT_S,
+    DEFAULT_CHARSET,
     FETCH_TIMEOUT_S,
     MAX_REDIRECTS,
     MAX_RESPONSE_BYTES,
@@ -28,12 +29,13 @@ from meritum_core.corpus.fetching.constants import (
     ROBOTS_PATH,
     USER_AGENT,
 )
-from meritum_core.corpus.fetching.errors import (
+from meritum_core.corpus.fetching.errors import PageFetchError, RobotsDisallowedError
+from meritum_core.corpus.fetching.models import (
+    FetchedPage,
     FetchFailureReason,
-    PageFetchError,
-    RobotsDisallowedError,
+    FetchPurpose,
 )
-from meritum_core.corpus.fetching.models import FetchedPage, FetchPurpose
+from meritum_core.corpus.fetching.ports import Resolver
 
 
 async def _read_limited(response: httpx.Response) -> str:
@@ -45,7 +47,15 @@ async def _read_limited(response: httpx.Response) -> str:
         body += chunk
         if len(body) > MAX_RESPONSE_BYTES:
             raise PageFetchError(FetchFailureReason.TOO_LARGE)
-    return body.decode(response.charset_encoding or "utf-8", errors="replace")
+    return body.decode(_charset(response), errors="replace")
+
+
+def _charset(response: httpx.Response) -> str:
+    declared = response.charset_encoding or DEFAULT_CHARSET
+    try:
+        return codecs.lookup(declared).name
+    except LookupError:  # the server named an encoding Python does not know
+        return DEFAULT_CHARSET
 
 
 def _header(response: httpx.Response, name: str) -> str:
@@ -102,11 +112,12 @@ class HttpxPageFetcher:
             async with asyncio.timeout(FETCH_TIMEOUT_S), self._client() as client:
                 honour_robots = purpose is FetchPurpose.SOURCE
                 response = await self._follow(client, target, robots=honour_robots)
+                # trafilatura is CPU-bound: off the event loop, inside the budget
+                return await asyncio.to_thread(to_page, response)
         except TimeoutError, httpx.TimeoutException:
             raise PageFetchError(FetchFailureReason.TIMEOUT) from None
         except httpx.HTTPError:
             raise PageFetchError(FetchFailureReason.UNREACHABLE) from None
-        return to_page(response)
 
     @asynccontextmanager
     async def _client(self) -> AsyncGenerator[httpx.AsyncClient]:
@@ -137,7 +148,7 @@ class HttpxPageFetcher:
                 checked_hosts.add(url.netloc)
             response = await self._get(client, url, redirected=hop > 0)
             if not response.location:
-                return response
+                return dataclasses.replace(response, redirected=hop > 0)
             url = checked_url(url.join(response.location))
         raise PageFetchError(FetchFailureReason.TOO_MANY_REDIRECTS)
 
@@ -162,7 +173,7 @@ class HttpxPageFetcher:
         location = _header(response, "location")
         if response.status_code in REDIRECT_STATUSES and location:
             return RawResponse(str(url), response.status_code, location=location)
-        media = _media_type(response)
-        is_readable = response.is_success and media in ALLOWED_CONTENT_TYPES
-        text = await _read_limited(response) if is_readable else ""
-        return RawResponse(str(url), response.status_code, media, text)
+        # Read any 2xx body (robots.txt often has no media type); to_page then
+        # rejects unsupported media types. MAX_RESPONSE_BYTES bounds the cost.
+        text = await _read_limited(response) if response.is_success else ""
+        return RawResponse(str(url), response.status_code, _media_type(response), text)

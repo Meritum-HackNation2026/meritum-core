@@ -25,6 +25,9 @@ CONNECT_TIMEOUT_S: Final = 5.0
 MAX_RESPONSE_BYTES: Final = 5 * 1024 * 1024
 """Largest body read; a bigger page fails with ``too_large``, memory stays bounded."""
 
+DEFAULT_CHARSET: Final = "utf-8"
+"""Body encoding when the server names none, or one Python does not know."""
+
 HTML_CONTENT_TYPES: Final = frozenset({"text/html", "application/xhtml+xml"})
 """Media types whose main text trafilatura extracts."""
 

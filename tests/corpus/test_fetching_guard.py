@@ -11,9 +11,9 @@ from meritum_core.corpus.fetching import (
     FetchedPage,
     FetchFailureReason,
     FetchPurpose,
+    PageFetcherPort,
     PageFetchError,
 )
-from meritum_core.corpus.fetching.adapters import HttpxPageFetcher
 
 if TYPE_CHECKING:
     from tests.corpus.conftest import Web
@@ -41,7 +41,7 @@ BLOCKED = [
 ]
 
 
-def fetch(fetcher: HttpxPageFetcher, url: str) -> FetchedPage:
+def fetch(fetcher: PageFetcherPort, url: str) -> FetchedPage:
     return asyncio.run(fetcher.fetch(url, purpose=FetchPurpose.USER_LINK))
 
 

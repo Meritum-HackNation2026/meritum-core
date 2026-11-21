@@ -9,7 +9,7 @@ from collections.abc import Callable, Mapping
 import httpx
 import pytest
 
-from meritum_core.corpus.fetching.adapters import HttpxPageFetcher
+from meritum_core.corpus.fetching import PageFetcherPort, build_page_fetcher
 
 type Route = Callable[[httpx.Request], httpx.Response]
 type Address = ipaddress.IPv4Address | ipaddress.IPv6Address
@@ -31,7 +31,7 @@ class FakeDns:
 
 def build(
     routes: Mapping[str, Route], dns: dict[str, list[list[str]]] | None = None
-) -> tuple[HttpxPageFetcher, list[httpx.Request]]:
+) -> tuple[PageFetcherPort, list[httpx.Request]]:
     """A fetcher whose server is ``routes`` keyed by ``host/path``; requests are logged."""
     seen: list[httpx.Request] = []
 
@@ -42,7 +42,7 @@ def build(
         return route(request) if route else httpx.Response(404)
 
     table = dns if dns is not None else {"example.org": [["93.184.215.14"]]}
-    fetcher = HttpxPageFetcher(
+    fetcher = build_page_fetcher(
         resolver=FakeDns(table), transport=httpx.MockTransport(handle)
     )
     return fetcher, seen

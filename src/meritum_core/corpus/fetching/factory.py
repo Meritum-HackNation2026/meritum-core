@@ -4,12 +4,22 @@ Features:
     US-SPR-07, F-06
 """
 
-from meritum_core.corpus.fetching.adapters import HttpxPageFetcher
-from meritum_core.corpus.fetching.ports import PageFetcherPort
+import httpx
+
+from meritum_core.corpus.fetching.adapters import HttpxPageFetcher, system_resolver
+from meritum_core.corpus.fetching.ports import PageFetcherPort, Resolver
 
 
-def build_page_fetcher() -> PageFetcherPort:
-    """Build the SSRF-safe fetcher on httpx with the system DNS resolver.
+def build_page_fetcher(
+    *,
+    resolver: Resolver = system_resolver,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> PageFetcherPort:
+    """Build the SSRF-safe fetcher on httpx.
+
+    Args:
+        resolver: DNS lookup; the system resolver unless a test substitutes one.
+        transport: httpx transport; the network unless a test serves in process.
 
     Returns:
         The page fetcher.
@@ -17,4 +27,4 @@ def build_page_fetcher() -> PageFetcherPort:
     Features:
         US-SPR-07, F-06
     """
-    return HttpxPageFetcher()
+    return HttpxPageFetcher(resolver=resolver, transport=transport)

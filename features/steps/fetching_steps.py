@@ -15,8 +15,8 @@ from meritum_core.corpus.fetching import (
     FetchFailureReason,
     FetchPurpose,
     PageFetchError,
+    build_page_fetcher,
 )
-from meritum_core.corpus.fetching.adapters import HttpxPageFetcher
 
 type Address = ipaddress.IPv4Address | ipaddress.IPv6Address
 
@@ -35,7 +35,7 @@ def _serve(context: Context, pages: dict[str, httpx.Response]) -> None:
     async def resolve(host: str) -> list[Address]:  # ruff: ignore[unused-async]  # Resolver is async
         return [ipaddress.ip_address(PUBLIC[host])]
 
-    context.fetcher = HttpxPageFetcher(
+    context.fetcher = build_page_fetcher(
         resolver=resolve, transport=httpx.MockTransport(handle)
     )
 
