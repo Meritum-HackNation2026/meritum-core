@@ -13,6 +13,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
+| `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
 | `meritum_core.evidence`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików

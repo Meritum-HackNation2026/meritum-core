@@ -7,6 +7,7 @@ from meritum_core.checks.contracts import (
     CheckRequest,
     CheckResult,
     Escalation,
+    InjectionEvent,
 )
 from meritum_core.checks.normalization import NormalizedInput, normalize_input
 
@@ -17,6 +18,7 @@ __all__ = [
     "CheckRequest",
     "CheckResult",
     "Escalation",
+    "InjectionEvent",
     "NormalizedInput",
     "normalize_input",
 ]
