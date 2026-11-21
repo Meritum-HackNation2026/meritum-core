@@ -72,14 +72,14 @@ ignore = [
 # that _Model (in _base.py) is a BaseModel, and default_factory would drop
 # "default": [] from the published schema.
 "src/meritum_core/checks/contracts/_claims.py" = ["line-too-long", "mutable-class-default"]
-"src/meritum_core/checks/contracts/_context.py" = ["line-too-long"]
 "src/meritum_core/checks/contracts/_progress.py" = ["line-too-long"]
 # EM101/EM102/TRY003 too: Pydantic validators raise ValueError with the rule itself as
 # the message, which ValidationError shows.
+"src/meritum_core/checks/contracts/_context.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
 "src/meritum_core/checks/contracts/_moderation.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
 "src/meritum_core/checks/contracts/_notifications.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
 "src/meritum_core/checks/contracts/_request.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
-"src/meritum_core/checks/contracts/_sources.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_sources.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception", "mutable-class-default"]
 "src/meritum_core/checks/contracts/_strength.py" = ["line-too-long", "raise-vanilla-args", "f-string-in-exception"]
 "src/meritum_core/checks/contracts/_verdict_rules.py" = ["raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
 "src/meritum_core/checks/contracts/_records.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "mutable-class-default"]

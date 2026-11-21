@@ -74,3 +74,27 @@ NotificationKind = Literal[
     "case_assigned",  # staff: a case was created or updated for the moderator
     "system",
 ]
+
+# Why a check ended in technical_failure; never names a key or a provider.
+FailureCode = Literal[
+    "provider_unavailable",
+    "web_search_unavailable",
+    "transcription_failed",
+    "url_unavailable",
+    "not_ready",
+]
+# What a finished check could not cover; the channel builds the text from copy/pl.json.
+# A limitation never changes the check's status.
+LimitationCode = Literal["fact_check_unavailable", "image_search_not_run"]
+# What would change the verdict, computed by a rule from the premises (US-ZRD-11).
+VerdictChange = Literal[
+    "needs_primary_source",
+    "needs_second_publisher",
+    "needs_fresh_evidence",
+    "needs_resolving_source",
+    "needs_named_source",
+]
+# What an incident match agreed on; a content match needs title, topic and date.
+MatchBasis = Literal["title", "topic", "date", "domain"]
+# Networks whose signatories' ClaimReview ratings may be premises (ADR-34).
+FactCheckNetwork = Literal["ifcn", "efcsn"]

@@ -1,7 +1,7 @@
-"""Corpus sources, the citations cut from them and the open source catalogue.
+"""Corpus sources, the citations cut from them, fact-checkers' ratings and the open source catalogue.
 
 Features:
-    US-ZRD-01, US-ZRD-12, US-KOR-01, ADR-02
+    US-ZRD-01, US-ZRD-12, US-KOR-01, ADR-02, ADR-34
 """
 
 from __future__ import annotations
@@ -14,7 +14,15 @@ from pydantic import Field, HttpUrl, model_validator
 from meritum_core.checks.constants import PER_EVIDENCE_VALIDITY
 
 from ._base import _Model
-from ._types import PublisherId, SourceKind, SourceTier, SourceVia, Stance, Validity
+from ._types import (
+    FactCheckNetwork,
+    PublisherId,
+    SourceKind,
+    SourceTier,
+    SourceVia,
+    Stance,
+    Validity,
+)
 
 
 class Source(_Model):
@@ -83,6 +91,51 @@ class Citation(_Model):
     fragment_found_verbatim: Literal[True] = True
 
 
+class ClaimReviewPremise(_Model):
+    """A fact-checker's ClaimReview rating used as a premise of the verdict, next to the citations (ADR-34).
+
+    Found through Google Fact Check Tools API. It has no page fragment: the rating, title,
+    date and link are the evidence. Only publishers the catalogue lists as IFCN or EFCSN
+    signatories qualify; the pipeline copies `signatory_of` from their catalogue entry.
+    Counted per publisher like a secondary-tier citation.
+
+    Attributes:
+        publisher: the fact-checker's name as shown.
+        publisher_id: the catalogue publisher id; independence is counted on it.
+        signatory_of: the networks the catalogue lists the publisher in.
+        rating: the textualRating, verbatim.
+        title: the fact-check's title.
+        reviewed_at: when the claim was reviewed.
+        url: the fact-check link.
+        fetched_at: when the rating was fetched from the API.
+        stance: whether the rating supports or refutes the claim.
+
+    Features:
+        US-ZRD-01, US-KOR-01, F-14, ADR-34
+    """
+
+    publisher: Annotated[str, Field(min_length=2, max_length=120)]
+    publisher_id: PublisherId
+    signatory_of: Annotated[
+        list[FactCheckNetwork],
+        Field(
+            min_length=1,
+            description="IFCN or EFCSN membership from the publisher's catalogue entry; required for a premise.",
+        ),
+    ]
+    rating: Annotated[
+        str,
+        Field(min_length=1, max_length=120, description="textualRating, verbatim."),
+    ]
+    title: Annotated[str, Field(min_length=3, max_length=200)]
+    reviewed_at: datetime
+    url: HttpUrl
+    fetched_at: Annotated[
+        datetime, Field(description="When Google Fact Check Tools API returned it.")
+    ]
+    stance: Stance
+
+
 class CatalogEntry(_Model):
     """One domain in the open source catalogue: why it qualifies, how it is refreshed, whether it is excluded.
 
@@ -99,11 +152,12 @@ class CatalogEntry(_Model):
         max_age_hours: a shorter threshold for short-lived sources.
         qualified_because: why the domain qualifies.
         tdm_reservation: the owner's text and data mining opt-out.
+        signatory_of: the fact-checking networks the publisher signed (IFCN, EFCSN).
         excluded: whether the domain is excluded.
         exclusion_reason: why it is excluded.
 
     Features:
-        US-ZRD-12, US-KOR-01, US-KOR-05, US-KOR-08, ADR-02
+        US-ZRD-12, US-KOR-01, US-KOR-05, US-KOR-08, ADR-02, ADR-34
     """
 
     domain: Annotated[str, Field(min_length=3, max_length=100)]
@@ -139,6 +193,12 @@ class CatalogEntry(_Model):
             description="Machine-readable text and data mining opt-out (robots.txt incl. Content-Signal, meta tags, tdmrep), checked per domain."
         ),
     ] = "unknown"
+    signatory_of: Annotated[
+        list[FactCheckNetwork],
+        Field(
+            description="IFCN or EFCSN membership; only such publishers' ClaimReview ratings may be premises (ADR-34)."
+        ),
+    ] = []
     excluded: bool = False
     exclusion_reason: Annotated[str | None, Field(max_length=300)] = None
 

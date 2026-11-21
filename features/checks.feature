@@ -51,3 +51,30 @@ Feature: Sprawdzanie treści
     Given link do posta na Facebooku wymagającego logowania
     When system pobiera stronę
     Then wynik to "technical_failure" z prośbą o wklejenie tekstu
+
+
+  Scenario: identyfikator w kanale z przeglądarką
+    Given żądanie z channel = web i identyfikatorem użytkownika kanału
+    When kontrakt waliduje żądanie
+    Then walidacja je odrzuca
+
+  Scenario: awaria indeksu fact-checkerów
+    Given sprawdzenie zakończone stanem done, a Google Fact Check Tools API zwróciło błąd dostępu
+    When worker składa CheckResult
+    Then wynik ma kod ograniczenia "fact_check_unavailable", z którego kanał składa komunikat o błędzie dostępu do indeksu
+    And stan sprawdzenia nie jest technical_failure
+
+  Scenario: przesłanka z oceny fact-checkera
+    Given ClaimResult z werdyktem "fałszywe" i jedyną przesłanką z ClaimReview Demagogu z textualRating "Fałsz", tytułem, datą i linkiem
+    When kontrakt waliduje wynik
+    Then walidacja go przyjmuje, choć przesłanka nie ma fragmentu strony
+
+  Scenario: dopasowanie tylko po domenie
+    Given IncidentMatch z podstawą dopasowania zawierającą tylko domenę i matched_on "content"
+    When kontrakt waliduje twierdzenie
+    Then walidacja je odrzuca, bo dopasowanie treści wymaga zgodnego tytułu, tematu i daty
+
+  Scenario: twierdzenie bez daty
+    Given wynik "done" z twierdzeniem bez claim_date
+    When kontrakt waliduje wynik
+    Then walidacja go odrzuca
