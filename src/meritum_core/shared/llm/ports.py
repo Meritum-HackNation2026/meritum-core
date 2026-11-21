@@ -34,7 +34,7 @@ class LlmUsage(BaseModel):
 
     Attributes:
         provider: The provider name from settings (``vertex``, ``stub``).
-        model: The pinned model version that answered.
+        model: The model version pinned in settings (``MERITUM_LLM_MODEL``).
         region: Where the data was processed.
         input_tokens: Prompt tokens.
         output_tokens: Answer tokens.

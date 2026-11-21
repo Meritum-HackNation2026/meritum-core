@@ -30,7 +30,7 @@ class LlmSettings(BaseSettings):
 
     Attributes:
         provider: ``stub`` (default, no keys, no network) or ``vertex``.
-        model: Pinned model version, e.g. a dated Gemini or Model Garden name.
+        model: Pinned model version served by Vertex ``generateContent`` (Gemini).
         region: Vertex AI location in the EU, one of ``EU_REGIONS``.
         project: Google Cloud project; ADC's default project when None.
         retries: HTTP attempts per call on transient errors, the first included.

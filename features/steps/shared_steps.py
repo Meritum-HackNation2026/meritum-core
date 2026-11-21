@@ -7,6 +7,7 @@ answers from a recorded reply through a mock HTTP transport.
 import asyncio
 import json
 import os
+import shutil
 import socket
 import tempfile
 from pathlib import Path
@@ -64,6 +65,7 @@ def _no_network(*_args: object, **_kwargs: object) -> object:
 def given_stub_without_keys(context: Context) -> None:
     """Stub provider with a fixture file; no Google variables at all."""
     folder = Path(tempfile.mkdtemp())
+    context.add_cleanup(shutil.rmtree, folder)
     fixtures = folder / "llm-stub.json"
     fixtures.write_text(json.dumps({"ClaimList": ANSWER}), encoding="utf-8")
     _set_env(

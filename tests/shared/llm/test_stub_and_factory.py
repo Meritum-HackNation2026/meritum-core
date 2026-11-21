@@ -83,3 +83,10 @@ def test_eu_multi_region_is_accepted(vertex_settings: LlmSettings) -> None:
         vertex_settings.model_dump() | {"region": "eu"}
     )
     assert settings.region == "eu"
+
+
+def test_stub_fixture_file_that_is_not_an_object_is_rejected(tmp_path: Path) -> None:
+    path = tmp_path / "list.json"
+    path.write_text('["ClaimList"]', encoding="utf-8")
+    with pytest.raises(ValidationError):
+        build_llm(LlmSettings(provider="stub", stub_fixtures=path))

@@ -597,6 +597,8 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dbos" },
+    { name = "google-auth" },
+    { name = "httpx2" },
     { name = "pydantic" },
     { name = "pydantic-ai-slim", extra = ["google"] },
     { name = "pydantic-settings" },
@@ -616,6 +618,8 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dbos", specifier = ">=3.6.0" },
+    { name = "google-auth", specifier = ">=2.63.0" },
+    { name = "httpx2", specifier = ">=2.16.2" },
     { name = "pydantic", specifier = ">=2.14.4" },
     { name = "pydantic-ai-slim", extras = ["google"], specifier = ">=2.71.0" },
     { name = "pydantic-settings", specifier = ">=2.16.3" },

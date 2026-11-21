@@ -4,10 +4,9 @@ Features:
     US-WDR-02, F-30, ADR-11
 """
 
-import json
-
 from google.auth.credentials import Credentials
 from httpx2 import AsyncClient
+from pydantic import JsonValue, TypeAdapter
 
 from meritum_core.shared.llm.adapters import StubLlm, VertexLlm
 from meritum_core.shared.llm.ports import LlmPort
@@ -30,7 +29,8 @@ def build_llm(
             tests); Pydantic AI creates one when None. Ignored by the stub.
 
     Returns:
-        The stub (fixtures from ``stub_fixtures``, none when unset) or Vertex AI.
+        The stub (fixtures from ``stub_fixtures``, none when unset; a file that
+        is not a JSON object fails with ValidationError) or Vertex AI.
 
     Features:
         US-WDR-02, F-30, ADR-11
@@ -40,5 +40,8 @@ def build_llm(
             return VertexLlm(settings, credentials=credentials, http_client=http_client)
         case LlmProvider.STUB:
             path = settings.stub_fixtures
-            fixtures = {} if path is None else json.loads(path.read_text("utf-8"))
-            return StubLlm(fixtures)
+            if path is None:
+                return StubLlm({})
+            return StubLlm(
+                TypeAdapter(dict[str, JsonValue]).validate_json(path.read_bytes())
+            )
