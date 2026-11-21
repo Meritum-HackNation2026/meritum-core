@@ -121,12 +121,10 @@ Test adaptera na prawdziwej bazie uruchamia się lokalnie:
 
 ```bash
 docker run -d --rm --name corpus -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritum -p 55432:5432 <obraz meritum-postgres>
-MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum \
-MERITUM_TEST_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum \
-  uv run pytest -m integration tests/corpus
+MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum uv run pytest -m integration tests/corpus
 ```
 
-Migracja `0002_euvsdisinfo_copy.sql` dodaje tabele lokalnej kopii EUvsDisinfo (`euvsdisinfo_entries`, `euvsdisinfo_flagged_domains`), które zapisuje tylko workflow synchronizacji w meritum-worker (worker#59). Test `test_migrations_integration.py` (adres z `MERITUM_TEST_DATABASE_URL`) uruchamia wszystkie migracje corpus dwa razy.
+Migracja `0002_euvsdisinfo_copy.sql` dodaje tabele lokalnej kopii EUvsDisinfo (`euvsdisinfo_entries`, `euvsdisinfo_flagged_domains`), które zapisuje tylko workflow synchronizacji w meritum-worker (worker#59). Test `test_migrations_integration.py` uruchamia wszystkie migracje corpus dwa razy. Późniejsza zmiana tych tabel to nowy plik migracji (`ADD COLUMN IF NOT EXISTS`), bo poprawiony `CREATE TABLE` w 0002 nie dotrze do istniejącej bazy.
 
 ## Transkrypcja nagrań (`meritum_core.checks.transcription`)
 
