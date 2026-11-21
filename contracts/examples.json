@@ -60,7 +60,8 @@
         "verdict": "insufficient_evidence",
         "citations": [],
         "explanation": "Nie znaleźliśmy żadnej publikacji z zatwierdzonych źródeł, która by to potwierdzała albo obalała.",
-        "unresolved": "Czy takie zdarzenie miało miejsce i kto je ogłosił."
+        "unresolved": "Czy takie zdarzenie miało miejsce i kto je ogłosił.",
+        "would_change_verdict": ["needs_named_source"]
       }
     ],
     "escalation": { "state": "created", "case_id": "#S-1" }
@@ -114,7 +115,8 @@
         "verdict": "insufficient_evidence",
         "citations": [],
         "explanation": "Nie znaleźliśmy żadnej publikacji z zatwierdzonych źródeł, która by to potwierdzała albo obalała.",
-        "unresolved": "Czy takie zdarzenie miało miejsce i kto je ogłosił."
+        "unresolved": "Czy takie zdarzenie miało miejsce i kto je ogłosił.",
+        "would_change_verdict": ["needs_named_source"]
       }
     ],
     "source_ids": [],

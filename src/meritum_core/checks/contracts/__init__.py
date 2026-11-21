@@ -94,6 +94,7 @@ from ._types import (
     Verdict,
     VerdictChange,
 )
+from ._verdict_changes import verdict_changes_for
 
 __all__ = [
     "AGREEING_STANCE",
@@ -154,4 +155,5 @@ __all__ = [
     "VerdictChange",
     "is_stale",
     "strength_for",
+    "verdict_changes_for",
 ]

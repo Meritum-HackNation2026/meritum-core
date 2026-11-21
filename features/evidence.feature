@@ -30,3 +30,13 @@ Feature: Cytaty ze źródeł i siła dowodów
     When system ustala werdykt
     Then werdykt to "brak wystarczających dowodów" bez poziomu siły
     And wynik zawiera cytaty obu stron i notatkę, czym się różnią
+
+  Scenario: brak źródła urzędowego
+    Given werdykt "confirmed" z siłą "moderate" i dwoma zgodnymi wydawcami wtórnymi
+    When system liczy, co zmieniłoby werdykt
+    Then wynik ma kod "needs_primary_source"
+
+  Scenario: sprzeczne źródła
+    Given werdykt "insufficient_evidence" ze sprzecznymi cytatami
+    When system liczy, co zmieniłoby werdykt
+    Then wynik ma kod mówiący, że rozstrzygnąłby nowszy dowód urzędowy, i żadnego faktu spoza wyniku

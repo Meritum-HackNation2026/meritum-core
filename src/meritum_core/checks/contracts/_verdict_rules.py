@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from meritum_core.checks.constants import AGREEING_STANCE, SETTLING
 
 from ._strength import is_stale
+from ._verdict_changes import verdict_changes_for
 
 if TYPE_CHECKING:
     from ._claims import ClaimResult
@@ -46,6 +47,16 @@ def check_verdict_rules(claim: ClaimResult) -> None:
             "'insufficient_evidence' must say what could not be established"
         )
     _age_rules(claim)
+    allowed = verdict_changes_for(
+        claim.verdict,
+        claim.strength.premises if claim.strength else None,
+        claim.unresolved,
+        conflicting=conflicting,
+    )
+    if not set(claim.would_change_verdict) <= set(allowed):
+        raise ValueError(
+            f"what would change the verdict must follow from the premises: {allowed}"
+        )
 
 
 def _superseded_next_to_newer(
