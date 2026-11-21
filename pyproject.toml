@@ -60,11 +60,24 @@ ignore = [
 "features/**/*.py" = ["implicit-namespace-package", "assert"]  # behave loads steps by path; steps assert like tests
 # Bare names tell vulture they are used; the file is never imported.
 "vulture_whitelist.py" = ["implicit-namespace-package", "useless-expression"]
-# Domain contracts: long Field(...) declarations and validator messages are the
-# readable form of the rules from the MSZ brief; _verdict_rules lists them in one place.
-# too-many-boolean-expressions: CheckRequest's input rule (v3); named conditions come
-# with the split in issue core/001.
-"src/meritum_core/checks/contracts.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception", "complex-structure", "too-many-branches", "too-many-boolean-expressions"]
+# Check contracts. line-too-long: class docstrings and Field descriptions are published
+# in contracts/meritum.schema.json, so rewrapping them would change the generated files.
+# mutable-class-default: Pydantic copies list defaults per instance; ruff cannot see
+# that _Model (in _base.py) is a BaseModel, and default_factory would drop
+# "default": [] from the published schema.
+"src/meritum_core/checks/contracts/_claims.py" = ["line-too-long", "mutable-class-default"]
+"src/meritum_core/checks/contracts/_context.py" = ["line-too-long"]
+"src/meritum_core/checks/contracts/_progress.py" = ["line-too-long"]
+# EM101/EM102/TRY003 too: Pydantic validators raise ValueError with the rule itself as
+# the message, which ValidationError shows.
+"src/meritum_core/checks/contracts/_moderation.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
+"src/meritum_core/checks/contracts/_notifications.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_request.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception"]
+"src/meritum_core/checks/contracts/_sources.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_strength.py" = ["line-too-long", "raise-vanilla-args", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_verdict_rules.py" = ["raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception"]
+"src/meritum_core/checks/contracts/_records.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "mutable-class-default"]
+"src/meritum_core/checks/contracts/_results.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception", "mutable-class-default"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"  # also turns off D203/D213 and the other non-Google rules
@@ -120,11 +133,8 @@ error-on-warning = true
 max-lines = 250
 
 [tool.meritum-conventions.line-limit-exceptions]
-"src/meritum_core/checks/contracts.py" = "861 lines (contracts v3); split into a checks/contracts/ package in issue core/001"
-"tests/test_checks_contracts.py" = "tests of checks/contracts.py; split together with the module in issue core/001"
 
 [tool.meritum-conventions.module-exceptions]
-"src/meritum_core/checks/contracts.py" = "contracts v3 predates the conventions; Features, Attributes and constants.py come with the split in issue core/001"
 
 [tool.meritum-conventions.constants-exceptions]
 "src/meritum_core/jobs/contracts/_workflows.py" = "the workflow specs and WORKFLOWS are built from the contract models; a constants.py would import them back (cycle)"
@@ -135,8 +145,8 @@ max-lines = 250
 [tool.vulture]
 paths = ["src", "scripts", "tests", "features", "vulture_whitelist.py"]
 # Contract models: their fields are read through JSON and in meritum-backend/worker,
-# never as attributes here. Revisit with the split in issue core/001.
-exclude = ["src/meritum_core/checks/contracts.py"]
+# never as attributes here.
+exclude = ["src/meritum_core/checks/contracts/"]
 min_confidence = 60
 ignore_decorators = ["@given", "@when", "@then", "@model_validator"]  # behave calls step functions, Pydantic calls validators
 

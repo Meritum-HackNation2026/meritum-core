@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Generate contracts/meritum.schema.json and contracts/meritum.ts from
-# src/meritum_core/checks/contracts.py. The only place they are generated;
+# Generate contracts/meritum.schema.json and contracts/meritum.ts from the
+# src/meritum_core/checks/contracts/ package. The only place they are generated;
 # consumers (design system, TypeScript apps) copy them, never edit them.
 #   scripts/generate-contracts.sh           write the files
 #   scripts/generate-contracts.sh --check   fail if the committed files are stale (CI)
+# The banner still names checks/contracts.py: changing it would change meritum.ts,
+# so it moves with the next contract change that regenerates the file.
 # Versions are pinned: pydantic through uv.lock, the TS generator below.
 set -euo pipefail
 cd "$(dirname "$0")/.."
