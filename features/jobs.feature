@@ -10,3 +10,9 @@ Feature: Kontrakt zadań
     Given workflow "check" publikuje trzy kolejne AnalysisStatus
     When backend czyta strumień przez JobQueue
     Then dostaje je w tej kolejności, a ostatni ma pole result
+
+  Scenario: zgłoszenie błędu bez uzasadnienia
+    Given EscalateClaimInput z powodem "user_dispute" i bez justification_masked
+    When kontrakt go waliduje
+    Then walidacja przechodzi
+    And uzasadnienie przy powodzie innym niż "user_dispute" nadal jest odrzucane

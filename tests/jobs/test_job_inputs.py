@@ -128,16 +128,26 @@ def test_escalation_without_dispute_has_no_justification(reason: str) -> None:
         )
 
 
-def test_user_dispute_needs_a_masked_justification() -> None:
-    with pytest.raises(ValidationError):
-        EscalateClaimInput(check_id="c1", claim_index=0, reason="user_dispute")
+def test_user_dispute_may_come_without_a_justification() -> None:
+    bare = EscalateClaimInput(check_id="c1", claim_index=0, reason="user_dispute")
+    assert bare.justification_masked is None
     payload = EscalateClaimInput(
         check_id="c1",
         claim_index=1,
         reason="user_dispute",
         justification_masked="Źródło jest nieaktualne.",
     )
-    assert payload.claim_index == 1
+    assert (payload.claim_index, payload.justification_masked) == (
+        1,
+        "Źródło jest nieaktualne.",
+    )
+
+
+def test_user_dispute_rejects_an_empty_justification() -> None:
+    with pytest.raises(ValidationError):
+        EscalateClaimInput(
+            check_id="c1", claim_index=0, reason="user_dispute", justification_masked=""
+        )
 
 
 def test_escalation_rejects_a_negative_claim_index() -> None:
