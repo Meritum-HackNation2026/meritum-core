@@ -207,7 +207,7 @@ Nagranie z formularza albo wiadomość głosowa z Discorda leży w `BlobStore` (
 | Koszt | cennik Standard to 0,016 USD za minutę; czy `chirp_3` jest tak rozliczany, nie potwierdziliśmy (załącznik B dokumentu produktowego) |
 | Retencja | nagranie w magazynie usuwa retencja `BlobStore` (`expires_at`, ADR-13); adapter niczego nie zapisuje po stronie dostawcy (wynik batch wraca w odpowiedzi, `inlineResponseConfig`) |
 
-Błędy: `UnsupportedAudioError` (inny format, przekroczony limit) workflow mapuje na `out_of_scope`, `TranscriptionUnavailableError` (dostawca padł po ponowieniach, odrzucone dane logowania, operacja batch nie skończyła się w `BATCH_TIMEOUT_SECONDS`) na `technical_failure`; oba błędy niosą status w `check_status`. Brak pliku to `BlobNotFoundError`.
+Błędy: `UnsupportedAudioError` (inny format, przekroczony limit) workflow mapuje na `out_of_scope`, `TranscriptionUnavailableError` (dostawca padł po ponowieniach, odrzucone dane logowania, operacja batch nie skończyła się w `BATCH_TIMEOUT_SECONDS`) na `technical_failure`; oba błędy niosą status w `check_status`. Podtypy `UnsupportedAudioFormatError` i `AudioTooLongError` niosą też kod ograniczenia w `limitation_code` (`audio_format_unsupported`, `audio_too_long`), który workflow w meritum-worker ma wpisywać do `limitation_codes` wyniku `out_of_scope`. Brak pliku to `BlobNotFoundError`.
 
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |

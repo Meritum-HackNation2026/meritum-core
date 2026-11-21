@@ -102,3 +102,13 @@ Feature: Sprawdzanie treści
       | provider | model                |
       | vertex   | gemini-2.0-flash-001 |
       | stub     | stub                 |
+
+  Scenario Outline: odrzucone nagranie niesie kod ograniczenia
+    Given wynik "out_of_scope" dla nagrania odrzuconego błędem <error>
+    When kontrakt waliduje wynik
+    Then wynik ma kod ograniczenia "<code>", z którego kanał wybiera tekst w copy/pl.json
+
+    Examples:
+      | error                       | code                     |
+      | UnsupportedAudioFormatError | audio_format_unsupported |
+      | AudioTooLongError           | audio_too_long           |
