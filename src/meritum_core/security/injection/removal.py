@@ -1,7 +1,7 @@
 """Cut detected instructions out of user text and record each cut (ADR-23).
 
 Features:
-    US-BEZ-01, F-19, ADR-23
+    US-BEZ-01, F-19, ADR-12, ADR-23
 """
 
 from meritum_core.checks import InjectionEvent
@@ -38,7 +38,7 @@ def instruction_removed(scan: InjectionScan) -> CleanedInput:
         The text left for analysis and one event per cut.
 
     Features:
-        US-BEZ-01, F-19, ADR-23
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
     text = scan.text
     cuts = _merged(scan)

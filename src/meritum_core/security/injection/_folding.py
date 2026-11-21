@@ -1,7 +1,7 @@
 """Fold text for pattern matching while keeping a map back to the original indices.
 
 Features:
-    US-BEZ-01, F-19, ADR-12
+    US-BEZ-01, F-19, ADR-12, ADR-23
 """
 
 import unicodedata
@@ -20,7 +20,7 @@ def fold(text: str) -> tuple[str, tuple[int, ...]]:
         character it came from.
 
     Features:
-        US-BEZ-01, F-19, ADR-12
+        US-BEZ-01, F-19, ADR-12, ADR-23
     """
     chars: list[str] = []
     origin: list[int] = []

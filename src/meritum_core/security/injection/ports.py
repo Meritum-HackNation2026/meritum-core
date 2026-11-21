@@ -1,7 +1,7 @@
 """Ports of the injection defence: the composed detector and one detection layer.
 
 Features:
-    US-BEZ-01, F-19, ADR-12, ADR-35
+    US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
 """
 
 from typing import Protocol, runtime_checkable
@@ -17,7 +17,7 @@ class InjectionGatePort(Protocol):
     (worker/032); core keeps the null gate and a fake.
 
     Features:
-        US-BEZ-01, F-19, ADR-35
+        US-BEZ-01, F-19, ADR-12, ADR-23, ADR-35
     """
 
     async def screen(self, text: str) -> tuple[TextRange, ...]:

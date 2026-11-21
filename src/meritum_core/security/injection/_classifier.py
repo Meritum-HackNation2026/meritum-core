@@ -4,18 +4,29 @@ Features:
     US-BEZ-01, F-19, ADR-12, ADR-23
 """
 
-from meritum_core.security.injection.constants import CLASSIFIER_TASK
+import re
+
+from meritum_core.security.injection._folding import fold
+from meritum_core.security.injection.constants import (
+    CLASSIFIER_TASK,
+    MIN_QUOTE_WORDS,
+    QUOTE_GAP,
+)
 from meritum_core.security.injection.models import InjectionClassification, TextRange
 from meritum_core.shared.llm import LlmPort, Prompt
 
 
 def _occurrences(text: str, quote: str) -> list[TextRange]:
-    ranges: list[TextRange] = []
-    start = text.find(quote)
-    while start >= 0:
-        ranges.append(TextRange(start, start + len(quote)))
-        start = text.find(quote, start + 1)
-    return ranges
+    # Match on folded text, word by word, so case, quote marks and spacing may differ.
+    words = re.findall(r"\w+", fold(quote)[0])
+    if len(words) < MIN_QUOTE_WORDS:
+        return []
+    folded, origin = fold(text)
+    pattern = re.compile(rf"\b{QUOTE_GAP.join(map(re.escape, words))}\b")
+    return [
+        TextRange(origin[m.start()], origin[m.end() - 1] + 1)
+        for m in pattern.finditer(folded)
+    ]
 
 
 class LlmClassifierGate:
@@ -42,15 +53,14 @@ class LlmClassifierGate:
 
         Returns:
             Every occurrence of each quoted instruction; the whole text when the
-            model flags an injection and any quote is missing from the text.
+            model flags an injection and any quote is too short or missing.
         """
         prompt = Prompt(instructions=CLASSIFIER_TASK, data=(text,))
         answer = (await self._llm.complete(prompt, InjectionClassification)).output
         if not answer.injected:
             return ()
-        quotes = [quote for quote in answer.instructions if quote.strip()]
-        found = [_occurrences(text, quote) for quote in quotes]
-        if not quotes or not all(found):
+        found = [_occurrences(text, quote) for quote in answer.instructions]
+        if not found or not all(found):
             # An instruction the model did not quote verbatim cannot be located.
             return (TextRange(0, len(text)),)
         return tuple(r for ranges in found for r in ranges)
