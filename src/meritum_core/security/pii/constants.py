@@ -12,9 +12,6 @@ from meritum_core.security.constants import EMAIL_MARKER, PESEL_MARKER, PHONE_MA
 ENV_PREFIX: Final = "MERITUM_PII_"
 """Prefix of the gate's settings; ``MERITUM_PII_GATE`` picks the adapter."""
 
-ADDRESS_MARKER: Final = "[adres]"
-"""Replaces a street address (Sensitive Data Protection only)."""
-
 ID_CARD_MARKER: Final = "[dowód osobisty]"
 """Replaces a Polish identity card number."""
 
@@ -29,7 +26,6 @@ PAYMENT_CARD_MARKER: Final = "[karta płatnicza]"
 
 INFO_TYPE_MARKERS: Final = MappingProxyType(
     {
-        "STREET_ADDRESS": ADDRESS_MARKER,
         "PHONE_NUMBER": PHONE_MARKER,
         "EMAIL_ADDRESS": EMAIL_MARKER,
         "POLAND_PESEL_NUMBER": PESEL_MARKER,
@@ -41,9 +37,30 @@ INFO_TYPE_MARKERS: Final = MappingProxyType(
 )
 """Sensitive Data Protection infoTypes the gate masks, each with its marker.
 
-Obvious personal data of a citizen (US-BEZ-04). ``PERSON_NAME`` is left out on
-purpose: claims name public figures, and masking them would break the check.
-Markers hold no digits or ``@``, so the patterns never touch them (idempotence)."""
+Rule (US-BEZ-04, #102): we mask identifiers of a person: PESEL, identity card,
+passport, phone, e-mail, IBAN bank account and payment card numbers. We never
+mask first names and surnames, institutions, places, dates, amounts or other
+numbers: without them a claim changes its meaning or its evidence cannot be
+found (``NEVER_MASKED_INFO_TYPES``). Markers hold no digits or ``@``, so the
+patterns never touch them (idempotence)."""
+
+NEVER_MASKED_INFO_TYPES: Final = frozenset(
+    {
+        "PERSON_NAME",
+        "FIRST_NAME",
+        "LAST_NAME",
+        "ORGANIZATION_NAME",
+        "LOCATION",
+        "STREET_ADDRESS",
+        "DATE",
+        "DATE_OF_BIRTH",
+    }
+)
+"""Sensitive Data Protection infoTypes the gate never masks (#102).
+
+Claims name public figures and institutions and quote places and dates; an
+institution's address ("Sejm, ul. Wiejska 4") is part of a claim too. None of
+them may enter ``INFO_TYPE_MARKERS``."""
 
 MIN_LIKELIHOOD: Final = "LIKELY"
 """Lowest finding likelihood the gate masks; ``POSSIBLE`` hits amounts and dates."""

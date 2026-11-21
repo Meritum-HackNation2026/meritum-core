@@ -1,9 +1,9 @@
 {
-  "item": {"value": "Mieszkam przy Marszałkowskiej 12/4."},
+  "item": {"value": "Dowód ABA300000."},
   "overview": {
     "transformationSummaries": [
       {
-        "infoType": {"name": "STREET_ADDRESS"},
+        "infoType": {"name": "POLAND_NATIONAL_ID_NUMBER"},
         "results": [{"count": "1", "code": "ERROR", "details": "transformation failed"}]
       }
     ]

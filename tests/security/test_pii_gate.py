@@ -22,6 +22,7 @@ from meritum_core.security import (
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TEXT = "Mieszkam przy ul. Marszałkowskiej 12/4, 00-590 Warszawa i widziałem, że szczepionki zawierają chipy."
+PUBLIC_FIGURE = "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL 44051401359, dowód ABA300000"
 DEIDENTIFY = (
     "https://dlp.europe-central2.rep.googleapis.com/v2/projects/meritum-test"
     "/locations/europe-central2/content:deidentify"
@@ -58,25 +59,26 @@ def reply(name: str, status: int = 200) -> Callable[[httpx2.Request], httpx2.Res
     return lambda _request: httpx2.Response(status, content=content)
 
 
-def test_address_is_masked_on_the_eu_regional_endpoint(
+def test_identifiers_are_masked_on_the_eu_regional_endpoint(
     sdp_gate: GateFactory, sent: Sent
 ) -> None:
-    gate = sdp_gate(reply("dlp-address.json"))
-    result = asyncio.run(mask_personal_data(TEXT, gate))
+    gate = sdp_gate(reply("dlp-identifiers.json"))
+    result = asyncio.run(mask_personal_data(PUBLIC_FIGURE, gate))
     assert result == MaskedText(
-        text="Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy.",
-        replaced=1,
+        text="Donald Tusk powiedział, że zadzwoni pod [telefon], PESEL [PESEL],"
+        " dowód [dowód osobisty]",
+        replaced=3,
     )
     [request] = sent
     assert str(request.url) == DEIDENTIFY
     assert request.headers["authorization"] == "Bearer recorded"
     assert request.headers["x-goog-user-project"] == "meritum-test"
     body = json.loads(request.content)
-    assert body["item"] == {"value": TEXT}
+    assert body["item"] == {"value": PUBLIC_FIGURE}
     assert body["inspectConfig"]["minLikelihood"] == "LIKELY"
     inspected = {t["name"] for t in body["inspectConfig"]["infoTypes"]}
-    assert {"STREET_ADDRESS", "POLAND_PESEL_NUMBER"} <= inspected
-    assert "PERSON_NAME" not in inspected
+    assert {"POLAND_NATIONAL_ID_NUMBER", "POLAND_PESEL_NUMBER"} <= inspected
+    assert inspected.isdisjoint({"PERSON_NAME", "STREET_ADDRESS"})
     transformations = body["deidentifyConfig"]["infoTypeTransformations"]
     replaced = {
         t["infoTypes"][0]["name"]: t["primitiveTransformation"]["replaceConfig"][
@@ -84,7 +86,7 @@ def test_address_is_masked_on_the_eu_regional_endpoint(
         ]["stringValue"]
         for t in transformations["transformations"]
     }
-    assert replaced["STREET_ADDRESS"] == "[adres]"
+    assert replaced["POLAND_NATIONAL_ID_NUMBER"] == "[dowód osobisty]"
     assert set(replaced) == inspected
 
 
@@ -131,7 +133,7 @@ def test_failing_gate_is_skipped_and_patterns_still_mask(
 
 
 def test_empty_text_skips_the_call(sdp_gate: GateFactory, sent: Sent) -> None:
-    gate = sdp_gate(reply("dlp-address.json"))
+    gate = sdp_gate(reply("dlp-identifiers.json"))
     assert asyncio.run(gate.mask("")) == MaskedText(text="", replaced=0)
     assert sent == []
 
@@ -159,7 +161,7 @@ def test_environment_picks_sensitive_data_protection_and_its_quota_project(
 
     def answer(request: httpx2.Request) -> httpx2.Response:
         sent.append(request)
-        return reply("dlp-address.json")(request)
+        return reply("dlp-identifiers.json")(request)
 
     gate = build_pii_gate(
         PiiGateSettings(),

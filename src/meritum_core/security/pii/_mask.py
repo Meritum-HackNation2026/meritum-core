@@ -8,6 +8,9 @@ import logging
 import re
 
 from meritum_core.security.constants import (
+    AMOUNT_HEAD_PATTERN,
+    AMOUNT_HEAD_WINDOW,
+    AMOUNT_TAIL_PATTERN,
     EMAIL_MARKER,
     EMAIL_PATTERN,
     PESEL_MARKER,
@@ -32,10 +35,26 @@ def _pesel_or_keep(match: re.Match[str]) -> str:
     return PESEL_MARKER if _valid_pesel(match[0]) else match[0]
 
 
+def _is_amount(match: re.Match[str]) -> bool:
+    if match["prefix"]:
+        return False
+    text, start, end = match.string, match.start(), match.end()
+    head = AMOUNT_HEAD_PATTERN.search(text, max(0, start - AMOUNT_HEAD_WINDOW), start)
+    inner = re.search(r"\D", match["digits"])
+    separator = inner[0] if inner else None
+    continues_a_number = head is not None and head["separator"] in {None, separator}
+    has_unit = AMOUNT_TAIL_PATTERN.match(text, end) is not None
+    return continues_a_number or has_unit
+
+
+def _phone_or_keep(match: re.Match[str]) -> str:
+    return match[0] if _is_amount(match) else PHONE_MARKER
+
+
 def _mask_patterns(text: str) -> MaskedText:
     masked = PESEL_PATTERN.sub(_pesel_or_keep, text)
     masked = EMAIL_PATTERN.sub(EMAIL_MARKER, masked)
-    masked = PHONE_PATTERN.sub(PHONE_MARKER, masked)
+    masked = PHONE_PATTERN.sub(_phone_or_keep, masked)
     markers = (PHONE_MARKER, EMAIL_MARKER, PESEL_MARKER)
     # Count added markers only: markers already in the input are not new replacements.
     replaced = sum(masked.count(m) - text.count(m) for m in markers)
@@ -44,6 +63,9 @@ def _mask_patterns(text: str) -> MaskedText:
 
 async def mask_personal_data(text: str, gate: PiiGatePort) -> MaskedText:
     """Mask with the gate, then replace phones, e-mails and valid PESEL numbers.
+
+    A phone-shaped number that continues a digit group or stands before a
+    currency or unit is an amount and stays: the claim is about it (#102).
 
     Idempotent: markers contain no digits or ``@`` and are no personal data, so
     masking twice changes nothing. Run it before a workflow starts and on step
