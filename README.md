@@ -8,6 +8,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.contracts` | nazwa aplikacji DBOS, kolejki, workflowy (`WorkflowSpec`) i ich modele wejścia/wyjścia (Pydantic) |
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
+| `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Kontrakty dla TypeScriptu i design systemu
 
@@ -51,8 +52,14 @@ Backend i worker przypinają konkretny commit z gałęzi main w core (`rev`). Po
 uv sync
 uv run ruff check . && uv run ruff format --check . && uv run ty check
 uv run python scripts/check_conventions.py && uv run vulture && uv run bandit -c pyproject.toml -r src scripts
-uv run pytest            # z testami architektury (tests/architecture/)
+uv run pytest            # z testami architektury (tests/architecture/), bez testów integracyjnych
+uv run behave            # scenariusze z features/
+uv run pytest -m integration   # tylko lokalnie: testy na prawdziwym PostgreSQL albo u dostawcy
 ```
+
+Scenariusze behave leżą w `features/<domena>.feature` (Gherkin skopiowany ze zgłoszenia, kroki po polsku), kroki w `features/steps/` wołają publiczne API `meritum_core` i działają w procesie, bez bazy i sieci. CI uruchamia je w jobie `tests`.
+
+Test, który potrzebuje prawdziwego PostgreSQL albo dostawcy, dostaje `@pytest.mark.integration`. `uv run pytest` go pomija (`-m "not integration"` w `addopts`), CI też. Uruchamia się go lokalnie przez `uv run pytest -m integration`.
 
 Zasady architektury i to, co je sprawdza: [docs/architecture.md](docs/architecture.md).
 
