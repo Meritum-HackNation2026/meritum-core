@@ -86,7 +86,8 @@ def test_robots_txt_of_a_path_prefix_comes_from_the_host_root() -> None:
 @pytest.mark.parametrize("signal", ["ai-train=no, search=yes", "ai-input=no"])
 def test_content_signal_reservation_excludes_a_secondary_source(signal: str) -> None:
     robots = text(f"User-agent: *\nContent-Signal: {signal}\nAllow: /")
-    checked = run(SECONDARY, robots, RobotsDisallowedError())
+    root = html() if "ai-train" in signal else RobotsDisallowedError()
+    checked = run(SECONDARY, robots, root)
     assert checked.tdm_reservation == "reserved"
     assert checked.excluded
     assert checked.exclusion_reason is not None

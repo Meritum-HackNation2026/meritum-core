@@ -7,15 +7,7 @@ Features:
 from urllib.robotparser import RobotFileParser
 
 from meritum_core.corpus.fetching.constants import CONTENT_SIGNAL_USE, ROBOTS_AGENT
-from meritum_core.corpus.fetching.robots import content_signals
-
-
-def _signal_allows(value: str) -> bool:
-    for pair in value.split(","):
-        use, _, answer = pair.partition("=")
-        if use.strip().lower() == CONTENT_SIGNAL_USE and answer.strip() == "no":
-            return False
-    return True
+from meritum_core.corpus.fetching.robots import content_signals, signal_denies
 
 
 def robots_allow(robots_txt: str, url: str) -> bool:
@@ -33,5 +25,7 @@ def robots_allow(robots_txt: str, url: str) -> bool:
     """
     parser = RobotFileParser()
     parser.parse(robots_txt.splitlines())
-    signals_allow = all(map(_signal_allows, content_signals(robots_txt)))
+    signals_allow = not any(
+        signal_denies(s, {CONTENT_SIGNAL_USE}) for s in content_signals(robots_txt)
+    )
     return parser.can_fetch(ROBOTS_AGENT, url) and signals_allow

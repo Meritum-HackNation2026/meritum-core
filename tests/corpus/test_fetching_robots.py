@@ -7,7 +7,11 @@ from typing import TYPE_CHECKING
 import httpx
 import pytest
 
-from meritum_core.corpus.fetching import FetchPurpose, RobotsDisallowedError
+from meritum_core.corpus.fetching import (
+    FetchPurpose,
+    RobotsDisallowedError,
+    signal_denies,
+)
 
 if TYPE_CHECKING:
     from tests.corpus.conftest import Web
@@ -98,3 +102,19 @@ def test_a_pasted_link_is_fetched_on_the_citizens_behalf_without_robots(
         "example.org/post": web.html(web.article),
     }
     assert fetch(web, routes, FetchPurpose.USER_LINK)
+
+
+@pytest.mark.parametrize(
+    ("signal", "denies"),
+    [
+        ("search=yes, AI-Train=NO", True),
+        ("ai-train=yes, ai-input=no", True),
+        ("search=no", False),
+        ("ai-train", False),
+    ],
+)
+def test_signal_denies_a_use_answered_no(
+    signal: str,
+    denies: bool,  # ruff: ignore[boolean-type-hint-positional-argument]  # parametrized
+) -> None:
+    assert signal_denies(signal, {"ai-train", "ai-input"}) is denies

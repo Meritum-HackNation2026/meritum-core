@@ -4,7 +4,9 @@ Features:
     US-KOR-01, F-06
 """
 
-from meritum_core.corpus.fetching.constants import ROBOTS_AGENT
+from collections.abc import Set as AbstractSet
+
+from meritum_core.corpus.fetching.constants import CONTENT_SIGNAL_DENIED, ROBOTS_AGENT
 
 
 def _applies(agents: set[str]) -> bool:
@@ -41,3 +43,24 @@ def content_signals(robots_txt: str) -> list[str]:
             if key == "content-signal" and _applies(agents):
                 found.append(value)
     return found
+
+
+def signal_denies(signal: str, uses: AbstractSet[str]) -> bool:
+    """Whether one Content-Signal value refuses any of ``uses``.
+
+    Args:
+        signal: one value, e.g. ``search=yes, ai-train=no``.
+        uses: the uses to look for, lower case.
+
+    Returns:
+        True when one of ``uses`` is answered ``no`` (case-insensitive).
+
+    Features:
+        US-KOR-01, F-06, ADR-24
+    """
+    for pair in signal.split(","):
+        use, _, answer = pair.partition("=")
+        refused = answer.strip().lower() == CONTENT_SIGNAL_DENIED
+        if use.strip().lower() in uses and refused:
+            return True
+    return False

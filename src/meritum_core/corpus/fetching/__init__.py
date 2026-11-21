@@ -21,7 +21,7 @@ from meritum_core.corpus.fetching.models import (
     FetchPurpose,
 )
 from meritum_core.corpus.fetching.ports import PageFetcherPort, Resolver
-from meritum_core.corpus.fetching.robots import content_signals
+from meritum_core.corpus.fetching.robots import content_signals, signal_denies
 
 __all__ = [
     "BlockedAddressError",
@@ -37,4 +37,5 @@ __all__ = [
     "RobotsDisallowedError",
     "build_page_fetcher",
     "content_signals",
+    "signal_denies",
 ]

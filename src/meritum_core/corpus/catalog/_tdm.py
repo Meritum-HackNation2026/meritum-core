@@ -16,29 +16,36 @@ from meritum_core.corpus.fetching import (
     PageFetchError,
     RobotsDisallowedError,
     content_signals,
+    signal_denies,
 )
-from meritum_core.corpus.fetching.constants import ROBOTS_PATH
+from meritum_core.corpus.fetching.constants import (
+    PLAIN_TEXT_CONTENT_TYPE,
+    ROBOTS_PATH,
+)
 
-type _Reading = Literal["none", "reserved"] | None
+type _Reservation = Literal["none", "reserved"]
+"""What the owner's signals say together."""
+
+type _Reading = _Reservation | None
 """What one owner signal says; None when it could not be read."""
-
-
-def _reserves(signal: str) -> bool:
-    pairs = (pair.partition("=") for pair in signal.lower().split(","))
-    return any(u.strip() in TDM_SIGNAL_USES and a.strip() == "no" for u, _, a in pairs)
 
 
 async def _robots_signal(root: str, fetcher: PageFetcherPort) -> _Reading:
     host_root = urlsplit(root)._replace(path="").geturl()  # domain may be a path prefix
     try:
         robots = await fetcher.fetch(
-            host_root + ROBOTS_PATH, purpose=FetchPurpose.USER_LINK
+            # USER_LINK: robots.txt itself is read before any robots rule applies
+            host_root + ROBOTS_PATH,
+            purpose=FetchPurpose.USER_LINK,
         )
     except PageFetchError as error:
         return "none" if error.reason is FetchFailureReason.NOT_FOUND else None
-    if robots.content_type != "text/plain":  # an anti-bot page, not robots.txt
+    if (
+        robots.content_type != PLAIN_TEXT_CONTENT_TYPE
+    ):  # an anti-bot page, not robots.txt
         return None
-    reserved = any(map(_reserves, content_signals(robots.untrusted_text)))
+    signals = content_signals(robots.untrusted_text)
+    reserved = any(signal_denies(s, TDM_SIGNAL_USES) for s in signals)
     return "reserved" if reserved else "none"
 
 
@@ -56,9 +63,11 @@ def _recorded(
     entry: CatalogEntry, reservation: Literal["none", "reserved"]
 ) -> CatalogEntry:
     excluded, reason = entry.excluded, entry.exclusion_reason
-    if reservation == "reserved" and entry.tier == "secondary" and not excluded:
+    reserved_secondary = reservation == "reserved" and entry.tier == "secondary"
+    excluded_by_check = reason == TDM_EXCLUSION_REASON
+    if reserved_secondary and not excluded:
         excluded, reason = True, TDM_EXCLUSION_REASON
-    if reservation == "none" and reason == TDM_EXCLUSION_REASON:
+    if reservation == "none" and excluded_by_check:
         excluded, reason = False, None
     update = {
         "tdm_reservation": reservation,

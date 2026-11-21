@@ -11,6 +11,7 @@ from meritum_core.corpus.fetching.constants import (
     NOAI_DIRECTIVE,
     ROBOTS_META_NAME,
     TDM_META_NAME,
+    TDM_RESERVED_VALUE,
 )
 
 
@@ -26,7 +27,7 @@ class _MetaReader(HTMLParser):
         found = {k: (v or "").strip().lower() for k, v in attrs}
         name, content = found.get("name", ""), found.get("content", "")
         directives = {d.strip() for d in content.split(",")}
-        tdm_reserved = name == TDM_META_NAME and content == "1"
+        tdm_reserved = name == TDM_META_NAME and content == TDM_RESERVED_VALUE
         no_ai = name == ROBOTS_META_NAME and NOAI_DIRECTIVE in directives
         self.reserved = self.reserved or tdm_reserved or no_ai
 
