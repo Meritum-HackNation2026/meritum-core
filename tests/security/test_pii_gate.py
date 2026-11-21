@@ -149,17 +149,33 @@ def test_default_settings_build_the_null_gate_that_logs_the_skip(
     assert TEXT not in caplog.text
 
 
-def test_environment_picks_sensitive_data_protection(
+def test_environment_picks_sensitive_data_protection_and_its_quota_project(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setenv("MERITUM_PII_GATE", "sdp")
-    monkeypatch.setenv("MERITUM_PII_PROJECT", "meritum-test")
+    monkeypatch.setenv("MERITUM_PII_PROJECT", "meritum-env")
     monkeypatch.setenv("MERITUM_PII_LOCATION", "europe-west3")
-    settings = PiiGateSettings()
-    gate = build_pii_gate(settings, credentials=Credentials(token="x"))  # ruff: ignore[hardcoded-password-func-arg]  # fake token
-    assert not isinstance(gate, NullPiiGate)
-    assert isinstance(gate, PiiGatePort)
-    assert settings.location == "europe-west3"
+    sent: Sent = []
+
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        sent.append(request)
+        return reply("dlp-address.json")(request)
+
+    gate = build_pii_gate(
+        PiiGateSettings(),
+        credentials=Credentials(token="x"),  # ruff: ignore[hardcoded-password-func-arg]  # fake token
+        http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(answer)),
+    )
+    asyncio.run(gate.mask(TEXT))
+    [request] = sent
+    assert request.url.host == "dlp.europe-west3.rep.googleapis.com"
+    assert request.headers["x-goog-user-project"] == "meritum-env"
+
+
+def test_gate_without_a_project_is_refused() -> None:
+    unchecked = PiiGateSettings.model_construct(gate="sdp", project=None)
+    with pytest.raises(ValueError, match="needs a project"):
+        build_pii_gate(unchecked)
 
 
 def test_sdp_needs_a_project(monkeypatch: pytest.MonkeyPatch) -> None:

@@ -78,6 +78,9 @@ class SensitiveDataProtectionGate:
         credentials: Google credentials; Application Default Credentials when None.
         http_client: HTTP client to use; tests pass one with recorded replies.
 
+    Raises:
+        ValueError: The settings name no project (validation was bypassed).
+
     Features:
         US-BEZ-04, F-20, ADR-13, ADR-14, ADR-35
     """
@@ -89,11 +92,11 @@ class SensitiveDataProtectionGate:
         credentials: Credentials | None = None,
         http_client: AsyncClient | None = None,
     ) -> None:
-        self._credentials = credentials
-        self._client = http_client or AsyncClient(timeout=HTTP_TIMEOUT_SECONDS)
         if settings.project is None:
             msg = "sensitive data protection needs a project"
             raise ValueError(msg)
+        self._credentials = credentials
+        self._client = http_client or AsyncClient(timeout=HTTP_TIMEOUT_SECONDS)
         location = settings.location
         self._project = settings.project
         self._url = (
