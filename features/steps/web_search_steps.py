@@ -6,8 +6,11 @@ in-process httpx2 transport: nothing leaves the process.
 
 import asyncio
 import json
+import os
+import shutil
 import tempfile
 from pathlib import Path
+from unittest import mock
 
 import httpx2
 from behave import given, then, when
@@ -47,11 +50,39 @@ def _catalog() -> tuple[CatalogEntry, ...]:
     return (_entry("gov.pl", "gov"), _entry("imgw.pl", "imgw"))
 
 
-def _stub(context: Context, urls: list[str]) -> None:
-    fixture = Path(tempfile.mkdtemp()) / "results.json"
+def _fixture(context: Context, urls: list[str]) -> Path:
+    folder = tempfile.mkdtemp()
+    context.add_cleanup(shutil.rmtree, folder)
+    fixture = Path(folder) / "results.json"
     fixture.write_text(json.dumps(urls), encoding="utf-8")
+    return fixture
+
+
+def _stub(context: Context, urls: list[str]) -> None:
+    fixture = _fixture(context, urls)
     settings = WebSearchSettings(provider="stub", stub_fixture=fixture)
     context.search = build_web_search(settings, context.catalog)
+
+
+def _set_env(context: Context, name: str, value: str) -> None:
+    patcher = mock.patch.dict(os.environ, {name: value})
+    patcher.start()
+    context.add_cleanup(patcher.stop)
+
+
+def _forbid_network(context: Context) -> None:
+    """Record every socket connection and DNS lookup instead of making it."""
+    context.network_calls = []
+
+    def record(*args: object, **_: object) -> None:
+        context.network_calls.append(args)
+        msg = "network is forbidden in this scenario"
+        raise OSError(msg)
+
+    for target in ("socket.socket.connect", "socket.getaddrinfo"):
+        patcher = mock.patch(target, record)
+        patcher.start()
+        context.add_cleanup(patcher.stop)
 
 
 def _run(context: Context, phrase: str) -> None:
@@ -136,9 +167,13 @@ def then_timeout_error(context: Context, status: str) -> None:
 
 @given("MERITUM_WEB_SEARCH_PROVIDER=stub")
 def given_stub_provider(context: Context) -> None:
-    """The stub with a fixture of catalogue addresses."""
+    """The environment names the stub and its fixture; the settings read it."""
     context.catalog = _catalog()
-    _stub(context, FIXTURE_URLS)
+    _set_env(context, "MERITUM_WEB_SEARCH_PROVIDER", "stub")
+    fixture = _fixture(context, FIXTURE_URLS)
+    _set_env(context, "MERITUM_WEB_SEARCH_STUB_FIXTURE", str(fixture))
+    _forbid_network(context)
+    context.search = build_web_search(WebSearchSettings(), context.catalog)
 
 
 @when("system wyszukuje dowolną frazę")
@@ -149,6 +184,7 @@ def when_search_any(context: Context) -> None:
 
 @then("port zwraca kandydatów z fixture, bez wywołań sieci")
 def then_fixture_candidates(context: Context) -> None:
-    """The fixture's addresses, in order; the stub has no HTTP client at all."""
+    """The fixture's addresses, in order, with no connection or DNS lookup."""
     assert context.error is None
     assert [c.url for c in context.candidates] == FIXTURE_URLS
+    assert context.network_calls == []

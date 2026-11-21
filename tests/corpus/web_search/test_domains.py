@@ -49,6 +49,9 @@ def test_address_gets_its_most_specific_entry(url: str, publisher_id: str) -> No
         "ftp://gov.pl/plik",
         "https://user:pass@gov.pl/",
         "gov.pl/web",
+        "https://www.gov.pl/web/gis/ostrzezenia/../../../web/obca",
+        "https://www.gov.pl/web/gis/ostrzezenia/%2e%2e/x",
+        "https://www.gov.pl/web/gis/./ostrzezenia",
         "",
     ],
 )

@@ -53,3 +53,7 @@ RESOURCE_ID_PATTERN: Final = r"^[a-z0-9][a-z0-9_-]*$"
 
 CONTRACT_QUERY: Final = "ostrzeżenie przed burzami"
 """Query the provider contract sends; the adapter under test must find results."""
+
+DOT_SEGMENTS: Final = frozenset({".", ".."})
+"""Path segments a client resolves away; a candidate holding one is dropped, or
+``/allowed/../other`` would pass the path filter and fetch ``/other``."""

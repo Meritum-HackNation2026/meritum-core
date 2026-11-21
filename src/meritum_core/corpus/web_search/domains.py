@@ -5,10 +5,14 @@ Features:
 """
 
 from collections.abc import Sequence
-from urllib.parse import urlsplit
+from urllib.parse import unquote, urlsplit
 
 from meritum_core.checks.contracts import CatalogEntry
-from meritum_core.corpus.web_search.constants import WEB_SCHEMES, WWW_PREFIX
+from meritum_core.corpus.web_search.constants import (
+    DOT_SEGMENTS,
+    WEB_SCHEMES,
+    WWW_PREFIX,
+)
 
 
 def _host(host: str) -> str:
@@ -49,7 +53,8 @@ def catalog_entry_for(url: str, catalog: Sequence[CatalogEntry]) -> CatalogEntry
 
     Returns:
         The matching entry, or None for an address outside the catalogue or
-        one that is not a plain http(s) URL with a host.
+        one that is not a plain http(s) URL with a host, or whose path holds
+        ``.`` or ``..`` segments (also percent-encoded).
 
     Features:
         US-KOR-04, F-13, ADR-07
@@ -59,6 +64,8 @@ def catalog_entry_for(url: str, catalog: Sequence[CatalogEntry]) -> CatalogEntry
     if parts.scheme not in WEB_SCHEMES or parts.hostname is None or has_credentials:
         return None
     host, path = _host(parts.hostname), _segments(parts.path)
+    if any(unquote(segment) in DOT_SEGMENTS for segment in path):
+        return None
     usable = (e for e in catalog if not e.excluded and e.role == "evidence")
     found = [e for e in usable if _matches(host, path, e)]
     return max(found, key=_specificity, default=None)
