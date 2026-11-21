@@ -1,0 +1,1131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Meritum contracts",
+  "x-contract-version": 1,
+  "$defs": {
+    "CheckRequest": {
+      "additionalProperties": false,
+      "description": "What a channel adapter sends to the verification core. The core is channel-agnostic.",
+      "properties": {
+        "channel": {
+          "enum": [
+            "web",
+            "extension",
+            "discord",
+            "sms",
+            "mcp"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "text": {
+          "anyOf": [
+            {
+              "maxLength": 4000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Text"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "page_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Extension only: the post the text came from.",
+          "title": "Page Url"
+        }
+      },
+      "required": [
+        "channel"
+      ],
+      "title": "CheckRequest",
+      "type": "object"
+    },
+    "Citation": {
+      "additionalProperties": false,
+      "description": "A fragment of a source and how it bears on the claim. The pipeline drops fragments it cannot find verbatim.",
+      "properties": {
+        "source": {
+          "$ref": "#/$defs/Source"
+        },
+        "fragment": {
+          "maxLength": 600,
+          "minLength": 10,
+          "title": "Fragment",
+          "type": "string"
+        },
+        "stance": {
+          "enum": [
+            "supports",
+            "refutes",
+            "context"
+          ],
+          "title": "Stance",
+          "type": "string"
+        },
+        "fragment_found_verbatim": {
+          "const": true,
+          "default": true,
+          "title": "Fragment Found Verbatim",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "fragment",
+        "stance"
+      ],
+      "title": "Citation",
+      "type": "object"
+    },
+    "ClaimResult": {
+      "additionalProperties": false,
+      "description": "One checked claim. Citations (source material) are kept apart from `explanation` (model interpretation).",
+      "properties": {
+        "claim": {
+          "maxLength": 500,
+          "minLength": 5,
+          "title": "Claim",
+          "type": "string"
+        },
+        "verdict": {
+          "enum": [
+            "confirmed",
+            "false",
+            "misleading",
+            "insufficient_evidence",
+            "not_verifiable"
+          ],
+          "title": "Verdict",
+          "type": "string"
+        },
+        "strength": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/EvidenceStrength"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "citations": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Citation"
+          },
+          "title": "Citations",
+          "type": "array"
+        },
+        "explanation": {
+          "maxLength": 800,
+          "minLength": 10,
+          "title": "Explanation",
+          "type": "string"
+        },
+        "unresolved": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "What could not be established.",
+          "title": "Unresolved"
+        },
+        "archival": {
+          "default": false,
+          "description": "Newest evidence is older than the claim's context needs.",
+          "title": "Archival",
+          "type": "boolean"
+        },
+        "technique": {
+          "anyOf": [
+            {
+              "enum": [
+                "false_authority",
+                "conspiracy_theory",
+                "out_of_context",
+                "outdated",
+                "fabricated_quote",
+                "manipulated_media",
+                "impersonation",
+                "cherry_picking"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Technique"
+        },
+        "incident": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IncidentMatch"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "claim",
+        "verdict",
+        "explanation"
+      ],
+      "title": "ClaimResult",
+      "type": "object"
+    },
+    "Escalation": {
+      "additionalProperties": false,
+      "description": "Hand-off to the moderator queue. 'recommended' means nobody was notified yet.",
+      "properties": {
+        "state": {
+          "enum": [
+            "recommended",
+            "created",
+            "updated"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "case_id": {
+          "anyOf": [
+            {
+              "pattern": "^#S-\\d+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Case Id"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "title": "Escalation",
+      "type": "object"
+    },
+    "EvidenceStrength": {
+      "additionalProperties": false,
+      "description": "Strength level together with the premises it follows from.",
+      "properties": {
+        "level": {
+          "enum": [
+            "strong",
+            "moderate",
+            "weak"
+          ],
+          "title": "Level",
+          "type": "string"
+        },
+        "premises": {
+          "$ref": "#/$defs/Premises"
+        }
+      },
+      "required": [
+        "level",
+        "premises"
+      ],
+      "title": "EvidenceStrength",
+      "type": "object"
+    },
+    "IncidentMatch": {
+      "additionalProperties": false,
+      "description": "Similarity to a known incident. Context only: never a basis for the verdict by itself.",
+      "properties": {
+        "incident_id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Incident Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "title": "Title",
+          "type": "string"
+        },
+        "date": {
+          "format": "date-time",
+          "title": "Date",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "similarity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Similarity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "incident_id",
+        "title",
+        "date",
+        "url",
+        "similarity"
+      ],
+      "title": "IncidentMatch",
+      "type": "object"
+    },
+    "Premises": {
+      "additionalProperties": false,
+      "description": "Explicit premises behind a verdict (MSZ: strength must follow from quality, recency, agreement, independence).",
+      "properties": {
+        "independent_sources": {
+          "description": "Distinct publishers (institutions) among the citations.",
+          "minimum": 0,
+          "title": "Independent Sources",
+          "type": "integer"
+        },
+        "primary_sources": {
+          "description": "Distinct primary-tier publishers among the citations.",
+          "minimum": 0,
+          "title": "Primary Sources",
+          "type": "integer"
+        },
+        "newest_source_age_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hours between the newest source and the date the claim refers to, not now.",
+          "title": "Newest Source Age Hours"
+        },
+        "max_age_hours": {
+          "default": 8760,
+          "description": "Threshold from the catalogue entry of the newest source.",
+          "minimum": 1,
+          "title": "Max Age Hours",
+          "type": "integer"
+        },
+        "validity": {
+          "default": "expires",
+          "enum": [
+            "expires",
+            "in_force",
+            "updated_in_place",
+            "past_event"
+          ],
+          "title": "Validity",
+          "type": "string"
+        },
+        "agreement": {
+          "enum": [
+            "consistent",
+            "conflicting"
+          ],
+          "title": "Agreement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "independent_sources",
+        "primary_sources",
+        "agreement"
+      ],
+      "title": "Premises",
+      "type": "object"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "description": "A document from the audited corpus. Title, publisher, date and link are mandatory to show (MSZ section 2).",
+      "properties": {
+        "id": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 3,
+          "title": "Title",
+          "type": "string"
+        },
+        "publisher": {
+          "maxLength": 120,
+          "minLength": 2,
+          "title": "Publisher",
+          "type": "string"
+        },
+        "url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "domain": {
+          "maxLength": 100,
+          "minLength": 3,
+          "title": "Domain",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "akt_prawny",
+            "dane_publiczne",
+            "instytucja",
+            "fact_check",
+            "media",
+            "encyklopedia"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            "primary",
+            "secondary"
+          ],
+          "title": "Tier",
+          "type": "string"
+        },
+        "published_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published At"
+        },
+        "fetched_at": {
+          "format": "date-time",
+          "title": "Fetched At",
+          "type": "string"
+        },
+        "language": {
+          "default": "pl",
+          "pattern": "^[a-z]{2}$",
+          "title": "Language",
+          "type": "string"
+        },
+        "via": {
+          "default": "corpus",
+          "enum": [
+            "corpus",
+            "rss",
+            "web_search"
+          ],
+          "title": "Via",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "publisher",
+        "url",
+        "domain",
+        "kind",
+        "tier",
+        "fetched_at"
+      ],
+      "title": "Source",
+      "type": "object"
+    },
+    "SourceStatusWarning": {
+      "additionalProperties": false,
+      "description": "Neutral note about who published the checked content (e.g. an EU-sanctioned entity). Never a verdict.",
+      "properties": {
+        "code": {
+          "enum": [
+            "eu_sanctioned_entity",
+            "state_controlled_media"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "entity": {
+          "maxLength": 120,
+          "title": "Entity",
+          "type": "string"
+        },
+        "basis_url": {
+          "format": "uri",
+          "maxLength": 2083,
+          "minLength": 1,
+          "title": "Basis Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "entity",
+        "basis_url"
+      ],
+      "title": "SourceStatusWarning",
+      "type": "object"
+    },
+    "CheckResult": {
+      "additionalProperties": false,
+      "description": "The answer every channel renders. Same request, same corpus version: same result on every channel.",
+      "properties": {
+        "check_id": {
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Check Id",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "done",
+            "needs_clarification",
+            "out_of_scope",
+            "technical_failure"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "claims": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ClaimResult"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "maxLength": 400,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For non-verdict statuses: what to do next.",
+          "title": "Message"
+        },
+        "limitations": {
+          "default": [],
+          "items": {
+            "maxLength": 300,
+            "type": "string"
+          },
+          "title": "Limitations",
+          "type": "array"
+        },
+        "source_warning": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceStatusWarning"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "escalation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Escalation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "corpus_version": {
+          "description": "Id of the scheduled corpus snapshot.",
+          "maxLength": 40,
+          "minLength": 1,
+          "title": "Corpus Version",
+          "type": "string"
+        },
+        "ai_disclosure": {
+          "const": true,
+          "default": true,
+          "title": "Ai Disclosure",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "check_id",
+        "status",
+        "corpus_version"
+      ],
+      "title": "CheckResult",
+      "type": "object"
+    },
+    "AnalysisStep": {
+      "additionalProperties": false,
+      "description": "One step of the processing strip shown between „Sprawdź” and the result.",
+      "properties": {
+        "code": {
+          "enum": [
+            "receive",
+            "extract_claims",
+            "search_corpus",
+            "search_web",
+            "assess_evidence",
+            "verify_citations",
+            "write_answer",
+            "save_record"
+          ],
+          "title": "Code",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "active",
+            "done",
+            "skipped",
+            "failed"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "status"
+      ],
+      "title": "AnalysisStep",
+      "type": "object"
+    },
+    "AnalysisStatus": {
+      "additionalProperties": false,
+      "description": "Polled (or streamed) by every channel while a check runs; mirrors the DBOS workflow.",
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/AnalysisStep"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "result": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CheckResult"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "check_id",
+        "steps"
+      ],
+      "title": "AnalysisStatus",
+      "type": "object"
+    },
+    "InjectionEvent": {
+      "additionalProperties": false,
+      "description": "Instructions found in the input or a source. Logged and ignored.",
+      "properties": {
+        "location": {
+          "enum": [
+            "input",
+            "source"
+          ],
+          "title": "Location",
+          "type": "string"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "maxLength": 2083,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "excerpt": {
+          "maxLength": 300,
+          "title": "Excerpt",
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "excerpt"
+      ],
+      "title": "InjectionEvent",
+      "type": "object"
+    },
+    "ModelUsage": {
+      "additionalProperties": false,
+      "description": "One model call: provider, model, region of processing, tokens and cost.",
+      "properties": {
+        "provider": {
+          "maxLength": 60,
+          "title": "Provider",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 80,
+          "title": "Model",
+          "type": "string"
+        },
+        "region": {
+          "description": "Where the data was processed.",
+          "maxLength": 40,
+          "title": "Region",
+          "type": "string"
+        },
+        "input_tokens": {
+          "minimum": 0,
+          "title": "Input Tokens",
+          "type": "integer"
+        },
+        "output_tokens": {
+          "minimum": 0,
+          "title": "Output Tokens",
+          "type": "integer"
+        },
+        "cost_usd": {
+          "minimum": 0,
+          "title": "Cost Usd",
+          "type": "number"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "region",
+        "input_tokens",
+        "output_tokens",
+        "cost_usd"
+      ],
+      "title": "ModelUsage",
+      "type": "object"
+    },
+    "CheckRecord": {
+      "additionalProperties": false,
+      "description": "Audit log of one check (MSZ MVP: question, time, sources, result; plus observability).",
+      "properties": {
+        "check_id": {
+          "title": "Check Id",
+          "type": "string"
+        },
+        "session_id": {
+          "description": "Random id kept in the browser session.",
+          "maxLength": 64,
+          "minLength": 8,
+          "title": "Session Id",
+          "type": "string"
+        },
+        "user_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 8,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Signed-in users only (Google or Microsoft account); None for anonymous checks.",
+          "title": "User Id"
+        },
+        "channel": {
+          "enum": [
+            "web",
+            "extension",
+            "discord",
+            "sms",
+            "mcp"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "answered_at": {
+          "format": "date-time",
+          "title": "Answered At",
+          "type": "string"
+        },
+        "question_masked": {
+          "description": "Input with obvious personal data masked.",
+          "maxLength": 4000,
+          "title": "Question Masked",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "done",
+            "needs_clarification",
+            "out_of_scope",
+            "technical_failure"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "verdicts": {
+          "items": {
+            "enum": [
+              "confirmed",
+              "false",
+              "misleading",
+              "insufficient_evidence",
+              "not_verifiable"
+            ],
+            "type": "string"
+          },
+          "title": "Verdicts",
+          "type": "array"
+        },
+        "source_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Source Ids",
+          "type": "array"
+        },
+        "corpus_version": {
+          "title": "Corpus Version",
+          "type": "string"
+        },
+        "models": {
+          "items": {
+            "$ref": "#/$defs/ModelUsage"
+          },
+          "title": "Models",
+          "type": "array"
+        },
+        "web_search_calls": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Web Search Calls",
+          "type": "integer"
+        },
+        "retrieval_errors": {
+          "default": [],
+          "items": {
+            "maxLength": 200,
+            "type": "string"
+          },
+          "title": "Retrieval Errors",
+          "type": "array"
+        },
+        "injection_events": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/InjectionEvent"
+          },
+          "title": "Injection Events",
+          "type": "array"
+        },
+        "escalation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Escalation"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "retention_until": {
+          "format": "date-time",
+          "title": "Retention Until",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "session_id",
+        "channel",
+        "received_at",
+        "answered_at",
+        "question_masked",
+        "status",
+        "verdicts",
+        "source_ids",
+        "corpus_version",
+        "models",
+        "retention_until"
+      ],
+      "title": "CheckRecord",
+      "type": "object"
+    },
+    "ModeratorCase": {
+      "additionalProperties": false,
+      "description": "One case per group of similar unresolved checks. Repeated questions update it instead of opening new ones.",
+      "properties": {
+        "id": {
+          "pattern": "^#S-\\d+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "state": {
+          "enum": [
+            "open",
+            "answered",
+            "closed"
+          ],
+          "title": "State",
+          "type": "string"
+        },
+        "reason": {
+          "enum": [
+            "insufficient_evidence",
+            "high_risk",
+            "repeated_unanswered"
+          ],
+          "title": "Reason",
+          "type": "string"
+        },
+        "summary": {
+          "maxLength": 300,
+          "minLength": 5,
+          "title": "Summary",
+          "type": "string"
+        },
+        "check_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Check Ids",
+          "type": "array"
+        },
+        "first_seen": {
+          "format": "date-time",
+          "title": "First Seen",
+          "type": "string"
+        },
+        "last_seen": {
+          "format": "date-time",
+          "title": "Last Seen",
+          "type": "string"
+        },
+        "assignee_role": {
+          "default": "moderator",
+          "enum": [
+            "moderator",
+            "analyst"
+          ],
+          "title": "Assignee Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "state",
+        "reason",
+        "summary",
+        "check_ids",
+        "first_seen",
+        "last_seen"
+      ],
+      "title": "ModeratorCase",
+      "type": "object"
+    },
+    "CatalogEntry": {
+      "additionalProperties": false,
+      "description": "One domain in the open source catalogue: why it qualifies, how it is refreshed, whether it is excluded.",
+      "properties": {
+        "domain": {
+          "maxLength": 100,
+          "minLength": 3,
+          "title": "Domain",
+          "type": "string"
+        },
+        "publisher": {
+          "maxLength": 120,
+          "minLength": 2,
+          "title": "Publisher",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "akt_prawny",
+            "dane_publiczne",
+            "instytucja",
+            "fact_check",
+            "media",
+            "encyklopedia"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "tier": {
+          "enum": [
+            "primary",
+            "secondary"
+          ],
+          "title": "Tier",
+          "type": "string"
+        },
+        "license": {
+          "maxLength": 120,
+          "minLength": 2,
+          "title": "License",
+          "type": "string"
+        },
+        "ingest": {
+          "enum": [
+            "static",
+            "rss",
+            "sitemap",
+            "web_search"
+          ],
+          "title": "Ingest",
+          "type": "string"
+        },
+        "refresh_hours": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Refresh Hours"
+        },
+        "validity": {
+          "default": "expires",
+          "description": "Age override for every document of this entry; past_event is set per evidence.",
+          "enum": [
+            "expires",
+            "in_force",
+            "updated_in_place",
+            "past_event"
+          ],
+          "title": "Validity",
+          "type": "string"
+        },
+        "max_age_hours": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shorter threshold for short-lived sources (warnings, roads, weather: hours or days).",
+          "title": "Max Age Hours"
+        },
+        "qualified_because": {
+          "maxLength": 300,
+          "minLength": 10,
+          "title": "Qualified Because",
+          "type": "string"
+        },
+        "excluded": {
+          "default": false,
+          "title": "Excluded",
+          "type": "boolean"
+        },
+        "exclusion_reason": {
+          "anyOf": [
+            {
+              "maxLength": 300,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exclusion Reason"
+        }
+      },
+      "required": [
+        "domain",
+        "publisher",
+        "kind",
+        "tier",
+        "license",
+        "ingest",
+        "qualified_because"
+      ],
+      "title": "CatalogEntry",
+      "type": "object"
+    }
+  }
+}

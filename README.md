@@ -1,12 +1,28 @@
 # meritum-core
 
-Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/meritum-backend) i [meritum-worker](https://github.com/Meritum-HackNation2026/meritum-worker): kontrakty zadań, porty i adaptery. Nie zawiera aplikacji, tylko bibliotekę `meritum_core`.
+Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/meritum-backend) i [meritum-worker](https://github.com/Meritum-HackNation2026/meritum-worker) oraz jedyne źródło prawdy kontraktów danych Meritum. Nie zawiera aplikacji, tylko bibliotekę `meritum_core` i wygenerowane z niej pliki dla TypeScriptu.
 
 | Moduł | Zawartość |
 | --- | --- |
+| `meritum_core.checks.contracts` | kontrakty sprawdzania (MSZ „Prawdowid”): `CheckRequest`, `CheckResult` z werdyktami, cytatami i przesłankami, `AnalysisStatus`, `CheckRecord`, `ModeratorCase`, `CatalogEntry`; reguły z treści zadania pilnuje walidacja, `CONTRACT_VERSION` osobno od kontraktu zadań |
 | `meritum_core.jobs.contracts` | nazwa aplikacji DBOS, kolejki, workflowy (`WorkflowSpec`) i ich modele wejścia/wyjścia (Pydantic) |
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
+
+## Kontrakty dla TypeScriptu i design systemu
+
+`contracts/` trzyma pliki wygenerowane z `meritum_core.checks.contracts`. Generuje się je tylko tutaj:
+
+```bash
+scripts/generate-contracts.sh           # contracts/meritum.schema.json i contracts/meritum.ts
+scripts/generate-contracts.sh --check   # to samo sprawdza CI (job contracts)
+```
+
+Wersje są przypięte: pydantic przez `uv.lock`, generator TS (`json-schema-to-typescript@15.0.4`) w skrypcie. `contracts/examples.json` to przykłady, które testy (`tests/test_checks_contracts.py`) walidują razem z regułami: werdykt rozstrzygający bez cytatu, siła niezgodna z przesłankami, sprzeczne źródła z poziomem siły i inne.
+
+Design system (`design-system/contracts/`) i aplikacje w TypeScripcie trzymają kopię tych plików i nigdy jej nie edytują. Kopię odświeża `contracts/sync.sh` w design-systemie po zmianie tutaj; zapisuje commit core i sumy kontrolne, a CI design-systemu sprawdza, że kopii nikt nie zmienił ręcznie. Przy rozbieżności wygrywa zawsze meritum-core.
+
+## Kontrakt zadań
 
 Zasady kontraktu:
 
@@ -17,7 +33,7 @@ Zasady kontraktu:
 
 ## Użycie w innym repo
 
-Repozytorium jest prywatne, więc zależność idzie przez SSH:
+Do końca prac repozytorium jest prywatne (potem wszystkie repozytoria Meritum będą publiczne), więc zależność idzie przez SSH:
 
 ```toml
 [project]
