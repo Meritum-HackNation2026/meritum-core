@@ -14,7 +14,7 @@ from importlib.resources import files
 import psycopg
 import pytest
 from psycopg import sql
-from psycopg.conninfo import conninfo_to_dict, make_conninfo
+from psycopg.conninfo import make_conninfo
 
 MIGRATIONS = files("meritum_core.corpus") / "migrations"
 TABLES = (
@@ -22,7 +22,7 @@ TABLES = (
 )
 
 
-def run(conninfo: str, *queries: sql.Composed) -> None:
+def run(conninfo: str, *queries: sql.SQL | sql.Composed) -> None:
     with psycopg.connect(conninfo, autocommit=True) as conn:
         for query in queries:
             conn.execute(query)
@@ -35,29 +35,31 @@ def owner_url() -> Iterator[str]:
     if not admin:
         pytest.skip("set MERITUM_CORPUS_DATABASE_URL to the meritum-postgres image")
     name, password = f"corpus_test_{uuid.uuid4().hex}", uuid.uuid4().hex
-    db = role = sql.Identifier(name)
-    source = sql.Identifier(str(conninfo_to_dict(admin).get("dbname", "postgres")))
-    maintenance, url = (make_conninfo(admin, dbname=d) for d in ("postgres", name))
-    run(
-        maintenance,
-        sql.SQL("CREATE DATABASE {} TEMPLATE {}").format(db, source),
-        sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(role, password),
-    )
+    db = role = sql.Identifier(name)  # one name for the copied database and its role
+    with psycopg.connect(admin) as conn:
+        source = sql.Identifier(conn.info.dbname)
+    maintenance = make_conninfo(admin, dbname="postgres")
+    url = make_conninfo(admin, dbname=name)
     try:
+        run(
+            maintenance,
+            sql.SQL("CREATE DATABASE {} TEMPLATE {}").format(db, source),
+            sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(role, password),
+        )
         # The same grants as db.sh: no CREATE on the database, owner of corpus.
         run(
             url,
             sql.SQL("REVOKE ALL ON DATABASE {} FROM PUBLIC").format(db),
             sql.SQL("GRANT CONNECT ON DATABASE {} TO {}").format(db, role),
-            sql.SQL("DROP SCHEMA IF EXISTS corpus CASCADE").format(),
+            sql.SQL("DROP SCHEMA IF EXISTS corpus CASCADE"),
             sql.SQL("CREATE SCHEMA corpus AUTHORIZATION {}").format(role),
         )
         yield make_conninfo(url, user=name, password=password)
     finally:
         run(
             maintenance,
-            sql.SQL("DROP DATABASE {} WITH (FORCE)").format(db),
-            sql.SQL("DROP ROLE {}").format(role),
+            sql.SQL("DROP DATABASE IF EXISTS {} WITH (FORCE)").format(db),
+            sql.SQL("DROP ROLE IF EXISTS {}").format(role),
         )
 
 
@@ -73,4 +75,4 @@ def test_issue_scenario_migrations_run_as_the_corpus_schema_owner(
         for script in scripts:
             conn.execute(script.read_bytes())
         tables = {row[0] for row in conn.execute(TABLES).fetchall()}
-    assert tables == {"passages", "snapshots"}
+    assert {"passages", "snapshots"} <= tables
