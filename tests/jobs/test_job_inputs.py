@@ -59,6 +59,8 @@ def test_check_input_rejects_a_raw_channel_user_id() -> None:
         _discord(session_id=raw, channel_user_hash=raw)
     with pytest.raises(ValidationError):
         _discord(session_id=raw, channel_user_hash=HASH)
+    with pytest.raises(ValidationError):
+        _discord(session_id=HASH, channel_user_hash=HASH, user_id=raw)
 
 
 def test_check_input_rejects_an_unknown_field_for_the_raw_id() -> None:

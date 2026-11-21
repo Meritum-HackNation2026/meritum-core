@@ -9,13 +9,13 @@ from collections.abc import AsyncIterator
 from typing import Any, NamedTuple
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, JsonValue
 
 from meritum_core.jobs.constants import EVENT_TIMEOUT_SECONDS
 from meritum_core.jobs.contracts import WorkflowSpec
 from meritum_core.jobs.ports import JobState
 
-type _Json = dict[str, Any]
+type _Json = dict[str, JsonValue]
 
 
 class EnqueuedJob(NamedTuple):
@@ -124,6 +124,8 @@ class InMemoryJobQueue:
     ) -> AsyncIterator[T]:
         """Yield every value published so far to stream `key`, in order.
 
+        A value that does not match `model` raises pydantic's ValidationError.
+
         Args:
             workflow_id: the workflow that wrote the stream.
             key: the stream key.
@@ -144,6 +146,8 @@ class InMemoryJobQueue:
         timeout_seconds: float = EVENT_TIMEOUT_SECONDS,  # ruff: ignore[unused-method-argument]  # matches the port; the fake never waits
     ) -> T | None:
         """Return the event's value, or None when it was never set.
+
+        A value that does not match `model` raises pydantic's ValidationError.
 
         Args:
             workflow_id: the workflow that set it.

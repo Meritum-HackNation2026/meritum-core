@@ -82,6 +82,8 @@ class DbosJobQueue:
     ) -> AsyncIterator[T]:
         """Yield the values of a DBOS stream, validated against `model`.
 
+        A value that does not match `model` raises pydantic's ValidationError.
+
         Args:
             workflow_id: the id `enqueue` returned.
             key: the stream key.
@@ -102,6 +104,8 @@ class DbosJobQueue:
         timeout_seconds: float = EVENT_TIMEOUT_SECONDS,
     ) -> T | None:
         """Read a DBOS event, validated against `model`.
+
+        A value that does not match `model` raises pydantic's ValidationError.
 
         Args:
             workflow_id: the id `enqueue` returned.

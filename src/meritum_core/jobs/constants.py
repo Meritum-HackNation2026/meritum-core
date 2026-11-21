@@ -36,5 +36,8 @@ ID_MIN_CHARS: Final = 8
 ID_MAX_CHARS: Final = 64
 """Longest session or user id, as in the checks contracts (CheckRecord)."""
 
+MAX_PING_MESSAGE_CHARS: Final = 200
+"""Longest text the `ping` workflow echoes."""
+
 CHECK_ID_MAX_CHARS: Final = 40
 """Longest check id, as in CheckResult.check_id."""

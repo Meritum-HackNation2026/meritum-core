@@ -23,7 +23,8 @@ class CheckInput(JobModel):
     Attributes:
         request: the channel's request with personal data already masked.
         session_id: browser session id; on Discord, SMS and MCP the user hash.
-        user_id: the signed-in user's id, if any.
+        user_id: the signed-in user's id, if any; web and extension only, since
+            Discord, SMS and MCP have no sign-in.
         channel_user_hash: Discord, SMS and MCP only: salted SHA-256 of the
             channel user id.
         received_at: when the backend received the request.
@@ -44,6 +45,9 @@ class CheckInput(JobModel):
             msg = "a check comes from a session or a signed-in user"
             raise ValueError(msg)
         is_sessionless = self.request.channel in SESSIONLESS_CHANNELS
+        if is_sessionless and self.user_id is not None:
+            msg = "Discord, SMS and MCP have no signed-in user"
+            raise ValueError(msg)
         if is_sessionless != (self.channel_user_hash is not None):
             msg = "only Discord, SMS and MCP carry a hashed channel user id, always"
             raise ValueError(msg)

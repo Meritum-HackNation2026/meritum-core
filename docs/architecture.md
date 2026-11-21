@@ -15,6 +15,8 @@ Zasady są w skillu `meritum-architecture` w monorepo (`.claude/skills/meritum-a
 | martwy kod | `vulture` (ścieżki w `[tool.vulture]`; nazwy używane tylko przez frameworki albo inne repo w `vulture_whitelist.py`) |
 | bezpieczeństwo | ruff `S` (reguły bandita) i sam `bandit` (`[tool.bandit]`); bandit to linter bezpieczeństwa, nie szuka martwego kodu |
 
+Fake portu w pamięci do testów innych repozytoriów (np. `jobs/fakes.py`, `InMemoryJobQueue`) nie jest adapterem: nie importuje frameworków ani dostawców, więc leży obok portu, a nie w `adapters/`.
+
 ## Wyjątki
 
 Wąsko i zawsze z powodem: `# noqa: XXX  # powód` w linii, per-file ignore w `[tool.ruff.lint.per-file-ignores]` z komentarzem, a dla `scripts/check_conventions.py` wpis `ścieżka = "powód"` w `[tool.meritum-conventions.*-exceptions]` w `pyproject.toml`.

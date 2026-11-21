@@ -6,6 +6,7 @@ Features:
 
 from pydantic import Field
 
+from meritum_core.jobs.constants import MAX_PING_MESSAGE_CHARS
 from meritum_core.jobs.contracts._base import JobModel
 
 
@@ -19,7 +20,7 @@ class PingInput(JobModel):
         ADR-03
     """
 
-    message: str = Field(default="ping", max_length=200)
+    message: str = Field(default="ping", max_length=MAX_PING_MESSAGE_CHARS)
 
 
 class PingOutput(JobModel):

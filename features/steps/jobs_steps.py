@@ -53,16 +53,14 @@ def then_input_has_no_raw_id(context: Context) -> None:
     assert built.request.text == context.request.text
     assert built.session_id == built.channel_user_hash == context.user_hash
     assert context.raw_user_id not in built.model_dump_json()
-    leaked = built.model_dump(mode="json") | {
-        "session_id": context.raw_user_id,
-        "channel_user_hash": context.raw_user_id,
-    }
-    rejected = False
-    try:
-        CheckInput.model_validate(leaked)
-    except ValidationError:
-        rejected = True
-    assert rejected, "the contract accepted a raw channel user id"
+    for field in ("session_id", "user_id"):
+        leaked = built.model_dump(mode="json") | {field: context.raw_user_id}
+        rejected = False
+        try:
+            CheckInput.model_validate(leaked)
+        except ValidationError:
+            rejected = True
+        assert rejected, f"the contract accepted a raw channel user id in {field}"
 
 
 def _status(check_id: str, step: str, *, result: CheckResult | None) -> AnalysisStatus:
@@ -117,3 +115,4 @@ def then_statuses_in_order(context: Context) -> None:
     """Order is kept and only the last status carries the result."""
     assert context.read == context.published
     assert context.read[-1].result is not None
+    assert all(status.result is None for status in context.read[:-1])

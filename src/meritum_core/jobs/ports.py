@@ -75,6 +75,12 @@ class JobQueue(Protocol):
             workflow_id: the id `enqueue` returned.
             key: the stream key, e.g. `PROGRESS_KEY`.
             model: the model every value validates against.
+
+        Yields:
+            The values in the order the workflow wrote them.
+
+        Raises:
+            ValidationError: a value does not match `model`.
         """
         ...
 
@@ -93,5 +99,11 @@ class JobQueue(Protocol):
             key: the event key, e.g. `READINESS_KEY`.
             model: the model the value validates against.
             timeout_seconds: how long to wait for a value.
+
+        Returns:
+            The latest value, or None when none was set in time.
+
+        Raises:
+            ValidationError: the value does not match `model`.
         """
         ...
