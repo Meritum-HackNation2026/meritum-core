@@ -12,7 +12,7 @@ from pytestarch import EvaluableArchitecture, Rule, get_evaluable_architecture
 
 PACKAGE = "meritum_core"
 # Modules that may use frameworks and adapters: adapters, factories, app wiring.
-WIRING = re.compile(r"^meritum_core\.[a-z_]+\.(adapters|factory)(\.|$)")
+WIRING = re.compile(r"^meritum_core(\.[a-z_]+)+\.(adapters|factory)(\.|$)")
 FRAMEWORKS = re.compile(
     r"^(dbos|fastapi|starlette|slowapi|psycopg|uvicorn|httpx|cryptography)(\.|$)"
 )
