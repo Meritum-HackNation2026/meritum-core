@@ -121,7 +121,7 @@ def when_verdict_is_settled(context: Context) -> None:
     )
 
 
-@then('siła to "{strength}"')
+@then('siła to "{strength:w}"')
 def then_strength_is(context: Context, strength: str) -> None:
     """The computed strength level matches the Polish name."""
     assert context.strength is not None

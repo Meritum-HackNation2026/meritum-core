@@ -40,3 +40,20 @@ Feature: Cytaty ze źródeł i siła dowodów
     Given werdykt "insufficient_evidence" ze sprzecznymi cytatami
     When system liczy, co zmieniłoby werdykt
     Then wynik ma kod mówiący, że rozstrzygnąłby nowszy dowód urzędowy, i żadnego faktu spoza wyniku
+
+  Scenario: dowód starszy niż 365 dni od daty twierdzenia
+    Given twierdzenie z claim_date 2026-11-01 pochodzącą z tekstu
+    And najnowszy zgodny dowód opublikowany 2025-09-01
+    When system liczy siłę
+    Then siła to "słaba" z przesłanką "dowód nieaktualny"
+
+  Scenario: obowiązujący akt prawny nie jest nieaktualny
+    Given cytat z pozycji katalogu ISAP o ważności "in_force" sprzed 5 lat
+    When system liczy wiek dowodu
+    Then cytat nie jest oznaczony jako nieaktualny
+
+  Scenario: dowód zastąpiony nowszym
+    Given starszy dowód wspierający i nowszy urzędowy dowód obalający od tego samego wydawcy i serii
+    When system ustala werdykt
+    Then starszy dowód ma ważność "superseded" i nie liczy się do siły ani rozbieżności
+    And werdykt to "fałszywe" albo "wprowadzające w błąd" z techniką "outdated", nigdy "brak wystarczających dowodów"
