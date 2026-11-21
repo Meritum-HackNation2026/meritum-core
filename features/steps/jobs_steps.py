@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from meritum_core.checks import AnalysisStatus, CheckRequest, CheckResult
 from meritum_core.jobs.constants import PROGRESS_KEY
-from meritum_core.jobs.contracts import CHECK, WORKFLOWS, CheckInput
+from meritum_core.jobs.contracts import CHECK, WORKFLOWS, CheckInput, EscalateClaimInput
 from meritum_core.jobs.fakes import InMemoryJobQueue
 
 _SALT = b"behave-salt"
@@ -116,3 +116,38 @@ def then_statuses_in_order(context: Context) -> None:
     assert context.read == context.published
     assert context.read[-1].result is not None
     assert all(status.result is None for status in context.read[:-1])
+
+
+@given('EscalateClaimInput z powodem "user_dispute" i bez justification_masked')
+def given_dispute_without_reason(context: Context) -> None:
+    """A "Zgłoś błąd" payload where the person left the reason empty."""
+    context.payload = {"check_id": "c1", "claim_index": 0, "reason": "user_dispute"}
+
+
+@when("kontrakt go waliduje")
+def when_contract_validates(context: Context) -> None:
+    """Validate the payload as the worker does."""
+    context.escalation = EscalateClaimInput.model_validate(context.payload)
+
+
+@then("walidacja przechodzi")
+def then_validation_passes(context: Context) -> None:
+    """The dispute is valid and carries no justification."""
+    assert context.escalation.reason == "user_dispute"
+    assert context.escalation.justification_masked is None
+
+
+@then('uzasadnienie przy powodzie innym niż "user_dispute" nadal jest odrzucane')
+def then_other_reasons_refuse_a_justification(context: Context) -> None:
+    """A justification still belongs to disputes only."""
+    payload = {
+        **context.payload,
+        "reason": "recommended_clicked",
+        "justification_masked": "Źródło jest nieaktualne.",
+    }
+    refused = False
+    try:
+        EscalateClaimInput.model_validate(payload)
+    except ValidationError:
+        refused = True
+    assert refused

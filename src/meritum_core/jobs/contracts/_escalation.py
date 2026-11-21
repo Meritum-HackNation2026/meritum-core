@@ -1,7 +1,7 @@
 """Models of the `escalate_claim` workflow: hand one claim to moderators.
 
 Features:
-    US-MOD-03, ADR-03
+    US-MOD-03, US-MOD-06, ADR-03
 """
 
 from typing import Annotated, Literal, Self
@@ -23,10 +23,11 @@ class EscalateClaimInput(JobModel):
         check_id: the check the claim belongs to.
         claim_index: position of the claim in the check's result.
         reason: what triggered the escalation.
-        justification_masked: the user's masked reason; only for `user_dispute`.
+        justification_masked: the user's masked reason; optional, and only for
+            `user_dispute` (an empty reason is sent as None).
 
     Features:
-        US-MOD-03, ADR-03
+        US-MOD-03, US-MOD-06, ADR-03
     """
 
     check_id: Annotated[str, Field(min_length=1, max_length=CHECK_ID_MAX_CHARS)]
@@ -39,8 +40,8 @@ class EscalateClaimInput(JobModel):
     @model_validator(mode="after")
     def _justification_only_for_disputes(self) -> Self:
         is_dispute = self.reason == "user_dispute"
-        if is_dispute != (self.justification_masked is not None):
-            msg = "a user dispute, and only a dispute, carries a justification"
+        if self.justification_masked is not None and not is_dispute:
+            msg = "only a user dispute carries a justification"
             raise ValueError(msg)
         return self
 
@@ -52,7 +53,7 @@ class EscalateClaimOutput(JobModel):
         escalation: the case created or updated for the claim.
 
     Features:
-        US-MOD-03, ADR-03
+        US-MOD-03, US-MOD-06, ADR-03
     """
 
     escalation: Escalation
