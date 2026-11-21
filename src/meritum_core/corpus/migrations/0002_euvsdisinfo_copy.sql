@@ -6,7 +6,8 @@
 CREATE TABLE IF NOT EXISTS corpus.euvsdisinfo_entries (
     key text PRIMARY KEY,
     kind text NOT NULL CHECK (kind IN ('case', 'article')),
-    -- meritum_worker.corpus.Entry as JSON: title, url, dates, texts, domains.
+    -- The worker's corpus.Entry as JSON (title, url, dates, texts, domains): the
+    -- worker alone reads and writes it, so its fields change without a migration.
     entry jsonb NOT NULL,
     -- 768 = DEFAULT_DIMENSIONS in meritum_core.shared.embeddings.constants
     description_embedding vector(768) NOT NULL,
