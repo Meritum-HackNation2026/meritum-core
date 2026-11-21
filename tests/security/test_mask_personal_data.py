@@ -61,6 +61,7 @@ CASES = [
     ("Dzwoń na +48 601 234 567 albo 22 123 45 67", "Dzwoń na [telefon] albo [telefon]"),
     ("nr 5 601234567", "nr 5 [telefon]"),
     ("tel 601 234 567 Euro-park", "tel [telefon] Euro-park"),
+    ("601 234 567,22 123 45 67", "[telefon],[telefon]"),
     ("tel. 601 234 567 123-456", "tel. [telefon] 123-456"),
 ]
 

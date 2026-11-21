@@ -63,9 +63,12 @@ AMOUNT_UNITS: Final = (
 """Words and signs after a number that make it an amount or a count, not a phone."""
 
 AMOUNT_TAIL_PATTERN: Final = re.compile(
-    r"(?:,\d|\s*(?i:" + "|".join(map(re.escape, AMOUNT_UNITS)) + r")(?![\w-]))"
+    r"(?:,\d{1,2}(?![ \u00a0.-]?\d)|\s*(?i:"
+    + "|".join(map(re.escape, AMOUNT_UNITS))
+    + r")(?![\w-]))"
 )
-"""Text right after a phone-shaped match that makes it an amount: decimals or a unit.
+"""Text right after a phone-shaped match that makes it an amount: one or two decimals
+that end the number ("850 000 000,50"; ",22 123" starts the next phone) or a unit.
 
 Fixed alternatives after optional spaces, so the check takes linear time."""
 
