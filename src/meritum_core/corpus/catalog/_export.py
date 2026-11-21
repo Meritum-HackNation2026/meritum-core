@@ -6,6 +6,9 @@ Features:
 
 import json
 from collections.abc import Sequence
+from itertools import takewhile
+
+import yaml
 
 from meritum_core.checks.contracts import CatalogEntry
 from meritum_core.corpus.constants import CATALOG_TABLE_HEADER
@@ -60,3 +63,33 @@ def catalog_markdown(entries: Sequence[CatalogEntry]) -> str:
         US-KOR-01, F-10
     """
     return "\n".join([CATALOG_TABLE_HEADER, *map(_row, entries)])
+
+
+def _yaml_entry(entry: CatalogEntry) -> str:
+    fields = entry.model_dump(mode="json", exclude_none=True)
+    if not entry.excluded:
+        del fields["excluded"]
+    dumped = yaml.safe_dump([fields], allow_unicode=True, sort_keys=False, width=10_000)
+    return str(dumped)  # PyYAML ships no stubs
+
+
+def catalog_yaml(entries: Sequence[CatalogEntry], current: str) -> str:
+    """Render the catalogue back to ``catalog.yaml`` in the curators' layout.
+
+    Keeps the leading comment lines of ``current``, omits empty fields and
+    ``excluded: false`` and puts a blank line between entries, so rewriting an
+    unchanged catalogue gives the same bytes.
+
+    Args:
+        entries: the validated catalogue.
+        current: the file's present text, for its leading comments.
+
+    Returns:
+        The YAML text.
+
+    Features:
+        US-KOR-01, F-10
+    """
+    lines = current.splitlines(keepends=True)
+    header = "".join(takewhile(lambda line: line.startswith("#"), lines))
+    return header + "\nentries:\n\n" + "\n".join(map(_yaml_entry, entries))

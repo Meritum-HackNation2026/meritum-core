@@ -10,12 +10,14 @@ from urllib.parse import urlsplit
 
 from urllib3.exceptions import DependencyWarning
 
+from meritum_core.corpus.fetching.adapters._meta import meta_reserves_mining
 from meritum_core.corpus.fetching.constants import (
     ALLOWED_CONTENT_TYPES,
     HTML_CONTENT_TYPES,
     LOGIN_PATH,
     LOGIN_WALL_MAX_TEXT_CHARS,
     LOGIN_WALL_STATUSES,
+    NOT_FOUND_STATUSES,
     PASSWORD_INPUT,
     PAYWALL_MARKER,
     PAYWALL_STATUSES,
@@ -84,6 +86,8 @@ def _check_walls(response: RawResponse) -> None:
         raise LoginWallError(FetchFailureReason.LOGIN_WALL)
     if response.status in PAYWALL_STATUSES:
         raise PaywallError
+    if response.status in NOT_FOUND_STATUSES:
+        raise PageFetchError(FetchFailureReason.NOT_FOUND)
     if not response.is_success:
         raise PageFetchError(FetchFailureReason.HTTP_ERROR)
     if response.content_type not in ALLOWED_CONTENT_TYPES:
@@ -124,5 +128,8 @@ def to_page(response: RawResponse) -> FetchedPage:
     is_html = response.content_type in HTML_CONTENT_TYPES
     text = _main_text(response.text) if is_html else response.text.strip()
     return FetchedPage(
-        url=response.url, content_type=response.content_type, untrusted_text=text
+        url=response.url,
+        content_type=response.content_type,
+        untrusted_text=text,
+        tdm_reserved=is_html and meta_reserves_mining(response.text),
     )

@@ -5,6 +5,9 @@
 
 meritum-frontend copies catalog/catalog.json with ``pnpm sync``; never edit it by
 hand, change src/meritum_core/corpus/catalog/catalog.yaml and run this script.
+
+Features:
+    US-KOR-01, F-10
 """
 
 import sys

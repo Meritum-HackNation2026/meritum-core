@@ -43,8 +43,8 @@ CATALOG_FILE: Final = Path(__file__).parent / "catalog" / "catalog.yaml"
 ``scripts/export_catalog.py`` turns it into ``catalog/catalog.json``."""
 
 TDM_EXCLUSION_REASON: Final = (
-    "robots.txt albo Content-Signal zastrzega eksplorację tekstów i danych "
-    "(art. 4 dyrektywy 2019/790)."
+    "Content-Signal w robots.txt albo znaczniki meta zastrzegają eksplorację "
+    "tekstów i danych (art. 4 dyrektywy 2019/790)."
 )
 """Exclusion reason the TDM check writes into a secondary source whose owner
 reserved text and data mining (US-KOR-01, ADR-24); catalogue data, not UI copy."""
@@ -59,3 +59,7 @@ CATALOG_TABLE_HEADER: Final = (
     "|---|---|---|---|---|---|---|---|---|"
 )
 """Header of the generated audit table of the catalogue in the README (US-KOR-01)."""
+
+TDM_SIGNAL_USES: Final = frozenset({"ai-train", "ai-input"})
+"""Content-Signal uses whose ``=no`` reserves text and data mining (ADR-24);
+a plain ``Disallow`` blocks crawling and is recorded as an exclusion instead."""

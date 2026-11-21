@@ -1,9 +1,16 @@
 """The catalogue exports to catalog/catalog.json and to the audit table in the README."""
 
 import json
+from pathlib import Path
 
 from meritum_core.checks.contracts import CatalogEntry
-from meritum_core.corpus.catalog import catalog_json, catalog_markdown, load_catalog
+from meritum_core.corpus.catalog import (
+    catalog_json,
+    catalog_markdown,
+    catalog_yaml,
+    load_catalog,
+)
+from meritum_core.corpus.constants import CATALOG_FILE
 
 EXCLUDED = CatalogEntry(
     domain="konkret24.tvn24.pl",
@@ -35,3 +42,15 @@ def test_markdown_row_shows_exclusion_reason_and_escapes_pipes() -> None:
     row = table.splitlines()[-1]
     assert "TVN \\| Konkret24" in row
     assert "wykluczone: Brak w IFCN i EFCSN." in row
+
+
+def test_yaml_export_reproduces_the_shipped_catalogue_byte_for_byte() -> None:
+    shipped = CATALOG_FILE.read_text(encoding="utf-8")
+    assert catalog_yaml(load_catalog(), shipped) == shipped
+
+
+def test_yaml_export_writes_an_exclusion_and_reloads(tmp_path: Path) -> None:
+    path = tmp_path / "catalog.yaml"
+    path.write_text(catalog_yaml((EXCLUDED,), "# nagłówek\n"), encoding="utf-8")
+    assert load_catalog(path) == (EXCLUDED,)
+    assert path.read_text(encoding="utf-8").startswith("# nagłówek\n")

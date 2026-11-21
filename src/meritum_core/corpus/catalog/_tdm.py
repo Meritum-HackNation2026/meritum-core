@@ -5,47 +5,78 @@ Features:
 """
 
 from typing import Literal
+from urllib.parse import urlsplit
 
 from meritum_core.checks.contracts import CatalogEntry
-from meritum_core.corpus.constants import TDM_EXCLUSION_REASON
+from meritum_core.corpus.constants import TDM_EXCLUSION_REASON, TDM_SIGNAL_USES
 from meritum_core.corpus.fetching import (
+    FetchFailureReason,
     FetchPurpose,
     PageFetcherPort,
     PageFetchError,
     RobotsDisallowedError,
+    content_signals,
 )
+from meritum_core.corpus.fetching.constants import ROBOTS_PATH
 
-type _Reservation = Literal["none", "reserved"]
+type _Reading = Literal["none", "reserved"] | None
+"""What one owner signal says; None when it could not be read."""
 
 
-async def _reservation(url: str, fetcher: PageFetcherPort) -> _Reservation | None:
+def _reserves(signal: str) -> bool:
+    pairs = (pair.partition("=") for pair in signal.lower().split(","))
+    return any(u.strip() in TDM_SIGNAL_USES and a.strip() == "no" for u, _, a in pairs)
+
+
+async def _robots_signal(root: str, fetcher: PageFetcherPort) -> _Reading:
+    host_root = urlsplit(root)._replace(path="").geturl()  # domain may be a path prefix
     try:
-        await fetcher.fetch(url, purpose=FetchPurpose.SOURCE)
+        robots = await fetcher.fetch(
+            host_root + ROBOTS_PATH, purpose=FetchPurpose.USER_LINK
+        )
+    except PageFetchError as error:
+        return "none" if error.reason is FetchFailureReason.NOT_FOUND else None
+    if robots.content_type != "text/plain":  # an anti-bot page, not robots.txt
+        return None
+    reserved = any(map(_reserves, content_signals(robots.untrusted_text)))
+    return "reserved" if reserved else "none"
+
+
+async def _meta_signal(root: str, fetcher: PageFetcherPort) -> _Reading:
+    try:
+        page = await fetcher.fetch(root, purpose=FetchPurpose.SOURCE)
     except RobotsDisallowedError:
-        return "reserved"
+        return "none"  # not crawled at all, so its meta tags reserve nothing
     except PageFetchError:
-        return None  # timeout, error page: says nothing about the opt-out
-    return "none"
+        return None
+    return "reserved" if page.tdm_reserved else "none"
 
 
-def _update(entry: CatalogEntry, reservation: _Reservation) -> dict[str, object]:
-    update: dict[str, object] = {"tdm_reservation": reservation}
-    if reservation == "reserved" and entry.tier == "secondary" and not entry.excluded:
-        update |= {"excluded": True, "exclusion_reason": TDM_EXCLUSION_REASON}
-    excluded_by_check = entry.exclusion_reason == TDM_EXCLUSION_REASON
-    if reservation == "none" and excluded_by_check:
-        update |= {"excluded": False, "exclusion_reason": None}
-    return update
+def _recorded(
+    entry: CatalogEntry, reservation: Literal["none", "reserved"]
+) -> CatalogEntry:
+    excluded, reason = entry.excluded, entry.exclusion_reason
+    if reservation == "reserved" and entry.tier == "secondary" and not excluded:
+        excluded, reason = True, TDM_EXCLUSION_REASON
+    if reservation == "none" and reason == TDM_EXCLUSION_REASON:
+        excluded, reason = False, None
+    update = {
+        "tdm_reservation": reservation,
+        "excluded": excluded,
+        "exclusion_reason": reason,
+    }
+    return CatalogEntry.model_validate(entry.model_copy(update=update).model_dump())
 
 
 async def check_tdm(entry: CatalogEntry, fetcher: PageFetcherPort) -> CatalogEntry:
-    """Fetch the entry's root as a source and record the owner's TDM opt-out.
+    """Read the owner's text and data mining opt-out and record it in the entry.
 
-    The fetcher honours robots.txt and its Content-Signal for sources; a refusal
-    (``Disallow`` or ``ai-input=no``) is the machine-readable reservation of
-    art. 4 of directive 2019/790. A secondary source with a reservation is
-    excluded with a reason (ADR-24), and brought back when the owner lifts it.
-    Any other fetch failure leaves the entry as recorded.
+    The opt-out (art. 4 of directive 2019/790) is ``ai-train=no`` or
+    ``ai-input=no`` in a robots.txt Content-Signal, or a ``tdm-reservation``
+    or ``noai`` meta tag on the entry's root page. A ``Disallow`` alone blocks
+    crawling, not mining. A secondary source with a reservation is excluded with
+    a reason (ADR-24) and brought back when the owner lifts it. When either
+    signal cannot be read and none reserves, the entry stays as recorded.
 
     Args:
         entry: the catalogue entry to check.
@@ -57,7 +88,10 @@ async def check_tdm(entry: CatalogEntry, fetcher: PageFetcherPort) -> CatalogEnt
     Features:
         US-KOR-01, F-10, ADR-24
     """
-    reservation = await _reservation(f"https://{entry.domain}", fetcher)
-    if reservation is None:
+    root = f"https://{entry.domain}"
+    readings = {await _robots_signal(root, fetcher), await _meta_signal(root, fetcher)}
+    if "reserved" in readings:
+        return _recorded(entry, "reserved")
+    if None in readings:
         return entry
-    return CatalogEntry.model_validate(entry.model_dump() | _update(entry, reservation))
+    return _recorded(entry, "none")

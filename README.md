@@ -17,7 +17,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.security.pii` | `mask_personal_data(text, gate)`: najpierw bramka maskowania za portem `PiiGatePort` (Google Sensitive Data Protection w regionie UE albo `NullPiiGate`, która loguje pominięcie), potem wzorce telefonu, e-maila i PESEL-u; fabryka `build_pii_gate(PiiGateSettings())` według `MERITUM_PII_GATE` (zob. [Maskowanie danych osobowych](#maskowanie-danych-osobowych-meritum_coresecuritypii)) |
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie, po usuniętych sprawdzeniach i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
-| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal |
+| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal; `FetchedPage.tdm_reserved` mówi, czy znaczniki meta strony zastrzegają eksplorację, a `content_signals()` czyta Content-Signal z robots.txt |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
 | `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
 | `meritum_core.corpus.catalog` | jawny katalog źródeł `catalog.yaml` (zob. [Katalog źródeł](#katalog-źródeł-meritum_corecorpuscatalog)): `load_catalog()` waliduje każdy wpis jako `CatalogEntry`, `check_tdm()` zapisuje zastrzeżenie TDM właściciela przez fetcher stron, `catalog_json()` i `catalog_markdown()` dają eksport dla frontendu i tabelę audytu |
@@ -235,7 +235,7 @@ Każdy wpis w `catalog.yaml` to dokładnie `CatalogEntry`. Kontrakt ma `extra="f
 | `validity` | `expires`: wygasa po `max_age_hours`, domyślnie 365 dni. `in_force`: obowiązuje, dopóki akt nie zostanie zmieniony („nie wygasa”). `updated_in_place`: strona stała, poprawiana na miejscu. |
 | `max_age_hours` | Krótki próg dla ostrzeżeń, dróg, pogody i pomiarów |
 | `qualified_because` | Powód kwalifikacji |
-| `tdm_reservation` | `none`: brak zastrzeżenia w robots.txt i tdmrep. `reserved`: zastrzeżenie jest. `unknown`: nie dało się odczytać. |
+| `tdm_reservation` | `none`: brak zastrzeżenia. `reserved`: `ai-train=no` albo `ai-input=no` w Content-Signal robots.txt, znacznik meta `tdm-reservation` albo `noai`. Samo `Disallow` blokuje pobieranie, nie eksplorację, więc daje wykluczenie z powodem, a nie `reserved`. `unknown`: nie dało się odczytać. |
 | `excluded`, `exclusion_reason` | Wykluczenie zawsze ma powód. Pola pomijamy, gdy wpis nie jest wykluczony. |
 
 ### Tabela audytu
@@ -407,18 +407,18 @@ Paragraf 5 zadania mówi, że objęcie podmiotu sankcjami UE nie może przesądz
 - **monitoring.paa.gov.pl:** robots.txt przekierowuje, tdmrep zwraca 403.
 - **umgdy.gov.pl:** robots.txt wskazuje mapę strony na serwerze deweloperskim wykonawcy. Nie używamy jej.
 - **Brak RSS na gov.pl:** wpisy gov.pl mają `ingest = static`, czyli cykliczne pobieranie stron list.
-- **Tylko robots.txt i Content-Signal:** `scripts/check_catalog_tdm.py` sprawdza je przez fetcher stron. Znaczników meta TDM na pojedynczych stronach i `tdmrep.json` jeszcze nie sprawdzamy automatycznie.
+- **Kontrola TDM:** `uv run python scripts/check_catalog_tdm.py` czyta Content-Signal z robots.txt hosta i znaczniki meta strony wpisu przez fetcher stron, wypisuje różnice, a z `--write` zapisuje je w `catalog.yaml`. Gdy któregoś sygnału nie da się odczytać (antybot, błąd serwera, strona wymagająca JavaScriptu), wpis zostaje bez zmian. `/.well-known/tdmrep.json` nie jest czytany, bo fetcher nie przyjmuje JSON-a.
 
 ### Ustalenia (core#22)
 
 1. `refresh_minutes` z minimum 15 zamiast `refresh_hours`. Ostrzeżenia gov.pl i RSO: 15 min, Policja i CERT: 30 min, reszta przeliczona z godzin.
-2. `ingest = api` obejmuje wszystkie publiczne API. Do poprawy tylko opis pola w kontrakcie.
+2. `ingest = api` obejmuje wszystkie publiczne API. Opis pola w kontrakcie jest poprawiony.
 3. Demagog zostaje `excluded`. Jego `publisher_id` służy do rozpoznania wydawcy ClaimReview (core#27).
 4. Ostrzeżenia gov.pl wydaje RCB (`rcb`). Portal Pasażera i SOK to oficjalne informacje przewoźnika, nie organu.
 5. Pole `role: evidence | source_status` w tym samym katalogu. `source_status`: sankcje UE (`webgate.ec.europa.eu/fsd`), sankcje MSWiA, `hole.cert.pl`.
 6. Źródła krótkotrwałe mają `ingest = live` i nie mają `refresh_minutes`: monitoring PAA, GIOŚ, drogi GDDKiA, Portal Pasażera, meteo, hydro i baltyk IMGW. Tak samo Fact Check API oraz AFP i Demagog, których oceny przychodzą przez to API.
 
-Walidator do dopisania w kontrakcie: wpis `live` nie ma `refresh_minutes`.
+Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 
 ### Adresy wejścia, podstawy prawne i uwagi
 

@@ -95,3 +95,15 @@ PASTE_TEXT_REASONS: Final = frozenset(
     }
 )
 """Failures where the citizen is asked to paste the text instead of the link."""
+
+NOT_FOUND_STATUSES: Final = frozenset({404, 410})
+"""Statuses meaning the server has no such page (``not_found``, e.g. no robots.txt)."""
+
+TDM_META_NAME: Final = "tdm-reservation"
+"""TDMRep meta tag; ``content="1"`` reserves text and data mining (W3C TDMRep)."""
+
+ROBOTS_META_NAME: Final = "robots"
+"""Robots meta tag, read for the ``noai`` directive."""
+
+NOAI_DIRECTIVE: Final = "noai"
+"""Robots meta directive that opts the page out of AI use."""

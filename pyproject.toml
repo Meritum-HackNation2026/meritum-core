@@ -158,7 +158,7 @@ paths = ["src", "scripts", "tests", "features", "vulture_whitelist.py"]
 # never as attributes here.
 exclude = ["src/meritum_core/checks/contracts/"]
 min_confidence = 60
-ignore_decorators = ["@given", "@when", "@then", "@model_validator"]  # behave calls step functions, Pydantic calls validators
+ignore_decorators = ["@given", "@when", "@then", "@model_validator", "@override"]  # behave calls step functions, Pydantic calls validators, a base class calls overrides
 ignore_names = ["app_database_url"]  # tests/conftest.py fixture, requested by name through getfixturevalue
 
 # bandit is a security linter, not a dead-code tool. Ruff's S rules already run

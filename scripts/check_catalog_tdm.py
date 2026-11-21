@@ -1,38 +1,46 @@
 """Manual check, local only (never in CI): read every catalogue owner's TDM opt-out.
 
-Fetches each entry's root as a source through the SSRF-safe page fetcher, which
-honours robots.txt and its Content-Signal, and prints the entries whose recorded
-``tdm_reservation`` (or exclusion) differs from the result. The curator copies
-the printed values into src/meritum_core/corpus/catalog/catalog.yaml.
+Reads each entry's robots.txt Content-Signal and root-page meta tags through the
+SSRF-safe page fetcher (``check_tdm``) and prints the entries whose recorded
+``tdm_reservation`` or exclusion differs. ``--write`` saves the results into
+src/meritum_core/corpus/catalog/catalog.yaml; run scripts/export_catalog.py after.
 
-    uv run python scripts/check_catalog_tdm.py
+    uv run python scripts/check_catalog_tdm.py [--write]
+
+Features:
+    US-KOR-01, F-10, ADR-24
 """
 
 import asyncio
 import sys
 
-from meritum_core.corpus.catalog import check_tdm, load_catalog
+from meritum_core.checks.contracts import CatalogEntry
+from meritum_core.corpus.catalog import catalog_yaml, check_tdm, load_catalog
+from meritum_core.corpus.constants import CATALOG_FILE
 from meritum_core.corpus.fetching import build_page_fetcher
 
 
-async def report() -> int:
-    """Check every entry and print the differences.
+async def checked_catalogue() -> list[CatalogEntry]:
+    """Check every entry and print the ones that changed.
 
     Returns:
-        How many entries differ from the catalogue.
+        The catalogue with every result recorded.
     """
     fetcher = build_page_fetcher()
-    differ = 0
+    checked: list[CatalogEntry] = []
     for entry in load_catalog():
-        checked = await check_tdm(entry, fetcher)
-        if checked != entry:
-            differ += 1
+        result = await check_tdm(entry, fetcher)
+        if result != entry:
             sys.stdout.write(
                 f"{entry.domain}: tdm_reservation {entry.tdm_reservation} -> "
-                f"{checked.tdm_reservation}, excluded {checked.excluded}\n"
+                f"{result.tdm_reservation}, excluded {result.excluded}\n"
             )
-    return differ
+        checked.append(result)
+    return checked
 
 
 if __name__ == "__main__":
-    sys.exit(1 if asyncio.run(report()) else 0)
+    entries = asyncio.run(checked_catalogue())
+    if "--write" in sys.argv[1:]:
+        current = CATALOG_FILE.read_text(encoding="utf-8")
+        CATALOG_FILE.write_text(catalog_yaml(entries, current), encoding="utf-8")
