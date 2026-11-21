@@ -16,6 +16,7 @@ from meritum_core.jobs.contracts import (
 )
 from meritum_core.jobs.fakes import InMemoryJobQueue
 from meritum_core.jobs.ports import JobQueue
+from meritum_core.moderation import HighRiskTopic
 from meritum_core.shared.blobs import BlobRef, BlobSettings
 from meritum_core.shared.embeddings import EmbeddingsSettings
 from meritum_core.shared.llm import LlmResult, LlmSettings, LlmUsage, Prompt
@@ -63,3 +64,4 @@ CorpusSettings._postgres_has_a_database  # ruff: ignore[private-member-access]  
 EmbeddingsSettings.model_config  # read by pydantic-settings
 EmbeddingsSettings._vertex_is_in_the_eu  # ruff: ignore[private-member-access]  # Pydantic validator
 Passage.model_config  # read by pydantic
+HighRiskTopic.keywords  # read by the worker's topic step (keyword fallback)

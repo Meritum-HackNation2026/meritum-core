@@ -11,3 +11,13 @@ Feature: Sprawdzanie treści
     When kontrakty są pakietem "checks/contracts/" z prywatnymi modułami
     Then każdy dotychczasowy import działa bez zmian
     And wygenerowane "contracts/meritum.schema.json" i "contracts/meritum.ts" są identyczne jak przed zmianą
+
+  Scenario: zapis i odczyt przebiegu
+    Given CheckRecord ze stanem done i dwoma werdyktami
+    When worker zapisuje go przez repozytorium, a backend czyta po check_id
+    Then backend dostaje ten sam CheckRecord, z question_masked i bez surowego tekstu
+
+  Scenario: usunięcie po identyfikatorze sesji
+    Given trzy zapisy z session_id "s_12345678" i jedna sprawa z ich twierdzeniami
+    When repozytorium usuwa dane tej sesji
+    Then zapisy znikają, a sprawa traci tylko ich check_ids
