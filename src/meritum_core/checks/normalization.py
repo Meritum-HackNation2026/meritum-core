@@ -19,6 +19,8 @@ from meritum_core.checks.constants import (
     TRACKING_PARAMS,
     TRACKING_PREFIXES,
     URL_PATTERN,
+    URL_SCHEMES,
+    URL_TRAILING_PUNCTUATION,
     WHITESPACE,
 )
 
@@ -40,18 +42,21 @@ class NormalizedInput:
     cache_key: str
 
 
-def canonical_url(url: str) -> str:
+def canonical_url(url: str) -> str | None:
     """Return ``url`` with a lowercase scheme and host, no fragment, no tracking.
 
     Args:
         url: An absolute http(s) URL.
 
     Returns:
-        The canonical URL; the remaining query parameters are sorted.
+        The canonical URL with the remaining query parameters sorted, or None
+        when the scheme is not http(s).
 
     Features: US-WTY-03, F-05, ADR-19
     """
-    parts = urlsplit(url.strip().rstrip(".,;:!?)\"'"))
+    parts = urlsplit(url.strip().rstrip(URL_TRAILING_PUNCTUATION))
+    if parts.scheme.lower() not in URL_SCHEMES:
+        return None
     query = sorted(
         (name, value)
         for name, value in parse_qsl(parts.query, keep_blank_values=True)
@@ -97,7 +102,9 @@ def normalize_input(text: str, post_url: str | None = None) -> NormalizedInput:
             the first URL found in ``text``.
 
     Returns:
-        The normalized text, the canonical post URL and the cache key.
+        The normalized text, the canonical post URL and the cache key. Input
+        that is only a URL is keyed by the canonical URL, so different posts
+        never share an entry.
 
     Features: US-WTY-03, F-05, ADR-19
     """
@@ -105,8 +112,7 @@ def normalize_input(text: str, post_url: str | None = None) -> NormalizedInput:
     urls = URL_PATTERN.findall(text)
     text = WHITESPACE.sub(" ", URL_PATTERN.sub(" ", text)).strip()
     url = post_url or next(iter(urls), None)
+    canonical = canonical_url(url) if url is not None else None
     return NormalizedInput(
-        text=text,
-        post_url=canonical_url(url) if url is not None else None,
-        cache_key=cache_key(text),
+        text=text, post_url=canonical, cache_key=cache_key(text or canonical or "")
     )

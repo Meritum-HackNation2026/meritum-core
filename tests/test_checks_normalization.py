@@ -2,8 +2,9 @@
 
 import pytest
 
+from meritum_core.checks import normalize_input
 from meritum_core.checks.constants import NORMALIZATION_VERSION
-from meritum_core.checks.normalization import cache_key, normalize_input
+from meritum_core.checks.normalization import cache_key
 
 
 @pytest.mark.parametrize(
@@ -54,3 +55,21 @@ def test_sentence_punctuation_is_not_part_of_the_url() -> None:
     assert normalize_input("Zobacz https://x.com/a/status/1.").post_url == (
         "https://x.com/a/status/1"
     )
+
+
+def test_url_only_inputs_are_keyed_by_the_post() -> None:
+    a = normalize_input("https://x.com/a/status/1")
+    b = normalize_input("https://x.com/b/status/2")
+    assert a.cache_key != b.cache_key
+    assert a.cache_key == normalize_input("https://x.com/a/status/1?s=20").cache_key
+
+
+def test_url_is_not_part_of_the_key() -> None:
+    assert (
+        normalize_input("Tekst https://x.com/1").cache_key
+        == normalize_input("Tekst https://x.com/2").cache_key
+    )
+
+
+def test_non_http_post_url_is_dropped() -> None:
+    assert normalize_input("Tekst", post_url="javascript:alert(1)").post_url is None

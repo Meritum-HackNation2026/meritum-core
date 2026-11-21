@@ -48,3 +48,9 @@ URL_PATTERN: Final = re.compile(r"https?://\S+", re.IGNORECASE)
 
 WHITESPACE: Final = re.compile(r"\s+")
 """Any run of Unicode whitespace, non-breaking spaces and newlines included."""
+
+URL_TRAILING_PUNCTUATION: Final = ".,;:!?)\"'"
+"""Characters that end a sentence after a pasted URL and are not part of it."""
+
+URL_SCHEMES: Final = frozenset({"http", "https"})
+"""Schemes a post URL may have; anything else is dropped from the context."""

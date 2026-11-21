@@ -3,7 +3,7 @@
 from behave import given, then, when
 from behave.runner import Context
 
-from meritum_core.checks.normalization import normalize_input
+from meritum_core.checks import normalize_input
 
 
 @given('tekst z formularza "{text}"')
