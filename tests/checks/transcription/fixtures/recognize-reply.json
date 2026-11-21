@@ -1,0 +1,15 @@
+{
+  "results": [
+    {
+      "alternatives": [{"transcript": "Sejm przyjął ustawę o ochronie zwierząt.", "confidence": 0.93}],
+      "resultEndOffset": "21.400s",
+      "languageCode": "pl-pl"
+    },
+    {
+      "alternatives": [{"transcript": "Weszła w życie w maju.", "confidence": 0.9}],
+      "resultEndOffset": "40s",
+      "languageCode": "pl-pl"
+    }
+  ],
+  "metadata": {"requestId": "recorded", "totalBilledDuration": "40s"}
+}

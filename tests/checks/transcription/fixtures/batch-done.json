@@ -1,0 +1,25 @@
+{
+  "name": "projects/meritum-test/locations/eu/operations/42",
+  "done": true,
+  "response": {
+    "@type": "type.googleapis.com/google.cloud.speech.v2.BatchRecognizeResponse",
+    "results": {
+      "gs://meritum-audio/audio_recorded": {
+        "inlineResult": {
+          "transcript": {
+            "results": [
+              {
+                "alternatives": [{"transcript": "Rząd obniżył VAT na żywność.", "confidence": 0.91}],
+                "resultEndOffset": "90s",
+                "languageCode": "pl-pl"
+              }
+            ],
+            "metadata": {"totalBilledDuration": "90s"}
+          }
+        },
+        "metadata": {"totalBilledDuration": "90s"}
+      }
+    },
+    "totalBilledDuration": "90s"
+  }
+}
