@@ -60,6 +60,7 @@ def test_corpus_migrations_create_documents_attempts_and_snapshot_manifest() -> 
         key=lambda f: f.name,
     )
     with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS corpus")  # the platform's job
         for _ in range(2):
             for script in scripts:
                 conn.execute(script.read_bytes())
