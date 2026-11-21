@@ -50,6 +50,7 @@ def test_corpus_migrations_create_the_euvsdisinfo_copy_and_can_run_twice() -> No
         key=lambda f: f.name,
     )
     with psycopg.connect(url, autocommit=True) as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS corpus")  # the platform's job
         match conn.execute(
             "SELECT to_regclass('corpus.euvsdisinfo_entries')"
         ).fetchone():
