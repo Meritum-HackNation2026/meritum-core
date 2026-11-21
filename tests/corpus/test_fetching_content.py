@@ -139,6 +139,15 @@ def test_unsupported_media_type_is_not_read(web: Web, media: str) -> None:
     assert failure(web, route).reason is FetchFailureReason.UNSUPPORTED_CONTENT
 
 
+def test_large_unsupported_file_is_refused_by_type_without_reading(web: Web) -> None:
+    pdf = b"%PDF" * (MAX_RESPONSE_BYTES // 4 + 1)
+    headers = {"content-type": "application/pdf"}
+    route = {
+        "example.org/post": lambda _: httpx.Response(200, content=pdf, headers=headers)
+    }
+    assert failure(web, route).reason is FetchFailureReason.UNSUPPORTED_CONTENT
+
+
 def test_declared_oversized_body_is_refused(web: Web) -> None:
     big = b"a" * (MAX_RESPONSE_BYTES + 1)
     route = {

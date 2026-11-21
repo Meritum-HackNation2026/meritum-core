@@ -20,6 +20,7 @@ from meritum_core.corpus.fetching.adapters._guard import (
 )
 from meritum_core.corpus.fetching.adapters._robots import robots_allow
 from meritum_core.corpus.fetching.constants import (
+    ALLOWED_CONTENT_TYPES,
     CONNECT_TIMEOUT_S,
     DEFAULT_CHARSET,
     FETCH_TIMEOUT_S,
@@ -112,7 +113,9 @@ class HttpxPageFetcher:
             async with asyncio.timeout(FETCH_TIMEOUT_S), self._client() as client:
                 honour_robots = purpose is FetchPurpose.SOURCE
                 response = await self._follow(client, target, robots=honour_robots)
-                # trafilatura is CPU-bound: off the event loop, inside the budget
+                # trafilatura is CPU-bound: off the event loop, inside the budget.
+                # shortcut: after a timeout the thread still finishes in the default
+                # executor; give extraction its own small pool if pages pile up.
                 return await asyncio.to_thread(to_page, response)
         except TimeoutError, httpx.TimeoutException:
             raise PageFetchError(FetchFailureReason.TIMEOUT) from None
@@ -173,7 +176,10 @@ class HttpxPageFetcher:
         location = _header(response, "location")
         if response.status_code in REDIRECT_STATUSES and location:
             return RawResponse(str(url), response.status_code, location=location)
-        # Read any 2xx body (robots.txt often has no media type); to_page then
-        # rejects unsupported media types. MAX_RESPONSE_BYTES bounds the cost.
-        text = await _read_limited(response) if response.is_success else ""
-        return RawResponse(str(url), response.status_code, _media_type(response), text)
+        media = _media_type(response)
+        # robots.txt is read whatever its media type (RFC 9309 asks for none)
+        is_readable = media in ALLOWED_CONTENT_TYPES or url.path == ROBOTS_PATH
+        text = (
+            await _read_limited(response) if response.is_success and is_readable else ""
+        )
+        return RawResponse(str(url), response.status_code, media, text)

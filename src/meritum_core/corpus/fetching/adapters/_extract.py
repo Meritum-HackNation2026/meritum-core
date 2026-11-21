@@ -112,7 +112,8 @@ def to_page(response: RawResponse) -> FetchedPage:
         The page; its text is untrusted data.
 
     Raises:
-        LoginWallError: A login or paywall stands in front of the content.
+        LoginWallError: A login stands in front of the content.
+        PaywallError: A paywall stands in front of the content.
         JavaScriptRequiredError: The HTML has no main text without JavaScript.
         PageFetchError: An error status or an unsupported media type.
 

@@ -19,7 +19,7 @@ def build_page_fetcher(
 
     Args:
         resolver: DNS lookup; the system resolver unless a test substitutes one.
-        transport: httpx transport; the network unless a test serves in process.
+        transport: httpx transport; only tests pass one (an in-process server).
 
     Returns:
         The page fetcher.
