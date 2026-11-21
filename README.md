@@ -283,6 +283,7 @@ Ta sekcja opisuje [`catalog.yaml`](src/meritum_core/corpus/catalog/catalog.yaml)
 - Stan na 21.11.2026. robots.txt, Content-Signal i `/.well-known/tdmrep.json` sprawdzono automatycznie tego dnia.
 - 57 wpisów: 51 włączonych (40 niezależnych wydawców) i 6 wykluczonych z podanym powodem.
 - Wszystkie wpisy przechodzą walidację kontraktu `CatalogEntry` z `meritum-core` (`meritum_core.checks.contracts`).
+- Członkostwo IFCN/EFCSN w polu `signatory_of` (tylko wydawcy ocen ClaimReview) ustalamy według obecności na oficjalnej liście sygnatariuszy IFCN w zakładce **Active** (https://ifcncodeofprinciples.poynter.org/signatories) albo na liście EFCSN (https://members.efcsn.com/signatories), stan na **2026-11-21**. Datę ważności odznaki na profilu IFCN nie bierzemy pod uwagę.
 
 ### Kolumny
 
@@ -302,7 +303,8 @@ Każdy wpis w `catalog.yaml` to dokładnie `CatalogEntry`. Kontrakt ma `extra="f
 | `max_age_hours` | Krótki próg dla ostrzeżeń, dróg, pogody i pomiarów |
 | `qualified_because` | Powód kwalifikacji |
 | `tdm_reservation` | `none`: brak zastrzeżenia. `reserved`: `ai-train=no` albo `ai-input=no` w Content-Signal robots.txt, znacznik meta `tdm-reservation` albo `noai`. Samo `Disallow` blokuje pobieranie, nie eksplorację, więc daje wykluczenie z powodem, a nie `reserved`. `unknown`: nie dało się odczytać. |
-| `excluded`, `exclusion_reason` | Wykluczenie zawsze ma powód. Pola pomijamy, gdy wpis nie jest wykluczony. |
+| `signatory_of` | `ifcn` i/lub `efcsn`, gdy wydawca jest na liście Active IFCN albo na liście sygnatariuszy EFCSN (reguła i data weryfikacji wyżej). Puste u wydawców bez członkostwa oraz u agregatorów i portali bez własnych ocen ClaimReview (np. EUvsDisinfo, EDMO, Check First, NASK). |
+| `excluded`, `exclusion_reason` | Wykluczenie zawsze ma powód. Pola pomijamy, gdy wpis nie jest wykluczony. Wykluczenie nie zeruje `signatory_of`, jeśli Fact Check API ma rozpoznać wydawcę oceny. |
 
 ### Tabela audytu
 
@@ -407,6 +409,7 @@ IMGW-PIB: meteo, hydro, baltyk. Ostrzeżenia bierzemy z oficjalnego API `danepub
 #### 5. Fact-checkerzy (punkt 2 listy organizatora)
 
 - **Google Fact Check Tools API** (`claims:search`) wyszukuje oceny ClaimReview do twierdzenia. Zwraca same metadane: wydawcę, ocenę, tytuł, datę i link. Ocenę fact-checkera z IFCN albo EFCSN pokazujemy jako przesłankę z linkiem (ADR-24, ADR-34). Nie przechowujemy jej dłużej, niż pozwalają nagłówki cache (Google APIs Terms §5(e)). Do ręcznego podglądu służy Fact Check Explorer (`toolbox.google.com/factcheck/explorer`).
+- **`signatory_of`**: członkostwo = obecność na liście Active IFCN (https://ifcncodeofprinciples.poynter.org/signatories) albo na liście sygnatariuszy EFCSN (https://members.efcsn.com/signatories), sprawdzone 2026-11-21, bez patrzenia na datę ważności odznaki IFCN na profilu.
 - **fakenews.pl** i **pravda.org.pl** to sygnatariusze IFCN bez blokad dla robotów. Pobieramy je z RSS jako źródła wtórne.
 - **AFP Sprawdzam** zwraca automatom 403. Jego ocena wchodzi tylko przez Fact Check API.
 
@@ -691,12 +694,14 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://fakenews.pl/
 - Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
 - Uwagi: RSS https://fakenews.pl/feed/, mapa https://fakenews.pl/sitemap_index.xml. robots.txt bez blokad AI.
+- Członkostwo: lista IFCN (Active) 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, profil https://www.ifcncodeofprinciples.poynter.org/profile/fundacja-%22przeciwdzia%C5%82amy-dezinformacji%22; `signatory_of: [ifcn]`. Brak na liście EFCSN 2026-11-21 — https://members.efcsn.com/signatories.
 
 #### `pravda.org.pl`
 
 - Wejście: https://pravda.org.pl/
 - Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
 - Uwagi: RSS https://pravda.org.pl/rss/, mapa https://pravda.org.pl/sitemap.xml.
+- Członkostwo: IFCN (Active) i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]`.
 
 #### `euvsdisinfo.eu`
 
@@ -715,15 +720,18 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://demagog.org.pl/
 - Podstawa prawna: zastrzeżenie TDM z art. 4 dyrektywy 2019/790
 - Uwagi: publisher_id potrzebny do rozpoznania wydawcy oceny ClaimReview.
+- Członkostwo: IFCN (Active) i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]` (wykluczenie dotyczy treści, nie rozpoznania wydawcy w Fact Check API).
 
 #### `sprawdzam.afp.com`
 
 - Wejście: https://sprawdzam.afp.com/
 - Uwagi: robots.txt, RSS i tdmrep zwracają 403 (Akamai). Nie pobieramy treści.
+- Członkostwo: AFP Fact Check na liście IFCN (Active) i AFP na liście EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of: [ifcn, efcsn]` dla polskiego serwisu Sprawdzam.
 
 #### `konkret24.tvn24.pl`
 
 - Wejście: https://konkret24.tvn24.pl/
+- Członkostwo: brak na listach IFCN i EFCSN 2026-11-21 — https://ifcncodeofprinciples.poynter.org/signatories, https://members.efcsn.com/signatories; `signatory_of` puste.
 
 #### `www.gov.pl/web/dyplomacja/bip`
 

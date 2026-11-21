@@ -484,6 +484,8 @@ entries:
   validity: expires
   qualified_because: Sygnatariusz IFCN, bez blokad dla robotów, z RSS i mapą strony.
   tdm_reservation: none
+  signatory_of:
+  - ifcn
 
 - domain: pravda.org.pl
   publisher: Stowarzyszenie Pravda
@@ -497,6 +499,9 @@ entries:
   validity: expires
   qualified_because: Sygnatariusz IFCN, bez blokad dla robotów, z RSS i mapą strony.
   tdm_reservation: none
+  signatory_of:
+  - ifcn
+  - efcsn
 
 - domain: euvsdisinfo.eu
   publisher: Europejska Służba Działań Zewnętrznych (EUvsDisinfo)
@@ -534,6 +539,9 @@ entries:
   validity: expires
   qualified_because: Sygnatariusz IFCN; ocena wchodzi tylko przez Fact Check API.
   tdm_reservation: reserved
+  signatory_of:
+  - ifcn
+  - efcsn
   excluded: true
   exclusion_reason: 'Content-Signal ai-train=no, use=reference i blokady botów AI w robots.txt: nie pobieramy treści, tylko ocena z Fact Check API.'
 
@@ -548,6 +556,9 @@ entries:
   validity: expires
   qualified_because: Sygnatariusz IFCN; ocena wchodzi tylko przez Fact Check API.
   tdm_reservation: unknown
+  signatory_of:
+  - ifcn
+  - efcsn
 
 - domain: konkret24.tvn24.pl
   publisher: TVN S.A. (Konkret24)
