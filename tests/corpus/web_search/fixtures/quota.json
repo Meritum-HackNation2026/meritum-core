@@ -1,0 +1,1 @@
+{"error": {"code": 429, "message": "Quota exceeded for quota metric 'Search requests' and limit 'Search requests per minute' of service 'discoveryengine.googleapis.com'.", "status": "RESOURCE_EXHAUSTED"}}
