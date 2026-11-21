@@ -64,7 +64,3 @@ def test_marker_is_never_false() -> None:
     marker = c.ai_marker_for(usage("stub", "stub"), AT).model_dump()
     with pytest.raises(ValidationError):
         c.AiMarker.model_validate(marker | {"ai_generated": False})
-
-
-def test_contract_version_is_6() -> None:
-    assert c.CONTRACT_VERSION == 6

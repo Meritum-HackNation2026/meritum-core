@@ -174,9 +174,11 @@ export type FailureCode =
   ("provider_unavailable" | "web_search_unavailable" | "transcription_failed" | "url_unavailable" | "not_ready") | null;
 export type Limitations = string[];
 /**
- * Codes next to the limitation texts; the channel words them from copy/pl.json. They never change the status.
+ * Codes of the limitations the channel words from copy/pl.json; they never change the status. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).
  */
-export type LimitationCodes = ("fact_check_unavailable" | "image_search_not_run")[];
+export type LimitationCodes = (
+  "fact_check_unavailable" | "image_search_not_run" | "audio_format_unsupported" | "audio_too_long"
+)[];
 /**
  * Audio input only: the automatic transcript, with personal data masked.
  */
@@ -191,9 +193,11 @@ export type Claims1 = ClaimResult[];
 export type Message1 = string | null;
 export type Limitations1 = string[];
 /**
- * Codes next to the limitation texts; the channel words them from copy/pl.json. They never change the status.
+ * Codes of the limitations the channel words from copy/pl.json; they never change the status. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope).
  */
-export type LimitationCodes1 = ("fact_check_unavailable" | "image_search_not_run")[];
+export type LimitationCodes1 = (
+  "fact_check_unavailable" | "image_search_not_run" | "audio_format_unsupported" | "audio_too_long"
+)[];
 /**
  * Audio input only: the automatic transcript, with personal data masked.
  */

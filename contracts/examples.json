@@ -107,6 +107,14 @@
     "corpus_version": "2026-11-21.1",
     "message": "Nie udało się przeszukać źródeł: usługa wyszukiwania nie odpowiada. To nie jest ocena treści. Spróbuj za kilka minut."
   },
+  "CheckResult.audio_rejected": {
+    "check_id": "c_05",
+    "status": "out_of_scope",
+    "corpus_version": "2026-11-21.1",
+    "message": "Nagranie w nieobsługiwanym formacie.",
+    "limitations": ["Nie sprawdziliśmy nagrania: ten format nie jest obsługiwany."],
+    "limitation_codes": ["audio_format_unsupported"]
+  },
   "CachedResult": {
     "status": "done",
     "ai_marker": { "ai_generated": true, "provider": "vertex", "model": "gemini-2.0-flash-001", "generated_at": "2026-11-21T14:02:20+01:00" },

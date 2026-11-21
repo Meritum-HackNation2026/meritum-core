@@ -6,7 +6,7 @@ Features:
 
 from typing import ClassVar
 
-from meritum_core.checks.contracts import CheckStatus
+from meritum_core.checks.contracts import CheckStatus, LimitationCode
 
 
 class TranscriptionError(Exception):
@@ -24,20 +24,28 @@ class UnsupportedAudioError(TranscriptionError):
 
     Attributes:
         check_status: The check status a workflow reports for it.
+        limitation_code: The code a workflow puts in ``limitation_codes``;
+            each subtype sets it.
 
     Features:
         US-SPR-11, F-08, ADR-30
     """
 
     check_status: ClassVar[CheckStatus] = "out_of_scope"
+    limitation_code: ClassVar[LimitationCode]
 
 
 class UnsupportedAudioFormatError(UnsupportedAudioError):
     """Not OGG Opus, MP3, M4A or WAV, or no readable length.
 
+    Attributes:
+        limitation_code: The code a workflow puts in ``limitation_codes``.
+
     Features:
         US-SPR-11, F-08, ADR-30
     """
+
+    limitation_code: ClassVar[LimitationCode] = "audio_format_unsupported"
 
 
 class AudioTooLongError(UnsupportedAudioError):
@@ -45,9 +53,14 @@ class AudioTooLongError(UnsupportedAudioError):
 
     The size cap counts as length: for the user both mean "recording too long".
 
+    Attributes:
+        limitation_code: The code a workflow puts in ``limitation_codes``.
+
     Features:
         US-SPR-11, F-08, ADR-30
     """
+
+    limitation_code: ClassVar[LimitationCode] = "audio_too_long"
 
 
 class TranscriptionUnavailableError(TranscriptionError):

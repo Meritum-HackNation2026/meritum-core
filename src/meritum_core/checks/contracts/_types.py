@@ -83,9 +83,15 @@ FailureCode = Literal[
     "url_unavailable",
     "not_ready",
 ]
-# What a finished check could not cover; the channel builds the text from copy/pl.json.
-# A limitation never changes the check's status.
-LimitationCode = Literal["fact_check_unavailable", "image_search_not_run"]
+# What a check could not cover; the channel builds the text from copy/pl.json.
+# A limitation never changes the check's status. The audio codes explain an
+# out_of_scope recording: unsupported format, or over the length or size limit.
+LimitationCode = Literal[
+    "fact_check_unavailable",
+    "image_search_not_run",
+    "audio_format_unsupported",
+    "audio_too_long",
+]
 # What would change the verdict, computed by a rule from the premises (US-ZRD-11).
 VerdictChange = Literal[
     "needs_primary_source",

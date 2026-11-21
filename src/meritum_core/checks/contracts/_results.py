@@ -33,7 +33,7 @@ _AiMarkerField = Annotated[
 _LimitationCodes = Annotated[
     list[LimitationCode],
     Field(
-        description="Codes next to the limitation texts; the channel words them from copy/pl.json. They never change the status."
+        description="Codes of the limitations the channel words from copy/pl.json; they never change the status. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope)."
     ),
 ]
 
