@@ -14,6 +14,7 @@ from operator import itemgetter
 
 from meritum_core.checks.contracts import (
     AGREEING_STANCE,
+    DEFAULT_MAX_AGE_HOURS,
     SETTLING,
     Citation,
     ClaimReviewPremise,
@@ -53,6 +54,7 @@ def compute_premises(
     *,
     claim_date: date,
     reviews: Sequence[ClaimReviewPremise] = (),
+    max_age_hours: int = DEFAULT_MAX_AGE_HOURS,
 ) -> Premises:
     """Count the premises of a verdict from the evidence that agrees with it.
 
@@ -69,6 +71,7 @@ def compute_premises(
         citations: The citations with their stance and validity.
         claim_date: The date the claim refers to.
         reviews: Fact-checkers' ratings used as premises.
+        max_age_hours: The catalogue threshold of the newest source.
 
     Returns:
         The premises the strength rule reads.
@@ -94,6 +97,7 @@ def compute_premises(
         primary_sources=len(primary),
         newest_source_published_at=newest_at,
         newest_source_age_hours=_age_hours(newest_at, claim_date),
+        max_age_hours=max_age_hours,
         validity=validity,
         agreement="conflicting" if _conflicting(citations, reviews) else "consistent",
     )
