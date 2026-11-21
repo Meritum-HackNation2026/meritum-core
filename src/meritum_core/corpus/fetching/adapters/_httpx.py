@@ -1,0 +1,165 @@
+"""Page fetcher on httpx: every hop pinned to a checked public address.
+
+Features:
+    US-SPR-07, F-06
+"""
+
+import asyncio
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
+import httpx
+
+from meritum_core.corpus.fetching.adapters._extract import Response, to_page
+from meritum_core.corpus.fetching.adapters._guard import (
+    Resolver,
+    checked_url,
+    pinned_address,
+    system_resolver,
+)
+from meritum_core.corpus.fetching.adapters._robots import robots_allow
+from meritum_core.corpus.fetching.constants import (
+    ALLOWED_CONTENT_TYPES,
+    CONNECT_TIMEOUT_S,
+    FETCH_TIMEOUT_S,
+    MAX_REDIRECTS,
+    MAX_RESPONSE_BYTES,
+    REDIRECT_STATUSES,
+    USER_AGENT,
+)
+from meritum_core.corpus.fetching.errors import (
+    FetchFailureReason,
+    PageFetchError,
+    RobotsDisallowedError,
+)
+from meritum_core.corpus.fetching.models import FetchedPage, FetchPurpose
+
+
+async def _read_limited(response: httpx.Response) -> str:
+    declared = _header(response, "content-length")
+    if declared.isdigit() and int(declared) > MAX_RESPONSE_BYTES:
+        raise PageFetchError(FetchFailureReason.TOO_LARGE)
+    body = bytearray()
+    async for chunk in response.aiter_bytes():
+        body += chunk
+        if len(body) > MAX_RESPONSE_BYTES:
+            raise PageFetchError(FetchFailureReason.TOO_LARGE)
+    return body.decode(response.charset_encoding or "utf-8", errors="replace")
+
+
+def _header(response: httpx.Response, name: str) -> str:
+    return str(response.headers.get(name, ""))  # httpx types Headers.get as Any
+
+
+def _media_type(response: httpx.Response) -> str:
+    media = _header(response, "content-type").split(";", maxsplit=1)[0]
+    return media.strip().lower()
+
+
+class HttpxPageFetcher:
+    """SSRF-safe fetcher: http(s) only, public addresses only, bounded.
+
+    Each hop resolves the host once, refuses internal addresses, then connects to
+    that very address with the original Host header and TLS SNI, so DNS
+    rebinding cannot redirect the connection. Redirects are followed by hand.
+
+    Args:
+        resolver: the DNS resolver (tests substitute one).
+        transport: the httpx transport (tests run an in-process server).
+
+    Features:
+        US-SPR-07, F-06
+    """
+
+    def __init__(
+        self,
+        *,
+        resolver: Resolver = system_resolver,
+        transport: httpx.AsyncBaseTransport | None = None,
+    ) -> None:
+        self._resolver = resolver
+        self._transport = transport
+
+    async def fetch(self, url: str, *, purpose: FetchPurpose) -> FetchedPage:
+        """Fetch one page; see ``PageFetcherPort.fetch``.
+
+        Args:
+            url: an absolute http(s) URL.
+            purpose: ``SOURCE`` also honours robots.txt and Content-Signal.
+
+        Returns:
+            The page's main text, marked as untrusted data.
+
+        Raises:
+            PageFetchError: The page could not be fetched; ``reason`` says why.
+
+        Features:
+            US-SPR-07, F-06
+        """
+        target = checked_url(url)
+        try:
+            async with asyncio.timeout(FETCH_TIMEOUT_S), self._client() as client:
+                if purpose is FetchPurpose.SOURCE:
+                    await self._check_robots(client, target)
+                response = await self._follow(client, target)
+        except TimeoutError, httpx.TimeoutException:
+            raise PageFetchError(FetchFailureReason.TIMEOUT) from None
+        except httpx.HTTPError:
+            raise PageFetchError(FetchFailureReason.UNREACHABLE) from None
+        return to_page(response)
+
+    @asynccontextmanager
+    async def _client(self) -> AsyncGenerator[httpx.AsyncClient]:
+        async with httpx.AsyncClient(
+            transport=self._transport,
+            timeout=httpx.Timeout(CONNECT_TIMEOUT_S),
+            follow_redirects=False,
+            trust_env=False,  # an env proxy would connect by host name, unpinned
+            headers={"user-agent": USER_AGENT},
+        ) as client:
+            yield client
+
+    async def _check_robots(self, client: httpx.AsyncClient, url: httpx.URL) -> None:
+        robots = url.copy_with(path="/robots.txt", query=None, fragment=None)
+        response = await self._follow(client, robots)
+        if 400 <= response.status < 500:  # ruff: ignore[magic-value-comparison]  # RFC 9309: no robots.txt
+            return
+        is_ok = 200 <= response.status < 300  # ruff: ignore[magic-value-comparison]  # the 2xx class
+        if not is_ok or not robots_allow(response.text, str(url)):
+            raise RobotsDisallowedError
+
+    async def _follow(self, client: httpx.AsyncClient, url: httpx.URL) -> Response:
+        for hop in range(MAX_REDIRECTS + 1):
+            response, location = await self._get(client, url, redirected=hop > 0)
+            if location is None:
+                return response
+            url = checked_url(url.join(location))
+        raise PageFetchError(FetchFailureReason.TOO_MANY_REDIRECTS)
+
+    async def _get(
+        self, client: httpx.AsyncClient, url: httpx.URL, *, redirected: bool
+    ) -> tuple[Response, str | None]:
+        address = await pinned_address(url, self._resolver, redirected=redirected)
+        request = client.build_request(
+            "GET",
+            url.copy_with(host=str(address)),
+            headers={"host": url.netloc.decode("ascii")},
+            extensions={"sni_hostname": url.host},
+        )
+        response = await client.send(request, stream=True)
+        try:
+            return await self._read(response, url)
+        finally:
+            await response.aclose()
+
+    @staticmethod
+    async def _read(
+        response: httpx.Response, url: httpx.URL
+    ) -> tuple[Response, str | None]:
+        location = _header(response, "location")
+        if response.status_code in REDIRECT_STATUSES and location:
+            return Response(str(url), response.status_code, "", ""), location
+        media = _media_type(response)
+        is_readable = response.is_success and media in ALLOWED_CONTENT_TYPES
+        text = await _read_limited(response) if is_readable else ""
+        return Response(str(url), response.status_code, media, text), None
