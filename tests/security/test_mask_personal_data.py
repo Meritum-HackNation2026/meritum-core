@@ -26,6 +26,10 @@ CASES = [
     ("601 234 567 601 234 567", "[telefon] [telefon]"),
     ("PESEL 44051401359", "PESEL [PESEL]"),
     ("PESEL: 02070803628,", "PESEL: [PESEL],"),
+    ("dowód ABA300000", "dowód [dowód osobisty]"),
+    ("dowód: CXZ571234.", "dowód: [dowód osobisty]."),
+    ("kod ABA300001", "kod ABA300001"),
+    ("model abc300000", "model abc300000"),
     # false positives: left unchanged
     ("Budżet wynosi 12345678901 zł", "Budżet wynosi 12345678901 zł"),
     ("Rok 2024, 15 osób", "Rok 2024, 15 osób"),

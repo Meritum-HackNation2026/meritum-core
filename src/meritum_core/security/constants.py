@@ -16,6 +16,9 @@ EMAIL_MARKER: Final = "[e-mail]"
 PESEL_MARKER: Final = "[PESEL]"
 """Replaces a PESEL number with a valid checksum."""
 
+ID_CARD_MARKER: Final = "[dowód osobisty]"
+"""Replaces a Polish identity card number with a valid checksum."""
+
 PHONE_PATTERN: Final = re.compile(
     r"(?<![\w+])"
     r"(?P<prefix>(?:\+|00)48[ -]?)?"
@@ -79,6 +82,15 @@ A match starts only at a token start, so long input takes linear time."""
 
 PESEL_PATTERN: Final = re.compile(r"(?<![\w+])\d{11}(?!\w)")
 """Candidate PESEL: exactly 11 digits; the checksum decides."""
+
+ID_CARD_PATTERN: Final = re.compile(r"(?<![\w+])[A-Z]{3}\d{6}(?!\w)")
+"""Candidate Polish identity card number: three capital letters, six digits; the
+checksum decides. Sensitive Data Protection finds it only next to words such as
+"dowodu osobistego", so the pattern covers "dowód ABA300000" (#102)."""
+
+ID_CARD_WEIGHTS: Final = (7, 3, 1, 9, 7, 3, 1, 7, 3)
+"""Weights of the identity card characters (letters count A=10 ... Z=35); the
+weighted sum of a valid number ends in 0."""
 
 PESEL_WEIGHTS: Final = (1, 3, 7, 9, 1, 3, 7, 9, 1, 3)
 """Weights of the first ten PESEL digits in the checksum."""

@@ -1,9 +1,9 @@
 {
   "item": {
-    "value": "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL [PESEL], dowód [dowód osobisty]"
+    "value": "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL [PESEL], dowód ABA300000"
   },
   "overview": {
-    "transformedBytes": "20",
+    "transformedBytes": "11",
     "transformationSummaries": [
       {
         "infoType": {
@@ -26,28 +26,6 @@
           }
         ],
         "transformedBytes": "11"
-      },
-      {
-        "infoType": {
-          "name": "POLAND_NATIONAL_ID_NUMBER",
-          "sensitivityScore": {
-            "score": "SENSITIVITY_HIGH"
-          }
-        },
-        "transformation": {
-          "replaceConfig": {
-            "newValue": {
-              "stringValue": "[dowód osobisty]"
-            }
-          }
-        },
-        "results": [
-          {
-            "count": "1",
-            "code": "SUCCESS"
-          }
-        ],
-        "transformedBytes": "9"
       }
     ]
   }

@@ -1,4 +1,4 @@
-"""Masking of personal data: the gate first, then phone, e-mail and PESEL patterns.
+"""Masking of personal data: the gate first, then the always-on patterns.
 
 Features:
     US-BEZ-04, F-20, ADR-13, ADR-35
@@ -14,6 +14,9 @@ from meritum_core.security.constants import (
     AMOUNT_TAIL_PATTERN,
     EMAIL_MARKER,
     EMAIL_PATTERN,
+    ID_CARD_MARKER,
+    ID_CARD_PATTERN,
+    ID_CARD_WEIGHTS,
     PESEL_MARKER,
     PESEL_PATTERN,
     PESEL_WEIGHTS,
@@ -34,6 +37,13 @@ def _valid_pesel(digits: str) -> bool:
 
 def _pesel_or_keep(match: re.Match[str]) -> str:
     return PESEL_MARKER if _valid_pesel(match[0]) else match[0]
+
+
+def _id_card_or_keep(match: re.Match[str]) -> str:
+    # int(c, 36) reads A as 10 ... Z as 35, the identity card letter values.
+    values = [int(c, 36) for c in match[0]]
+    total = sum(v * w for v, w in zip(values, ID_CARD_WEIGHTS, strict=True))
+    return ID_CARD_MARKER if total % 10 == 0 else match[0]
 
 
 def _is_amount(match: re.Match[str]) -> bool:
@@ -59,15 +69,16 @@ def _phone_or_keep(match: re.Match[str]) -> str:
 def _mask_patterns(text: str) -> MaskedText:
     masked = PESEL_PATTERN.sub(_pesel_or_keep, text)
     masked = EMAIL_PATTERN.sub(EMAIL_MARKER, masked)
+    masked = ID_CARD_PATTERN.sub(_id_card_or_keep, masked)
     masked = PHONE_PATTERN.sub(_phone_or_keep, masked)
-    markers = (PHONE_MARKER, EMAIL_MARKER, PESEL_MARKER)
+    markers = (PHONE_MARKER, EMAIL_MARKER, PESEL_MARKER, ID_CARD_MARKER)
     # Count added markers only: markers already in the input are not new replacements.
     replaced = sum(masked.count(m) - text.count(m) for m in markers)
     return MaskedText(text=masked, replaced=replaced)
 
 
 async def mask_personal_data(text: str, gate: PiiGatePort) -> MaskedText:
-    """Mask with the gate, then replace phones, e-mails and valid PESEL numbers.
+    """Mask with the gate, then phones, e-mails, valid PESEL and ID card numbers.
 
     A phone-shaped number that continues a digit group or stands before a
     currency or unit is an amount and stays: the claim is about it (#102).

@@ -7,13 +7,15 @@ Features:
 from types import MappingProxyType
 from typing import Final
 
-from meritum_core.security.constants import EMAIL_MARKER, PESEL_MARKER, PHONE_MARKER
+from meritum_core.security.constants import (
+    EMAIL_MARKER,
+    ID_CARD_MARKER,
+    PESEL_MARKER,
+    PHONE_MARKER,
+)
 
 ENV_PREFIX: Final = "MERITUM_PII_"
 """Prefix of the gate's settings; ``MERITUM_PII_GATE`` picks the adapter."""
-
-ID_CARD_MARKER: Final = "[dowód osobisty]"
-"""Replaces a Polish identity card number."""
 
 PASSPORT_MARKER: Final = "[paszport]"
 """Replaces a Polish passport number."""
