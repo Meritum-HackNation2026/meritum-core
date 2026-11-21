@@ -4,6 +4,7 @@ Run: ``uv run vulture`` (paths come from ``[tool.vulture]`` in pyproject.toml).
 """
 
 from meritum_core.checks import constants
+from meritum_core.corpus import CorpusSettings, Passage
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
     CheckInput,
@@ -17,6 +18,7 @@ from meritum_core.jobs.fakes import InMemoryJobQueue
 from meritum_core.jobs.ports import JobQueue
 from meritum_core.shared.blobs import BlobRef, BlobSettings
 from meritum_core.shared.llm import LlmResult, LlmSettings, LlmUsage, Prompt
+from meritum_core.shared.embeddings import EmbeddingsSettings
 
 DbosJobQueue  # built by meritum-backend's composition root
 DbosJobQueue.enqueue  # called by meritum-backend through the JobQueue port
@@ -56,3 +58,8 @@ constants.DEFAULT_MAX_AGE_HOURS
 constants.SESSIONLESS_CHANNELS
 constants.CHECK_KINDS
 constants.CASE_KINDS
+CorpusSettings.model_config  # read by pydantic-settings
+CorpusSettings._postgres_has_a_database  # ruff: ignore[private-member-access]  # Pydantic validator
+EmbeddingsSettings.model_config  # read by pydantic-settings
+EmbeddingsSettings._vertex_is_named_and_in_the_eu  # ruff: ignore[private-member-access]  # Pydantic validator
+Passage.model_config  # read by pydantic
