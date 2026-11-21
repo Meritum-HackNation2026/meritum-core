@@ -36,3 +36,18 @@ Feature: Sprawdzanie treści
     Given Speech-to-Text v2 zwraca błąd po wyczerpaniu ponowień
     When system zleca transkrypcję
     Then port rzuca błąd dostawcy, który workflow mapuje na "technical_failure"
+  Scenario: adres wewnętrzny
+    Given link "http://169.254.169.254/latest/meta-data/"
+    When system próbuje pobrać stronę
+    Then pobranie jest zablokowane przed połączeniem
+    And wynik to "technical_failure" bez szczegółów sieci w komunikacie
+
+  Scenario: przekierowanie na adres prywatny
+    Given publiczny adres, który przekierowuje na "http://10.0.0.5/"
+    When system pobiera stronę
+    Then przekierowanie jest zablokowane
+
+  Scenario: strona za logowaniem
+    Given link do posta na Facebooku wymagającego logowania
+    When system pobiera stronę
+    Then wynik to "technical_failure" z prośbą o wklejenie tekstu
