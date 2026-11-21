@@ -29,6 +29,7 @@ ROOTS: dict[str, Any] = {
     "CheckRecord": c.CheckRecord,
     "ModeratorCase": c.ModeratorCase,
     "CatalogEntry": c.CatalogEntry,
+    "Notification": c.Notification,
 }
 
 DONE: dict[str, Any] = EXAMPLES["CheckResult.done"]
@@ -70,7 +71,18 @@ CATALOG: dict[str, Any] = EXAMPLES["CatalogEntry"]
 CACHED: dict[str, Any] = EXAMPLES["CachedResult"]
 RECORD: dict[str, Any] = EXAMPLES["CheckRecord"]
 CASE: dict[str, Any] = EXAMPLES["ModeratorCase"]
+NOTE: dict[str, Any] = EXAMPLES["Notification"]
 HASH = "a" * 64
+SUPERSEDED_SUPPORTING = SUPPORTING | {"validity": "superseded"}
+NEWER_SOURCE: dict[str, Any] = REFUTING["source"] | {
+    "id": "isap-newer",
+    "published_at": "2025-01-01T00:00:00+01:00",
+}
+NEWER_REFUTING = REFUTING | {
+    "source": NEWER_SOURCE,
+    "fragment": "Nowszy dokument urzędowy obala to twierdzenie (fragment testowy).",
+}
+NEWER_CONTEXT = NEWER_REFUTING | {"stance": "context"}
 
 
 def with_claim(**changes: object) -> dict[str, object]:
@@ -225,6 +237,46 @@ MUST_REJECT: dict[str, Callable[[], object]] = {
     "citation whose fragment was not found": lambda: c.Citation.model_validate(
         REFUTING | {"fragment_found_verbatim": False}
     ),
+    "superseded evidence with no newer evidence next to it": result(
+        citations=[SUPERSEDED_SUPPORTING, REFUTING]
+    ),
+    "superseded evidence counted as a conflict": result(
+        verdict="insufficient_evidence",
+        unresolved="Brak danych.",
+        strength=None,
+        citations=[SUPERSEDED_SUPPORTING, NEWER_REFUTING],
+    ),
+    "'superseded' set for a whole catalogue entry": lambda: (
+        c.CatalogEntry.model_validate(CATALOG | {"validity": "superseded"})
+    ),
+    "secondary source kept although it reserved text and data mining": lambda: (
+        c.CatalogEntry.model_validate(
+            EXAMPLES["CatalogEntry.euvsdisinfo"] | {"tdm_reservation": "reserved"}
+        )
+    ),
+    "MCP check without a hashed user id": lambda: c.CheckRecord.model_validate(
+        RECORD | {"channel": "mcp"}
+    ),
+    "Discord check whose session id is not the hashed user id": lambda: (
+        c.CheckRecord.model_validate(
+            RECORD | {"channel": "discord", "channel_user_hash": HASH}
+        )
+    ),
+    "notification to both a session and a user": lambda: c.Notification.model_validate(
+        NOTE | {"user_id": "u_12345678"}
+    ),
+    "notification to nobody": lambda: c.Notification.model_validate(
+        NOTE | {"session_id": None}
+    ),
+    "finished-check notification without the check": lambda: (
+        c.Notification.model_validate(NOTE | {"check_id": None})
+    ),
+    "moderator answer without the case": lambda: c.Notification.model_validate(
+        NOTE | {"kind": "moderator_answer"}
+    ),
+    "notification linking outside the app": lambda: c.Notification.model_validate(
+        NOTE | {"link": "https://example.org"}
+    ),
 }
 
 MUST_ACCEPT: dict[str, Callable[[], object]] = {
@@ -253,8 +305,67 @@ MUST_ACCEPT: dict[str, Callable[[], object]] = {
     "http URL": lambda: c.CheckRequest.model_validate(
         {"channel": "web", "url": "http://example.gov.pl/komunikat"}
     ),
-    "SMS check with a hashed user id": lambda: c.CheckRecord.model_validate(
-        RECORD | {"channel": "sms", "channel_user_hash": HASH}
+    "SMS check with a hashed user id as its session": lambda: (
+        c.CheckRecord.model_validate(
+            RECORD | {"channel": "sms", "channel_user_hash": HASH, "session_id": HASH}
+        )
+    ),
+    "MCP check with a hashed client id as its session": lambda: (
+        c.CheckRecord.model_validate(
+            RECORD | {"channel": "mcp", "channel_user_hash": HASH, "session_id": HASH}
+        )
+    ),
+    "older supporting evidence superseded by newer official refutation: false": result(
+        citations=[SUPERSEDED_SUPPORTING, NEWER_REFUTING]
+    ),
+    "superseded evidence: misleading, technique outdated": result(
+        verdict="misleading",
+        technique="outdated",
+        citations=[SUPERSEDED_SUPPORTING, NEWER_CONTEXT],
+    ),
+    "audio upload": lambda: c.CheckRequest.model_validate(
+        {"channel": "discord", "audio_id": "a_01"}
+    ),
+    "case opened by a user dispute": lambda: c.ModeratorCase.model_validate(
+        CASE
+        | {
+            "reasons": ["user_dispute"],
+            "high_risk_topic": None,
+            "high_risk_classified_by": None,
+        }
+    ),
+    "EUvsDisinfo incident match as context": result(
+        incident={
+            "database": "euvsdisinfo",
+            "incident_id": "eu-1",
+            "matched_on": "domain",
+            "title": "Przypadek testowy",
+            "date": "2025-01-01T00:00:00+01:00",
+            "url": "https://euvsdisinfo.eu/report/test/",
+            "similarity": 0.9,
+        }
+    ),
+    "fact-check rating shown as context": result(
+        claim_reviews=[
+            {
+                "publisher": "Fact-checker testowy",
+                "rating": "Fałsz",
+                "url": "https://example.org/fact-check",
+            }
+        ]
+    ),
+    "case notification for a signed-in moderator": lambda: (
+        c.Notification.model_validate(
+            NOTE
+            | {
+                "kind": "case_assigned",
+                "session_id": None,
+                "user_id": "u_12345678",
+                "check_id": None,
+                "case_id": "#S-1",
+                "link": "/panel/sprawy/S-1",
+            }
+        )
     ),
     "case that is both high-risk and repeated": lambda: c.ModeratorCase.model_validate(
         CASE | {"reasons": ["high_risk", "repeated_unanswered"]}
