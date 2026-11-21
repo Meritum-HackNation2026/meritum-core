@@ -30,7 +30,7 @@ from meritum_core.security.pii.settings import PiiGateSettings
 
 
 class _Item(BaseModel):
-    value: str = ""
+    value: str
 
 
 class _Result(BaseModel):
@@ -47,7 +47,7 @@ class _Overview(BaseModel):
 
 
 class _Reply(BaseModel):
-    item: _Item = _Item()
+    item: _Item  # required: a reply without the text must not blank it
     overview: _Overview = _Overview()
 
 
@@ -109,6 +109,8 @@ class SensitiveDataProtectionGate:
             PiiGateUnavailableError: No reply, a rejected request or credentials,
                 a reply that did not parse, or a transformation that failed.
         """
+        if not text:
+            return MaskedText(text=text, replaced=0)  # DLP omits an empty value
         body: dict[str, JsonValue] = {
             "item": {"value": text},
             "inspectConfig": _inspect_config(),
@@ -123,17 +125,7 @@ class SensitiveDataProtectionGate:
         if not response.is_success:
             msg = f"sensitive data protection answered HTTP {response.status_code}"
             raise PiiGateUnavailableError(msg)
-        try:
-            reply = _Reply.model_validate_json(response.content)
-        except ValidationError:
-            msg = "sensitive data protection reply did not parse"
-            # from None: the validation error quotes the reply, which holds user text
-            raise PiiGateUnavailableError(msg) from None
-        results = [r for s in reply.overview.summaries for r in s.results]
-        if any(r.code != SUCCESS_CODE for r in results):
-            msg = "sensitive data protection could not apply a transformation"
-            raise PiiGateUnavailableError(msg)
-        return MaskedText(text=reply.item.value, replaced=sum(r.count for r in results))
+        return _parse_reply(response.content)
 
     async def _token(self) -> str:
         try:
@@ -148,3 +140,17 @@ class SensitiveDataProtectionGate:
             msg = "sensitive data protection credentials were refused"
             raise PiiGateUnavailableError(msg) from exc
         return str(credentials.token)
+
+
+def _parse_reply(content: bytes) -> MaskedText:
+    try:
+        reply = _Reply.model_validate_json(content)
+    except ValidationError:
+        msg = "sensitive data protection reply did not parse"
+        # from None: the validation error quotes the reply, which holds user text
+        raise PiiGateUnavailableError(msg) from None
+    results = [r for s in reply.overview.summaries for r in s.results]
+    if any(r.code != SUCCESS_CODE for r in results):
+        msg = "sensitive data protection could not apply a transformation"
+        raise PiiGateUnavailableError(msg)
+    return MaskedText(text=reply.item.value, replaced=sum(r.count for r in results))

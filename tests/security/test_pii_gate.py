@@ -109,9 +109,10 @@ def test_patterns_mask_what_the_gate_left(sdp_gate: GateFactory) -> None:
         reply("dlp-unavailable.json", status=503),
         reply("dlp-partial-error.json"),
         lambda _request: httpx2.Response(200, content=b"<html>"),
+        lambda _request: httpx2.Response(200, json={}),
         lambda _request: (_ for _ in ()).throw(httpx2.ConnectError("down")),
     ],
-    ids=["http-503", "transformation-error", "not-json", "unreachable"],
+    ids=["http-503", "transformation-error", "not-json", "no-item", "unreachable"],
 )
 def test_failing_gate_is_skipped_and_patterns_still_mask(
     sdp_gate: GateFactory,
@@ -126,6 +127,12 @@ def test_failing_gate_is_skipped_and_patterns_still_mask(
     assert "skipped" in caplog.text
     assert "Marszałkowskiej" not in caplog.text
     assert "601 234 567" not in caplog.text
+
+
+def test_empty_text_skips_the_call(sdp_gate: GateFactory, sent: Sent) -> None:
+    gate = sdp_gate(reply("dlp-address.json"))
+    assert asyncio.run(gate.mask("")) == MaskedText(text="", replaced=0)
+    assert sent == []
 
 
 def test_default_settings_build_the_null_gate_that_logs_the_skip(
@@ -154,7 +161,8 @@ def test_environment_picks_sensitive_data_protection(
     assert settings.location == "europe-west3"
 
 
-def test_sdp_needs_a_project() -> None:
+def test_sdp_needs_a_project(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("MERITUM_PII_PROJECT", raising=False)
     with pytest.raises(ValidationError, match="PROJECT"):
         PiiGateSettings(gate="sdp")
 
@@ -167,7 +175,10 @@ def test_location_outside_the_eu_is_refused(location: str) -> None:
         PiiGateSettings(gate="sdp", project="meritum-test", location=location)
 
 
-def test_location_is_not_checked_without_the_gate() -> None:
+def test_location_is_not_checked_without_the_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("MERITUM_PII_GATE", raising=False)
     assert PiiGateSettings(location="us-central1").gate == "none"
 
 
