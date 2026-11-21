@@ -46,7 +46,11 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = ["assert", "magic-value-comparison", "D", "DOC"]
+"tests/**/*.py" = ["assert", "magic-value-comparison", "D", "DOC", "line-too-long"]  # long Polish fixture strings
+"scripts/**/*.py" = ["implicit-namespace-package"]  # standalone scripts, not a package
+# Domain contracts: long Field(...) declarations and validator messages are the
+# readable form of the rules from the MSZ brief; _verdict_rules lists them in one place.
+"src/meritum_core/checks/contracts.py" = ["line-too-long", "raise-vanilla-args", "raw-string-in-exception", "f-string-in-exception", "complex-structure", "too-many-branches"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
