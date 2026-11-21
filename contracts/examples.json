@@ -12,7 +12,7 @@
         "claim": "Prezydent w Polsce może sprawować urząd przez trzy kadencje.",
         "claim_date": "2026-11-21", "claim_date_source": "today",
         "verdict": "false",
-        "strength": { "level": "moderate", "premises": { "independent_sources": 1, "primary_sources": 1, "newest_source_published_at": "1997-07-16T00:00:00+02:00", "validity": "in_force", "agreement": "consistent" } },
+        "strength": { "level": "moderate", "premises": { "independent_sources": 1, "primary_sources": 1, "newest_source_published_at": "1997-07-16T00:00:00+02:00", "newest_source_age_hours": 257280, "validity": "in_force", "agreement": "consistent" } },
         "citations": [
           {
             "source": {
@@ -31,7 +31,7 @@
         "claim": "Językiem urzędowym w Polsce jest język polski.",
         "claim_date": "2026-11-21", "claim_date_source": "today",
         "verdict": "confirmed",
-        "strength": { "level": "moderate", "premises": { "independent_sources": 1, "primary_sources": 1, "newest_source_published_at": "1997-07-16T00:00:00+02:00", "validity": "in_force", "agreement": "consistent" } },
+        "strength": { "level": "moderate", "premises": { "independent_sources": 1, "primary_sources": 1, "newest_source_published_at": "1997-07-16T00:00:00+02:00", "newest_source_age_hours": 257280, "validity": "in_force", "agreement": "consistent" } },
         "citations": [
           {
             "source": {
@@ -77,7 +77,7 @@
         "claim": "Prezydent w Polsce może sprawować urząd przez trzy kadencje.",
         "claim_date": "2026-11-21", "claim_date_source": "today",
         "verdict": "false",
-        "strength": { "level": "weak", "premises": { "independent_sources": 1, "primary_sources": 0, "agreement": "consistent" } },
+        "strength": { "level": "weak", "premises": { "independent_sources": 1, "primary_sources": 0, "newest_source_published_at": "2026-11-01T00:00:00+01:00", "newest_source_age_hours": 480, "agreement": "consistent" } },
         "claim_review_premises": [
           {
             "publisher": "Demagog", "publisher_id": "demagog", "signatory_of": ["ifcn", "efcsn"],

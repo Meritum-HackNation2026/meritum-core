@@ -43,7 +43,7 @@ SECONDARY_REFUTING = REFUTING | {
 }
 CONTEXT_OTHER = SECONDARY_REFUTING | {"stance": "context"}
 EXPIRING = REFUTING | {"validity": "expires"}
-EXPIRING_PREMISES = PREMISES | {"validity": "expires"}
+EXPIRING_PREMISES = PREMISES | {"validity": "expires", "newest_source_age_hours": 0}
 STALE: dict[str, Any] = {
     "level": "weak",
     "premises": EXPIRING_PREMISES | {"newest_source_age_hours": 900 * 24},
