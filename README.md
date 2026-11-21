@@ -20,7 +20,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
 | `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
-| `meritum_core.evidence`, `security`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+| `meritum_core.evidence`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
 
