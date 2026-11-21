@@ -11,7 +11,9 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.fakes` | `InMemoryJobQueue`: port w pamięci do testów backendu i workera (nagrywa zlecone zadania, odtwarza strumienie i zdarzenia) |
 | `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci, adaptery systemu plików i prywatnego bucketu GCS oraz fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (zob. [Magazyn plików](#magazyn-plików)); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
 | `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów, instrukcje osobno od danych), adaptery Vertex AI i stub, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
-| `meritum_core.evidence`, `corpus`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+| `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
+| `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
+| `meritum_core.evidence`, `security`, `moderation`, `observability`, `notifications`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
 
@@ -65,6 +67,31 @@ Każdy krok workflowu woła model tylko przez `LlmPort`. Adapter wybiera konfigu
 | `MERITUM_LLM_STUB_FIXTURES` | brak | plik JSON dla stubu: nazwa klasy modelu wyjścia → odpowiedź, np. `{"ClaimList": {"claims": [...]}}` |
 
 Vertex AI uwierzytelnia się przez Application Default Credentials (`gcloud auth application-default login` lokalnie, konto serwisowe w chmurze). Temperatura jest zawsze 0 (ADR-19). Przypięcie wersji to odpowiedzialność konfiguracji: podaj nazwę z wersją, nie alias. Adapter woła `generateContent`, więc obsługuje modele Gemini. Model partnerski z Model Garden (np. Mistral Small 3.1 z ADR-11) potrzebuje osobnego adaptera za tym samym portem. Brak odpowiedzi stubu dla danego typu też kończy się `ProviderUnavailableError` z nazwą typu, więc przy stubie ustaw `MERITUM_LLM_STUB_FIXTURES`. Testy w CI używają stubu i odpowiedzi w formacie Vertex AI podanej przez atrapę HTTP (`build_llm(..., http_client=...)`); prawdziwe wywołanie odpala tylko `uv run pytest -m integration` z ustawionym `MERITUM_LLM_PROVIDER=vertex`.
+
+## Wyszukiwanie w korpusie (`meritum_core.corpus`)
+
+Agenty badawcze w workerze i narzędzie MCP `search_sources` w backendzie wołają `CorpusSearchPort.search(query, claim_date=..., corpus_version=...)` w swoim procesie (ADR-32). Adapter PostgreSQL układa trzy rankingi w przypiętej migawce: podobieństwo wektorów (pgvector, HNSW), pełny tekst w konfiguracji `public.polish` (słownik hunspell-pl, dowolne słowo zapytania może pasować) i podobieństwo trigramów (`pg_trgm`, literówki). `fuse_rankings` łączy je przez reciprocal rank fusion i mnoży wynik przez wagę świeżości liczoną od daty twierdzenia, a nie od dzisiaj (US-ZRD-05). Wagi i progi są w `corpus/constants.py`. Migawka widzi fragmenty dodane do jej `taken_at` i niewycofane przed nim (`retired_at`); fragmentów się nie nadpisuje, zmieniony albo usunięty dokument dostaje `retired_at`. Workflow migawek zapisuje `taken_at` dopiero po zatwierdzeniu objętych nią transakcji pobierania. Nieznana wersja kończy się `UnknownCorpusVersionError`, a nie pustą listą (ADR-19).
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_CORPUS_PROVIDER` | `memory` | `memory` (migawki w procesie: testy, behave, praca bez bazy) albo `postgres` |
+| `MERITUM_CORPUS_DATABASE_URL` | brak | adres libpq bazy ze schematem `corpus`; wymagany dla `postgres` |
+| `MERITUM_EMBEDDINGS_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex` |
+| `MERITUM_EMBEDDINGS_MODEL` | `gemini-embedding-001` | model embeddingów w Vertex AI (ADR-04); adaptery biorą go tylko z ustawień |
+| `MERITUM_EMBEDDINGS_REGION` | brak | lokalizacja Vertex AI w UE (`EU_REGIONS`, np. `europe-west4`); dostępność modelu w `europe-central2` do sprawdzenia; wymagany dla `vertex` |
+| `MERITUM_EMBEDDINGS_PROJECT` | projekt z ADC | projekt Google Cloud |
+| `MERITUM_EMBEDDINGS_DIMENSIONS` | `768` | rozmiar wektora; tabele korpusu mają `vector(768)`, więc zmiana wymaga migracji i ponownego zwektoryzowania |
+
+Dostawca embeddingów to Vertex AI (Google Cloud) w regionie UE, uwierzytelniony przez Application Default Credentials. Zapytania idą z typem `RETRIEVAL_QUERY`, fragmenty z `RETRIEVAL_DOCUMENT`. Korpus i zapytania muszą używać tego samego modelu i rozmiaru wektora.
+
+Migracje leżą w `src/meritum_core/corpus/migrations/` (SQL, w kolejności numerów) i trafiają do pakietu. Są tylko wstecznie zgodne (dodajemy, nie usuwamy i nie zmieniamy nazw), bo schemat `corpus` czytają dev i prd; uruchamia je deploy z `main` (infra/004). Wymagają obrazu `meritum-postgres` z meritum-infra (pgvector, `pg_trgm`, `public.polish`).
+
+Test adaptera na prawdziwej bazie uruchamia się lokalnie:
+
+```bash
+docker run -d --rm --name corpus -e POSTGRES_PASSWORD=test -e POSTGRES_DB=meritum -p 55432:5432 <obraz meritum-postgres>
+MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum uv run pytest -m integration tests/corpus
+```
 
 ## Użycie w innym repo
 
