@@ -4,6 +4,7 @@ Features:
     US-POW-01, US-BEZ-05, F-22, ADR-13
 """
 
+from collections.abc import Sequence
 from datetime import datetime
 from itertools import starmap
 from typing import Final
@@ -39,6 +40,28 @@ async def delete_recipient_notifications(
     """
     query = sql.SQL("DELETE FROM notifications WHERE {} = %s").format(_COLUMN[kind])
     cursor = await conn.execute(query, (value,))
+    return cursor.rowcount
+
+
+async def delete_check_notifications(
+    conn: AsyncConnection, check_ids: Sequence[str]
+) -> int:
+    """Delete notifications about the given checks, inside the caller's transaction.
+
+    Args:
+        conn: the connection; the caller owns the transaction.
+        check_ids: the deleted checks.
+
+    Returns:
+        How many were deleted.
+
+    Features:
+        US-POW-01, US-BEZ-05, F-22
+    """
+    cursor = await conn.execute(
+        "DELETE FROM notifications WHERE body ->> 'check_id' = ANY(%s)",
+        (list(check_ids),),
+    )
     return cursor.rowcount
 
 
@@ -120,6 +143,18 @@ class PostgresNotificationRepository:
         """
         async with await self._connect() as conn:
             return await delete_recipient_notifications(conn, kind, value)
+
+    async def delete_for_checks(self, check_ids: Sequence[str]) -> int:
+        """Delete notifications about the given checks.
+
+        Args:
+            check_ids: the deleted checks.
+
+        Returns:
+            How many were deleted.
+        """
+        async with await self._connect() as conn:
+            return await delete_check_notifications(conn, check_ids)
 
     async def delete_expired(self, now: datetime) -> int:
         """Delete notifications past retention.

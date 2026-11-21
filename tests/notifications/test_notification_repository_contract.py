@@ -83,3 +83,18 @@ def test_delete_expired_removes_notifications_past_retention(
     now = T0 + timedelta(days=30)  # n_old's retention ends exactly now
     assert run.run(notes.delete_expired(now)) == 1
     assert ids(run.run(notes.list_for("session_id", SESSION))) == ["n_new"]
+
+
+def test_delete_for_checks_removes_notifications_about_those_checks(
+    run: asyncio.Runner, notes: NotificationRepository
+) -> None:
+    save(
+        run,
+        notes,
+        note("n_1", check_id="c_1"),
+        for_user("n_2"),
+        note("n_3", check_id="c_2"),
+    )
+    assert run.run(notes.delete_for_checks(["c_1", "c_unknown"])) == 1
+    assert ids(run.run(notes.list_for("session_id", SESSION))) == ["n_3"]
+    assert run.run(notes.delete_for_checks([])) == 0

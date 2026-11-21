@@ -12,9 +12,9 @@ from meritum_core.checks import SubjectKind
 class SubjectEraser(Protocol):
     """Erases one person's data from every app table at once (port, US-BEZ-05).
 
-    Deletes their check records and notifications and drops their checks from
-    moderator cases. Every adapter passes the contract test in
-    ``tests/observability/``.
+    Deletes their check records, their notifications and the notifications about
+    their checks, and drops their checks from moderator cases. Every adapter
+    passes the contract test in ``tests/observability/``.
 
     Features:
         US-BEZ-05, F-24, ADR-13

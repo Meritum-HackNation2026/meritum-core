@@ -9,7 +9,10 @@ from psycopg import AsyncConnection
 from meritum_core.checks import SubjectKind
 from meritum_core.checks.adapters import delete_subject_records
 from meritum_core.moderation.adapters import remove_case_checks
-from meritum_core.notifications.adapters import delete_recipient_notifications
+from meritum_core.notifications.adapters import (
+    delete_check_notifications,
+    delete_recipient_notifications,
+)
 from meritum_core.observability.constants import SUBJECT_RECIPIENT
 
 
@@ -44,4 +47,5 @@ class PostgresSubjectEraser:
             check_ids = await delete_subject_records(conn, kind, value)
             await remove_case_checks(conn, check_ids)
             notes = await delete_recipient_notifications(conn, recipient, value)
+            notes += await delete_check_notifications(conn, check_ids)
         return len(check_ids) + notes

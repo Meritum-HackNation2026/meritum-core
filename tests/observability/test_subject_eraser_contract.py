@@ -53,6 +53,7 @@ def seed(run: asyncio.Runner, app: AppRepositories) -> None:
         app.notifications.save(note("n_u", session_id=None, user_id=USER)),
         app.notifications.save(note("n_d", session_id=HASH)),
         app.notifications.save(note("n_keep", session_id=OTHER)),
+        app.notifications.save(note("n_about_s", session_id=OTHER, check_id="c_s")),
         app.cases.save(case("#S-1", "c_s", "c_keep")),
         app.cases.save(case("#S-2", "c_s")),
     ]
@@ -64,13 +65,15 @@ def test_erasing_a_session_removes_its_records_notifications_and_case_checks(
     run: asyncio.Runner, app: AppRepositories
 ) -> None:
     seed(run, app)
-    assert run.run(app.eraser.erase("session_id", SESSION)) == 2
+    assert run.run(app.eraser.erase("session_id", SESSION)) == 3
     assert run.run(app.records.get("c_s")) is None
     assert run.run(app.notifications.list_for("session_id", SESSION)) == []
     kept = run.run(app.cases.get("#S-1"))
     assert kept is not None
     assert kept.check_ids == ["c_keep"]
     assert run.run(app.cases.get("#S-2")) is None
+    others = run.run(app.notifications.list_for("session_id", OTHER))
+    assert [n.id for n in others] == ["n_keep"]  # n_about_s named an erased check
 
 
 def test_erasing_a_user_or_channel_user_leaves_everyone_else(
@@ -83,5 +86,5 @@ def test_erasing_a_user_or_channel_user_leaves_everyone_else(
     left = run.run(app.records.list_for("session_id", OTHER))
     assert [r.check_id for r in left] == ["c_keep"]
     notes = run.run(app.notifications.list_for("session_id", OTHER))
-    assert [n.id for n in notes] == ["n_keep"]
+    assert sorted(n.id for n in notes) == ["n_about_s", "n_keep"]
     assert run.run(app.notifications.list_for("session_id", HASH)) == []

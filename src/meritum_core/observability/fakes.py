@@ -45,4 +45,5 @@ class InMemorySubjectEraser:
         check_ids = await self._records.delete_subject(kind, value)
         await self._cases.remove_checks(check_ids)
         notes = await self._notifications.delete_for(SUBJECT_RECIPIENT[kind], value)
+        notes += await self._notifications.delete_for_checks(check_ids)
         return len(check_ids) + notes

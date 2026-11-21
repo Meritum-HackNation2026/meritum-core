@@ -9,7 +9,7 @@ import pytest
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
 
-from meritum_core.shared.database.adapters import apply_migrations
+from meritum_core.shared.database.adapters import apply_migrations, main
 
 APP_TABLES = {
     "check_records",
@@ -28,9 +28,9 @@ WHERE table_schema = %s ORDER BY table_name, column_name
 @pytest.fixture
 def empty_schema() -> Iterator[tuple[str, str]]:
     """An empty schema; yields (its URL with search_path, its name)."""
-    admin = os.environ.get("MERITUM_DATABASE_URL", "")
+    admin = os.environ.get("MERITUM_TEST_DATABASE_URL", "")
     if not admin:
-        pytest.skip("set MERITUM_DATABASE_URL to a local PostgreSQL")
+        pytest.skip("set MERITUM_TEST_DATABASE_URL to a local PostgreSQL")
     schema = f"app_test_{uuid.uuid4().hex}"
     with psycopg.connect(admin, autocommit=True) as conn:
         conn.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
@@ -60,9 +60,25 @@ def test_issue_scenario_migrations_on_an_empty_schema(
 
 @pytest.mark.integration
 def test_missing_search_path_schema_is_an_error() -> None:
-    admin = os.environ.get("MERITUM_DATABASE_URL", "")
+    admin = os.environ.get("MERITUM_TEST_DATABASE_URL", "")
     if not admin:
-        pytest.skip("set MERITUM_DATABASE_URL to a local PostgreSQL")
+        pytest.skip("set MERITUM_TEST_DATABASE_URL to a local PostgreSQL")
     url = make_conninfo(admin, options=f"-c search_path=missing_{uuid.uuid4().hex}")
     with pytest.raises(RuntimeError, match="search_path"):
         apply_migrations(url)
+
+
+@pytest.mark.integration
+def test_issue_scenario_the_deploy_command_migrates_once(
+    empty_schema: tuple[str, str],
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    url, _ = empty_schema
+    monkeypatch.setenv("MERITUM_DATABASE_URL", url)
+    main()
+    main()
+    assert capsys.readouterr().out.splitlines() == [
+        "applied: 0001_app_tables.sql",
+        "applied: nothing",
+    ]
