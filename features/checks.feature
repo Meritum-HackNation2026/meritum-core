@@ -92,3 +92,13 @@ Feature: Sprawdzanie treści
     Given kanał z identyfikatorem sesji przeglądarki
     When wysyła CheckRequest z polem session_id
     Then kontrakt przyjmuje żądanie, a session_id trafia do CheckRecord
+
+  Scenario Outline: wynik sprawdzenia niesie znacznik treści wygenerowanej przez AI
+    Given wynik sprawdzenia z uzasadnieniem napisanym przez model "<model>" dostawcy "<provider>"
+    When kanał serializuje wynik do odpowiedzi
+    Then odpowiedź ma znacznik czytelny maszynowo z informacją, że uzasadnienie wygenerował system AI, i z nazwą modelu
+
+    Examples:
+      | provider | model                |
+      | vertex   | gemini-2.0-flash-001 |
+      | stub     | stub                 |

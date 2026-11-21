@@ -11,6 +11,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
+from ._ai import AiMarker
 from ._base import _Model
 from ._claims import ClaimResult
 from ._context import SourceStatusWarning
@@ -23,12 +24,23 @@ _Transcript = Annotated[
         description="Audio input only: the automatic transcript, with personal data masked.",
     ),
 ]
+_AiMarkerField = Annotated[
+    AiMarker | None,
+    Field(
+        description="Machine-readable marker that an AI system wrote the answer (AI Act art. 50(2)); required on a finished check."
+    ),
+]
 _LimitationCodes = Annotated[
     list[LimitationCode],
     Field(
         description="Codes next to the limitation texts; the channel words them from copy/pl.json. They never change the status."
     ),
 ]
+
+
+def _require_marker(marker: AiMarker | None) -> None:
+    if marker is None:
+        raise ValueError("a finished check carries the AI marker")
 
 
 class Escalation(_Model):
@@ -75,6 +87,7 @@ class CheckResult(_Model):
         escalation: the hand-off to the moderator queue.
         corpus_version: the id of the corpus snapshot.
         ai_disclosure: always true; the answer was produced with AI.
+        ai_marker: which AI system wrote the verdicts; set on a finished check.
 
     Features:
         US-SPR-06, US-SPR-09, US-BEZ-03, US-BEZ-07, US-OBS-04, US-OBS-05,
@@ -106,6 +119,7 @@ class CheckResult(_Model):
         ),
     ]
     ai_disclosure: Literal[True] = True
+    ai_marker: _AiMarkerField = None
 
     @model_validator(mode="after")
     def _failure_code_only_on_failure(self) -> CheckResult:
@@ -121,6 +135,7 @@ class CheckResult(_Model):
                 raise ValueError("a finished check has at least one claim")
             if not self.limitations:
                 raise ValueError("a finished check states its limitations")
+            _require_marker(self.ai_marker)
         elif self.claims or self.message is None or not self.message:
             raise ValueError(
                 f"{self.status!r} is not a verdict: no claims, and a message instead"
@@ -143,6 +158,7 @@ class CachedResult(_Model):
         limitation_codes: the cached limitation codes.
         transcript: the cached masked transcript of an audio input.
         source_warning: the cached sanctions note.
+        ai_marker: the cached AI marker of a finished check.
         corpus_version: the corpus snapshot the result came from.
         source_ids: the ids of the sources cited in the claims.
         cached_at: when the entry was stored.
@@ -159,6 +175,7 @@ class CachedResult(_Model):
     limitation_codes: _LimitationCodes = []
     transcript: _Transcript = None
     source_warning: SourceStatusWarning | None = None
+    ai_marker: _AiMarkerField = None
     corpus_version: Annotated[str, Field(min_length=1, max_length=40)]
     source_ids: Annotated[
         list[str], Field(description="Ids of the sources cited in the claims.")
@@ -168,6 +185,8 @@ class CachedResult(_Model):
 
     @model_validator(mode="after")
     def _cache_rules(self) -> CachedResult:
+        if self.status == "done":
+            _require_marker(self.ai_marker)
         if self.expires_at <= self.cached_at:
             raise ValueError("a cache entry expires after it was stored")
         cited = {c.source.id for claim in self.claims for c in claim.citations}

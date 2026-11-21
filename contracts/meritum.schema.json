@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Meritum contracts",
-  "x-contract-version": 5,
+  "x-contract-version": 6,
   "$defs": {
     "CheckRequest": {
       "additionalProperties": false,
@@ -112,6 +112,40 @@
         "channel"
       ],
       "title": "CheckRequest",
+      "type": "object"
+    },
+    "AiMarker": {
+      "additionalProperties": false,
+      "description": "Machine-readable marker that an AI system wrote the verdicts and justifications.\n\nEvery channel gets the same marker from the result; how a channel shows it is up to\nthe channel.",
+      "properties": {
+        "ai_generated": {
+          "const": true,
+          "default": true,
+          "title": "Ai Generated",
+          "type": "boolean"
+        },
+        "provider": {
+          "maxLength": 60,
+          "title": "Marker Provider",
+          "type": "string"
+        },
+        "model": {
+          "maxLength": 80,
+          "title": "Marker Model",
+          "type": "string"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "provider",
+        "model",
+        "generated_at"
+      ],
+      "title": "AiMarker",
       "type": "object"
     },
     "Citation": {
@@ -940,6 +974,18 @@
           "default": true,
           "title": "Ai Disclosure",
           "type": "boolean"
+        },
+        "ai_marker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AiMarker"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Machine-readable marker that an AI system wrote the answer (AI Act art. 50(2)); required on a finished check."
         }
       },
       "required": [
@@ -1030,6 +1076,18 @@
             }
           ],
           "default": null
+        },
+        "ai_marker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AiMarker"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Machine-readable marker that an AI system wrote the answer (AI Act art. 50(2)); required on a finished check."
         },
         "corpus_version": {
           "maxLength": 40,

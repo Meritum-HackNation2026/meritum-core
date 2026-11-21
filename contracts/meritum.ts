@@ -19,6 +19,10 @@ export type ChannelUserId = string | null;
  * Web and extension only: random id kept in the browser session; the API copies it to CheckRecord.session_id.
  */
 export type RequestSessionId = string | null;
+export type AiGenerated = true;
+export type MarkerProvider = string;
+export type MarkerModel = string;
+export type GeneratedAt = string;
 export type Id = string;
 export type Title = string;
 export type Publisher = string;
@@ -367,6 +371,21 @@ export interface CheckRequest {
   session_id?: RequestSessionId;
 }
 /**
+ * Machine-readable marker that an AI system wrote the verdicts and justifications.
+ *
+ * Every channel gets the same marker from the result; how a channel shows it is up to
+ * the channel.
+ *
+ * This interface was referenced by `MeritumContracts`'s JSON-Schema
+ * via the `definition` "AiMarker".
+ */
+export interface AiMarker {
+  ai_generated?: AiGenerated;
+  provider: MarkerProvider;
+  model: MarkerModel;
+  generated_at: GeneratedAt;
+}
+/**
  * A fragment of a source and how it bears on the claim. The pipeline drops fragments it cannot find verbatim.
  *
  * This interface was referenced by `MeritumContracts`'s JSON-Schema
@@ -550,6 +569,10 @@ export interface CheckResult {
   escalation?: Escalation | null;
   corpus_version: CorpusVersion;
   ai_disclosure?: AiDisclosure;
+  /**
+   * Machine-readable marker that an AI system wrote the answer (AI Act art. 50(2)); required on a finished check.
+   */
+  ai_marker?: AiMarker | null;
 }
 /**
  * What the result cache keeps: only the substantive part of a CheckResult.
@@ -569,6 +592,10 @@ export interface CachedResult {
   limitation_codes?: LimitationCodes1;
   transcript?: Transcript1;
   source_warning?: SourceStatusWarning | null;
+  /**
+   * Machine-readable marker that an AI system wrote the answer (AI Act art. 50(2)); required on a finished check.
+   */
+  ai_marker?: AiMarker | null;
   corpus_version: CorpusVersion1;
   source_ids?: SourceIds;
   cached_at: CachedAt;

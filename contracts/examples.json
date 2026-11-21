@@ -5,6 +5,7 @@
   "CheckResult.done": {
     "check_id": "c_01",
     "status": "done",
+    "ai_marker": { "ai_generated": true, "provider": "vertex", "model": "gemini-2.0-flash-001", "generated_at": "2026-11-21T14:02:20+01:00" },
     "corpus_version": "2026-11-21.1",
     "limitations": ["Sprawdziliśmy tylko tekst Konstytucji RP w korpusie. Nie oceniamy planowanych zmian prawa."],
     "claims": [
@@ -51,6 +52,7 @@
   "CheckResult.abstain": {
     "check_id": "c_02",
     "status": "done",
+    "ai_marker": { "ai_generated": true, "provider": "vertex", "model": "gemini-2.0-flash-001", "generated_at": "2026-11-21T14:02:20+01:00" },
     "corpus_version": "2026-11-21.1",
     "limitations": ["Korpus i wyszukiwanie w zatwierdzonych serwisach nie zawierają jeszcze publikacji na ten temat."],
     "claims": [
@@ -69,6 +71,7 @@
   "CheckResult.claim_review": {
     "check_id": "c_04",
     "status": "done",
+    "ai_marker": { "ai_generated": true, "provider": "vertex", "model": "gemini-2.0-flash-001", "generated_at": "2026-11-21T14:02:20+01:00" },
     "corpus_version": "2026-11-21.1",
     "transcript": "Prezydent w Polsce może rządzić trzy kadencje.",
     "limitations": ["Nie przeszukaliśmy obrazów: nagranie nie zawiera zdjęć."],
@@ -106,6 +109,7 @@
   },
   "CachedResult": {
     "status": "done",
+    "ai_marker": { "ai_generated": true, "provider": "vertex", "model": "gemini-2.0-flash-001", "generated_at": "2026-11-21T14:02:20+01:00" },
     "corpus_version": "2026-11-21.1",
     "limitations": ["Korpus i wyszukiwanie w zatwierdzonych serwisach nie zawierają jeszcze publikacji na ten temat."],
     "claims": [

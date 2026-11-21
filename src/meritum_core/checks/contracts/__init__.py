@@ -41,6 +41,8 @@ Rules from the MSZ brief that the models enforce:
   never stores;
 - only web and extension requests carry a session id, the random browser session id
   that becomes CheckRecord.session_id;
+- a finished check carries a machine-readable marker naming the AI system (provider
+  and model) that wrote its verdicts and justifications (US-BEZ-07);
 - the result cache keeps only the substantive part of a result and never a technical
   failure; escalation is computed per request.
 """
@@ -59,6 +61,7 @@ from meritum_core.checks.constants import (
     STRONG_MIN_SOURCES,
 )
 
+from ._ai import AiMarker, ai_marker_for
 from ._claims import ClaimResult
 from ._context import ClaimReviewContext, IncidentMatch, SourceStatusWarning
 from ._moderation import CaseClaim, ModeratorCase
@@ -109,6 +112,7 @@ __all__ = [
     "SETTLING",
     "STRONG_MIN_SOURCES",
     "Agreement",
+    "AiMarker",
     "AnalysisStatus",
     "AnalysisStep",
     "CacheableStatus",
@@ -153,6 +157,7 @@ __all__ = [
     "Validity",
     "Verdict",
     "VerdictChange",
+    "ai_marker_for",
     "is_stale",
     "strength_for",
     "verdict_changes_for",
