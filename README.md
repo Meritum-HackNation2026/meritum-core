@@ -50,7 +50,10 @@ Backend i worker przypinają konkretny commit core (`rev`), na develop commit z 
 ```bash
 uv sync
 uv run ruff check . && uv run ruff format --check . && uv run ty check
-uv run pytest
+uv run python scripts/check_conventions.py && uv run vulture && uv run bandit -c pyproject.toml -r src scripts
+uv run pytest            # z testami architektury (tests/architecture/)
 ```
+
+Zasady architektury i to, co je sprawdza: [docs/architecture.md](docs/architecture.md).
 
 Gałęzie: `develop` (integracja), `main` (produkcja). Zmiany przez PR do `develop`, potem PR `develop` → `main`. Nie pushuj bezpośrednio do `develop` ani `main`: na planie Free GitHub nie egzekwuje tego w repozytoriach prywatnych, więc to zasada zespołu.
