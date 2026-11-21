@@ -4,6 +4,7 @@ Features:
     US-KOR-02, US-ZRD-05, F-12, ADR-04
 """
 
+from pathlib import Path
 from typing import Final
 
 ENV_PREFIX: Final = "MERITUM_CORPUS_"
@@ -36,3 +37,29 @@ misses most one-letter typos in short Polish words)."""
 MEMORY_STEM_LENGTH: Final = 5
 """The in-memory adapter compares word prefixes of this length, a stand-in for
 the hunspell dictionary of ``public.polish`` in PostgreSQL."""
+
+CATALOG_FILE: Final = Path(__file__).parent / "catalog" / "catalog.yaml"
+"""The audited source catalogue shipped with the package (US-KOR-01, F-10);
+``scripts/export_catalog.py`` turns it into ``catalog/catalog.json``."""
+
+TDM_EXCLUSION_REASON: Final = (
+    "Content-Signal w robots.txt albo znaczniki meta zastrzegają eksplorację "
+    "tekstów i danych (art. 4 dyrektywy 2019/790)."
+)
+"""Exclusion reason the TDM check writes into a secondary source whose owner
+reserved text and data mining (US-KOR-01, ADR-24); catalogue data, not UI copy."""
+
+FULL_TEXT_RETENTION_DAYS: Final = 90
+"""Days a fetched document's full text is kept, counted from ``fetched_at``
+(US-KOR-05). Metadata and cited fragments stay as long as the check record."""
+
+CATALOG_TABLE_HEADER: Final = (
+    "| Domena | Wydawca (`publisher_id`) | Poziom | Rola | Pobieranie "
+    "| Odświeżanie (min) | Ważność | Zastrzeżenie TDM | Stan |\n"
+    "|---|---|---|---|---|---|---|---|---|"
+)
+"""Header of the generated audit table of the catalogue in the README (US-KOR-01)."""
+
+TDM_SIGNAL_USES: Final = frozenset({"ai-train", "ai-input"})
+"""Content-Signal uses whose ``=no`` reserves text and data mining (ADR-24);
+a plain ``Disallow`` blocks crawling and is recorded as an exclusion instead."""

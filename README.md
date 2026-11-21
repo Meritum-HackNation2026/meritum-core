@@ -17,9 +17,10 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.security.pii` | `mask_personal_data(text, gate)`: najpierw bramka maskowania za portem `PiiGatePort` (Google Sensitive Data Protection w regionie UE albo `NullPiiGate`, która loguje pominięcie), potem wzorce telefonu, e-maila i PESEL-u; fabryka `build_pii_gate(PiiGateSettings())` według `MERITUM_PII_GATE` (zob. [Maskowanie danych osobowych](#maskowanie-danych-osobowych-meritum_coresecuritypii)) |
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie, po usuniętych sprawdzeniach i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
-| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal |
+| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal; `FetchedPage.tdm_reserved` mówi, czy znaczniki meta strony zastrzegają eksplorację, a `content_signals()` czyta Content-Signal z robots.txt |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
 | `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
+| `meritum_core.corpus.catalog` | jawny katalog źródeł `catalog.yaml` (zob. [Katalog źródeł](#katalog-źródeł-meritum_corecorpuscatalog)): `load_catalog()` waliduje każdy wpis jako `CatalogEntry`, `check_tdm()` zapisuje zastrzeżenie TDM właściciela przez fetcher stron, `catalog_json()` i `catalog_markdown()` dają eksport dla frontendu i tabelę audytu |
 | `meritum_core.evidence`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
 
 ## Magazyn plików
@@ -208,6 +209,544 @@ Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na
 ```bash
 MERITUM_PII_PROJECT=<projekt> uv run pytest -m integration tests/security/test_pii_gate_integration.py
 ```
+
+## Katalog źródeł (`meritum_core.corpus.catalog`)
+
+Ta sekcja opisuje [`catalog.yaml`](src/meritum_core/corpus/catalog/catalog.yaml), czyli jawny katalog domen, w których Meritum szuka dowodów. Dokumentów nie dodajemy ręcznie. System pobiera je sam według katalogu: z RSS, map stron, API albo ze stałych adresów.
+
+- Stan na 21.11.2026. robots.txt, Content-Signal i `/.well-known/tdmrep.json` sprawdzono automatycznie tego dnia.
+- 57 wpisów: 51 włączonych (40 niezależnych wydawców) i 6 wykluczonych z podanym powodem.
+- Wszystkie wpisy przechodzą walidację kontraktu `CatalogEntry` z `meritum-core` (`meritum_core.checks.contracts`).
+
+### Kolumny
+
+Każdy wpis w `catalog.yaml` to dokładnie `CatalogEntry`. Kontrakt ma `extra="forbid"`, więc adresy wejścia, podstawy prawne i uwagi są tylko w README, w sekcji „Adresy wejścia, podstawy prawne i uwagi”. Z `catalog.yaml` core generuje `catalog/catalog.json` dla frontendu.
+
+| Pole | Znaczenie |
+|---|---|
+| `domain` | Domena albo prefiks ścieżki (np. `www.gov.pl/web/rcb`). Wyszukiwanie na żywo używa go jako wzorca INCLUDE. |
+| `publisher`, `publisher_id` | Wydawca. Wpisy z tym samym `publisher_id` liczą się jako jedno niezależne źródło (np. `imgw` dla meteo, hydro i baltyk). |
+| `kind` | `instytucja`, `dane_publiczne`, `akt_prawny`, `fact_check` |
+| `tier` | `primary`: urzędowe i pierwotne; `secondary`: fact-checkerzy |
+| `role` | `evidence`: źródło dowodów. `source_status`: lista statusu źródła (sankcje, ostrzeżenia CERT). Ingest ją pomija, a sprawdzenie używa jej tylko do neutralnego ostrzeżenia z §5. |
+| `license` | Licencja albo warunki ponownego wykorzystania |
+| `ingest` | `rss`, `sitemap`, `api` (publiczne API: IMGW, GIOŚ, ELI, dane.gov.pl, GUS, NBP, Eurostat), `static` (stałe adresy pobierane cyklicznie), `mcp` (EUvsDisinfo), `live` (odpytywane na żywo w chwili sprawdzenia, poza migawką korpusu) |
+| `refresh_minutes` | Co ile minut odświeżać, minimum 15. Ostrzeżenia 15–30 min. Brak przy `live`. |
+| `validity` | `expires`: wygasa po `max_age_hours`, domyślnie 365 dni. `in_force`: obowiązuje, dopóki akt nie zostanie zmieniony („nie wygasa”). `updated_in_place`: strona stała, poprawiana na miejscu. |
+| `max_age_hours` | Krótki próg dla ostrzeżeń, dróg, pogody i pomiarów |
+| `qualified_because` | Powód kwalifikacji |
+| `tdm_reservation` | `none`: brak zastrzeżenia. `reserved`: `ai-train=no` albo `ai-input=no` w Content-Signal robots.txt, znacznik meta `tdm-reservation` albo `noai`. Samo `Disallow` blokuje pobieranie, nie eksplorację, więc daje wykluczenie z powodem, a nie `reserved`. `unknown`: nie dało się odczytać. |
+| `excluded`, `exclusion_reason` | Wykluczenie zawsze ma powód. Pola pomijamy, gdy wpis nie jest wykluczony. |
+
+### Tabela audytu
+
+Generuje ją `uv run python scripts/export_catalog.py` z `catalog.yaml`, razem z `catalog/catalog.json` dla strony „Jak działa Meritum” (kopiuje go `pnpm sync` w meritum-frontend). CI odrzuca nieaktualny eksport (`--check`). `load_catalog()` waliduje każdy wpis jako `CatalogEntry`, a `check_tdm()` zapisuje zastrzeżenie TDM właściciela w `tdm_reservation`. Pełny tekst dokumentu trzymamy `FULL_TEXT_RETENTION_DAYS` (90) dni od `fetched_at`.
+
+<!-- catalog:start (scripts/export_catalog.py) -->
+| Domena | Wydawca (`publisher_id`) | Poziom | Rola | Pobieranie | Odświeżanie (min) | Ważność | Zastrzeżenie TDM | Stan |
+|---|---|---|---|---|---|---|---|---|
+| `www.gov.pl/web/gov/ostrzezenia` | Rządowe Centrum Bezpieczeństwa (system ostrzeżeń gov.pl) (`rcb`) | primary | evidence | static | 15 | expires, 48 h | none | włączone |
+| `www.gov.pl/web/mswia/regionalny-system-ostrzegania` | Ministerstwo Spraw Wewnętrznych i Administracji (`mswia`) | primary | evidence | static | 15 | expires, 48 h | none | włączone |
+| `www.gov.pl/web/rcb` | Rządowe Centrum Bezpieczeństwa (`rcb`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
+| `www.gov.pl/web/mswia` | Ministerstwo Spraw Wewnętrznych i Administracji (`mswia`) | primary | evidence | static | 360 | expires | none | włączone |
+| `www.gov.pl/web/kgpsp` | Komenda Główna Państwowej Straży Pożarnej (`kg-psp`) | primary | evidence | static | 360 | expires | none | włączone |
+| `policja.pl` | Komenda Główna Policji (`kgp`) | primary | evidence | rss | 30 | expires | none | włączone |
+| `mazowiecka.policja.gov.pl` | Komenda Wojewódzka Policji z siedzibą w Radomiu (`kwp-radom`) | primary | evidence | static | 360 | expires | none | włączone |
+| `www.gov.pl/web/obrona-narodowa` | Ministerstwo Obrony Narodowej (`mon`) | primary | evidence | static | 360 | expires | none | włączone |
+| `www.gov.pl/web/gis` | Główny Inspektorat Sanitarny (`gis`) | primary | evidence | static | 360 | expires, 168 h | none | włączone |
+| `www.gov.pl/web/paa` | Państwowa Agencja Atomistyki (`paa`) | primary | evidence | static | 360 | expires | none | włączone |
+| `monitoring.paa.gov.pl` | Państwowa Agencja Atomistyki (`paa`) | primary | evidence | live |  | expires, 6 h | unknown | włączone |
+| `powietrze.gios.gov.pl` | Główny Inspektorat Ochrony Środowiska (`gios`) | primary | evidence | live |  | expires, 3 h | none | włączone |
+| `moje.cert.pl` | NASK – CERT Polska (`cert-polska`) | primary | evidence | static |  | expires | none | wykluczone: robots.txt: Disallow: / dla wszystkich robotów. Zamiast tego pobieramy cert.pl (RSS). |
+| `cert.pl` | NASK – CERT Polska (`cert-polska`) | primary | evidence | rss | 30 | expires | none | włączone |
+| `www.gov.pl/web/infrastruktura` | Ministerstwo Infrastruktury (`mi`) | primary | evidence | static | 360 | expires | none | włączone |
+| `drogi.gddkia.gov.pl` | Generalna Dyrekcja Dróg Krajowych i Autostrad (`gddkia`) | primary | evidence | live |  | expires, 6 h | unknown | włączone |
+| `www.gov.pl/web/gddkia` | Generalna Dyrekcja Dróg Krajowych i Autostrad (`gddkia`) | primary | evidence | static | 10080 | updated_in_place | none | włączone |
+| `ulc.gov.pl` | Urząd Lotnictwa Cywilnego (`ulc`) | primary | evidence | static | 1440 | updated_in_place | unknown | włączone |
+| `portalpasazera.pl` | PKP Polskie Linie Kolejowe (`pkp-plk`) | primary | evidence | live |  | expires, 6 h | unknown | włączone |
+| `utk.gov.pl` | Urząd Transportu Kolejowego (`utk`) | primary | evidence | static |  | updated_in_place | none | wykluczone: robots.txt: Disallow: / dla wszystkich robotów. |
+| `kgsok.pl` | Komenda Główna Straży Ochrony Kolei (`kg-sok`) | primary | evidence | sitemap | 1440 | expires | none | włączone |
+| `www.sar.gov.pl` | Morska Służba Poszukiwania i Ratownictwa (`mspir`) | primary | evidence | static | 1440 | expires | none | włączone |
+| `www.umgdy.gov.pl` | Urząd Morski w Gdyni (`um-gdynia`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
+| `www.ums.gov.pl` | Urząd Morski w Szczecinie (`um-szczecin`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
+| `www.gov.pl/web/wody-polskie` | Państwowe Gospodarstwo Wodne Wody Polskie (`wody-polskie`) | primary | evidence | static | 360 | expires, 72 h | none | włączone |
+| `www.gov.pl/web/dyplomacja` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 360 | updated_in_place | none | włączone |
+| `odyseusz.gov.pl` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 1440 | updated_in_place | none | włączone |
+| `www.gov.pl/web/premier` | Kancelaria Prezesa Rady Ministrów (`kprm`) | primary | evidence | static | 360 | expires | none | włączone |
+| `meteo.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
+| `hydro.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
+| `baltyk.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
+| `isap.sejm.gov.pl` | Kancelaria Sejmu (`kancelaria-sejmu`) | primary | evidence | static |  | in_force | none | wykluczone: robots.txt: Disallow: / dla wszystkich robotów. Te same akty pobieramy z api.sejm.gov.pl (ELI). |
+| `api.sejm.gov.pl` | Kancelaria Sejmu (`kancelaria-sejmu`) | primary | evidence | api | 10080 | in_force | none | włączone |
+| `eur-lex.europa.eu` | Urząd Publikacji Unii Europejskiej (`urzad-publikacji-ue`) | primary | evidence | static | 10080 | in_force | unknown | włączone |
+| `dane.gov.pl` | Ministerstwo Cyfryzacji (`mc`) | primary | evidence | api | 1440 | expires | none | włączone |
+| `fakenews.pl` | Fundacja Przeciwdziałania Dezinformacji (fakenews.pl) (`fakenews-pl`) | secondary | evidence | rss | 60 | expires | none | włączone |
+| `pravda.org.pl` | Stowarzyszenie Pravda (`pravda`) | secondary | evidence | rss | 60 | expires | none | włączone |
+| `euvsdisinfo.eu` | Europejska Służba Działań Zewnętrznych (EUvsDisinfo) (`eeas-euvsdisinfo`) | secondary | evidence | mcp | 1440 | expires | none | włączone |
+| `factchecktools.googleapis.com` | Google (agregator ocen ClaimReview) (`google-factcheck`) | secondary | evidence | live |  | expires | unknown | włączone |
+| `demagog.org.pl` | Stowarzyszenie Demagog (`demagog`) | secondary | evidence | live |  | expires | reserved | wykluczone: Content-Signal ai-train=no, use=reference i blokady botów AI w robots.txt: nie pobieramy treści, tylko ocena z Fact Check API. |
+| `sprawdzam.afp.com` | Agence France-Presse (AFP Sprawdzam) (`afp`) | secondary | evidence | live |  | expires | unknown | włączone |
+| `konkret24.tvn24.pl` | TVN S.A. (Konkret24) (`konkret24`) | secondary | evidence | static |  | expires | none | wykluczone: Brak w IFCN i EFCSN; TVN wymaga umowy licencyjnej (zastrzeżenie z art. 25 ust. 1 pkt 1 lit. b pr. aut.). |
+| `www.gov.pl/web/dyplomacja/bip` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 10080 | updated_in_place | none | włączone |
+| `edmo.eu` | European Digital Media Observatory (`edmo`) | secondary | evidence | sitemap | 1440 | expires | none | włączone |
+| `checkfirst.network` | CheckFirst (`checkfirst`) | secondary | evidence | rss | 1440 | expires | none | włączone |
+| `www.nask.pl` | NASK – Państwowy Instytut Badawczy (`nask`) | secondary | evidence | static | 1440 | expires | none | włączone |
+| `www.eeas.europa.eu` | Europejska Służba Działań Zewnętrznych (`eeas`) | primary | evidence | static | 360 | expires | none | włączone |
+| `ec.europa.eu/commission/presscorner` | Komisja Europejska (`komisja-europejska`) | primary | evidence | rss | 60 | expires | none | włączone |
+| `www.consilium.europa.eu` | Rada Unii Europejskiej (`rada-ue`) | primary | evidence | static |  | expires | none | wykluczone: Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex. |
+| `www.nato.int` | Organizacja Traktatu Północnoatlantyckiego (NATO) (`nato`) | primary | evidence | sitemap | 360 | expires | none | włączone |
+| `bdl.stat.gov.pl` | Główny Urząd Statystyczny (`gus`) | primary | evidence | api | 10080 | expires | none | włączone |
+| `api.nbp.pl` | Narodowy Bank Polski (`nbp`) | primary | evidence | api | 1440 | expires | none | włączone |
+| `ec.europa.eu/eurostat` | Eurostat (Komisja Europejska) (`eurostat`) | primary | evidence | api | 10080 | expires | none | włączone |
+| `pkw.gov.pl` | Państwowa Komisja Wyborcza (`pkw`) | primary | evidence | sitemap | 360 | expires | none | włączone |
+| `webgate.ec.europa.eu/fsd` | Komisja Europejska (wykaz sankcji finansowych UE) (`komisja-europejska`) | primary | source_status | api | 1440 | expires, 48 h | none | włączone |
+| `www.gov.pl/web/mswia/lista-osob-i-podmiotow-objetych-sankcjami` | Ministerstwo Spraw Wewnętrznych i Administracji (`mswia`) | primary | source_status | static | 1440 | expires, 48 h | none | włączone |
+| `hole.cert.pl` | NASK – CERT Polska (Lista ostrzeżeń) (`cert-polska`) | primary | source_status | api | 60 | expires, 24 h | none | włączone |
+<!-- catalog:end -->
+
+### Podstawy prawne
+
+- **Materiały urzędowe** (komunikaty i ostrzeżenia organów): art. 4 pkt 2 ustawy o prawie autorskim stanowi, że nie są przedmiotem prawa autorskiego. Dodatkowo treści tekstowe na gov.pl są na licencji **CC BY-SA 4.0** (potwierdzone w stopce gov.pl, strona `gov.pl/web/gov/prawa-autorskie`), a KPRM udostępnia je na CC BY 3.0 PL. Zdjęć i wideo z gov.pl (CC BY-NC-ND 4.0) nie pobieramy.
+- **Dane publiczne** (IMGW, GIOŚ, PAA, GDDKiA, dane.gov.pl): ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu informacji sektora publicznego. IMGW wskazuje też rozporządzenie wykonawcze (UE) 2023/138 o zbiorach wysokiej wartości i art. 385–387 Prawa wodnego.
+- **Akty prawne:** akty normatywne RP nie są utworami (art. 4 pkt 1 pr. aut.). Dokumenty EUR-Lex można ponownie wykorzystywać na zasadach decyzji Komisji 2011/833/UE, co potwierdza nota prawna EUR-Lex.
+- **Fact-checkerzy:** ich artykuły są chronione prawem autorskim. Pokazujemy krótki cytat z linkiem (prawo cytatu, art. 29 pr. aut.). Eksplorację tekstów prowadzimy tylko tam, gdzie wydawca jej nie zastrzegł (art. 26¹ pr. aut., art. 4 dyrektywy 2019/790).
+- **Przechowywanie:** pełny tekst trzymamy 90 dni od pobrania, metadane i cytowane fragmenty tak długo jak zapis przebiegu.
+
+### Źródła
+
+#### 1. Ostrzeżenia i bezpieczeństwo (lista organizatora)
+
+System ostrzeżeń gov.pl, RSO (MSWiA), raport dobowy RCB, MSWiA, KG PSP, Policja (KGP i KWP Radom), MON, GIS, PAA z monitoringiem promieniowania, GIOŚ (jakość powietrza), CERT Polska.
+
+Są to urzędowe źródła pierwotne dla tematów, w których dezinformacja jest najgroźniejsza: zagrożenia, alarmy, skażenia, oszustwa. Ostrzeżenia mają krótki próg ważności (48 h, dla pomiarów 3–6 h), bo stare ostrzeżenie łatwo podać jako aktualne.
+
+#### 2. Transport, podróże, morze (lista organizatora)
+
+Ministerstwo Infrastruktury, GDDKiA (utrudnienia i infolinia 19 111), ULC (prawa pasażera lotniczego), Portal Pasażera (PKP PLK), UTK, Straż Ochrony Kolei, MSPiR (SAR), Urzędy Morskie w Gdyni i Szczecinie, Wody Polskie, MSZ (informacje dla podróżujących, Odyseusz), KPRM.
+
+Utrudnienia drogowe i kolejowe mają próg 6 h, komunikaty nawigacyjne 72 h. Prawa pasażera i strony infolinii mają `updated_in_place`.
+
+#### 3. Pogoda i hydrologia (lista organizatora)
+
+IMGW-PIB: meteo, hydro, baltyk. Ostrzeżenia bierzemy z oficjalnego API `danepubliczne.imgw.pl`, a nie ze stron, bo API daje stabilny format i datę wydania. Próg ważności to 24 h.
+
+#### 4. Prawo: ISAP i EUR-Lex (dodane przez nas)
+
+**Uzasadnienie:** wiele twierdzeń dotyczy przepisów, np. „od jutra nowy podatek”, „prezydent może mieć trzy kadencje” czy „UE zakazuje…”. Werdykt w takiej sprawie wymaga tekstu aktu, a nie komunikatu o nim. Akty mają `validity = in_force`, czyli nie wygasają z wiekiem, dopóki nie zostaną zmienione.
+
+- **ISAP jest wykluczony**, bo robots.txt `isap.sejm.gov.pl` zabrania wszystkiego (`Disallow: /`). Te same akty pobieramy z oficjalnego **API ELI Kancelarii Sejmu** (`api.sejm.gov.pl`, robots.txt `Allow: /`). Użytkownikowi można nadal pokazywać link do ISAP.
+- **EUR-Lex:** pobieramy wybrane akty. Strona odpowiada automatom kodem 202 (ochrona antybotowa), więc pewniejsza droga to repozytorium Cellar Urzędu Publikacji.
+- **dane.gov.pl:** liczby do twierdzeń statystycznych. Licencję zapisujemy osobno dla każdego zbioru.
+
+#### 5. Fact-checkerzy (punkt 2 listy organizatora)
+
+- **Google Fact Check Tools API** (`claims:search`) wyszukuje oceny ClaimReview do twierdzenia. Zwraca same metadane: wydawcę, ocenę, tytuł, datę i link. Ocenę fact-checkera z IFCN albo EFCSN pokazujemy jako przesłankę z linkiem (ADR-24, ADR-34). Nie przechowujemy jej dłużej, niż pozwalają nagłówki cache (Google APIs Terms §5(e)). Do ręcznego podglądu służy Fact Check Explorer (`toolbox.google.com/factcheck/explorer`).
+- **fakenews.pl** i **pravda.org.pl** to sygnatariusze IFCN bez blokad dla robotów. Pobieramy je z RSS jako źródła wtórne.
+- **AFP Sprawdzam** zwraca automatom 403. Jego ocena wchodzi tylko przez Fact Check API.
+
+#### 6. Operacje informacyjne (punkt 3 listy organizatora)
+
+**EUvsDisinfo** (EEAS) to baza przypadków prorosyjskiej dezinformacji. Pobieramy ją przez serwer MCP do lokalnej kopii, a instrukcja organizatora (`How_to_grab_all_Articles_and_Cases_from_disinfo.pdf`) opisuje pobranie całości. Służy do sprawdzenia, czy podobne twierdzenie pojawiło się już w znanej operacji. Teksty „fact” są cytowalnym dowodem wtórnym.
+
+#### 7. Punkty odniesienia z treści zadania (§7)
+
+| Zadanie wymienia | W katalogu |
+|---|---|
+| dane.gov.pl | `dane.gov.pl` |
+| BIP | `www.gov.pl/web/dyplomacja/bip` (BIP MSZ). BIP-y innych instytucji dodajemy, gdy wymaga tego przypadek testowy. |
+| ISAP | Przez `api.sejm.gov.pl` (ELI), bo robots.txt ISAP blokuje roboty |
+| EUR-Lex | `eur-lex.europa.eu` |
+| Korpusy fact-checkerów IFCN i EFCSN | fakenews.pl, pravda.org.pl. Demagog i AFP tylko przez Fact Check API. |
+| EDMO | `edmo.eu`: briefy i przeglądy dezinformacji w UE, po angielsku |
+| EUvsDisinfo | `euvsdisinfo.eu` przez MCP |
+| Check First | `checkfirst.network`: raporty o konkretnych operacjach FIMI, do dopasowania incydentów (scenariusz I). robots.txt wprost dopuszcza roboty AI. |
+| Materiały NASK o dezinformacji | `www.nask.pl`: aktualności z tagiem „Dezinformacja”. Pakiet NASK od organizatora dopiszemy, gdy go dostaniemy. |
+
+EDMO, Check First i NASK mają `tier = secondary`. Ich analizy cytujemy krótko z linkiem, tak jak teksty fact-checkerów. NASK jest instytutem badawczym, a nie organem, więc jego teksty nie są materiałami urzędowymi w rozumieniu art. 4.
+
+#### 8. UE i NATO (dodane przez nas)
+
+**Uzasadnienie:** zadanie dotyczy sytuacji międzynarodowej i zagranicznych manipulacji (FIMI), a twierdzenia o UE i NATO można rozstrzygnąć tylko u źródła.
+
+- **EEAS:** stanowiska UE w polityce zagranicznej. Ma inny `publisher_id` niż EUvsDisinfo, bo to inna redakcja.
+- **Komisja Europejska (Press Corner):** ma RSS po polsku.
+- **NATO:** pobieranie z mapy strony. Warunki ponownego użycia są jeszcze do potwierdzenia.
+- **Rada UE jest wykluczona:** strona „Browser check” blokuje automaty. Nie obchodzimy zabezpieczeń (§5 zadania), a decyzje Rady są w Dzienniku Urzędowym w EUR-Lex.
+
+Te źródła są głównie po angielsku, więc wspierają wyszukiwanie wielojęzyczne z odpowiedzią po polsku (funkcja premiowana).
+
+#### 9. Dane liczbowe (dodane przez nas)
+
+GUS (API BDL i DBW), NBP, Eurostat i PKW. Twierdzenia liczbowe to najczęstszy przypadek scenariusza C, czyli dwóch wiarygodnych źródeł z różnymi danymi. GUS i Eurostat to dwaj niezależni wydawcy tych samych wskaźników. Wybory są klasycznym celem FIMI. Wszystkie źródła mają publiczne API bez klucza, które działało przy sprawdzeniu.
+
+#### 10. Status źródła: ostrzeżenie, nie dowód
+
+Paragraf 5 zadania mówi, że objęcie podmiotu sankcjami UE nie może przesądzać o prawdziwości twierdzenia, a system ma pokazać odrębne, neutralne ostrzeżenie. Do tego służą trzy wpisy:
+
+- **Wykaz sankcji finansowych UE:** CSV Komisji, około 9 MB.
+- **Lista sankcyjna MSWiA.**
+- **Lista ostrzeżeń CERT (`hole.cert.pl`):** domeny wyłudzające, do ostrzeżenia przy linku w scenariuszu I.
+
+**Te wpisy nie mogą trafiać do wyszukiwania dowodów.** W katalogu mają `role: source_status`, więc ingest je pomija.
+
+### Wykluczone
+
+| Źródło | Powód |
+|---|---|
+| isap.sejm.gov.pl | robots.txt `Disallow: /`. Zastępuje go api.sejm.gov.pl. |
+| moje.cert.pl | robots.txt `Disallow: /`. Zastępuje go cert.pl z RSS, ten sam wydawca. |
+| utk.gov.pl | robots.txt `Disallow: /`. Do rozważenia: zgoda UTK albo samo linkowanie. |
+| demagog.org.pl | `Content-Signal: ai-train=no, use=reference` i blokady botów AI. Treści nie pobieramy, ocena przychodzi z Fact Check API. |
+| konkret24.tvn24.pl | Brak w IFCN i EFCSN, TVN wymaga umowy licencyjnej. |
+| consilium.europa.eu | Strona „Browser check” blokuje automaty. Decyzje Rady bierzemy z EUR-Lex. |
+
+### Ryzyka dostępu
+
+- **GDDKiA, ULC:** ochrona Incapsula zwraca stronę antybotową zamiast robots.txt i tdmrep (`tdm_reservation = unknown`). Pobranie może się nie udać. SAR ma tę samą ochronę, ale kontrola z 21.11 odczytała jego robots.txt i znaczniki meta bez zastrzeżenia (`none`).
+- **portalpasazera.pl:** błąd certyfikatu TLS (curl 60).
+- **monitoring.paa.gov.pl:** robots.txt przekierowuje, tdmrep zwraca 403.
+- **umgdy.gov.pl:** robots.txt wskazuje mapę strony na serwerze deweloperskim wykonawcy. Nie używamy jej.
+- **Brak RSS na gov.pl:** wpisy gov.pl mają `ingest = static`, czyli cykliczne pobieranie stron list.
+- **Kontrola TDM:** `uv run python scripts/check_catalog_tdm.py` czyta Content-Signal z robots.txt hosta i znaczniki meta strony wpisu przez fetcher stron, wypisuje różnice, a z `--write` zapisuje je w `catalog.yaml`. Gdy któregoś sygnału nie da się odczytać (antybot, błąd serwera, strona wymagająca JavaScriptu), wpis zostaje bez zmian. `/.well-known/tdmrep.json` nie jest czytany, bo fetcher nie przyjmuje JSON-a.
+
+### Ustalenia (core#22)
+
+1. `refresh_minutes` z minimum 15 zamiast `refresh_hours`. Ostrzeżenia gov.pl i RSO: 15 min, Policja i CERT: 30 min, reszta przeliczona z godzin.
+2. `ingest = api` obejmuje wszystkie publiczne API. Opis pola w kontrakcie jest poprawiony.
+3. Demagog zostaje `excluded`. Jego `publisher_id` służy do rozpoznania wydawcy ClaimReview (core#27).
+4. Ostrzeżenia gov.pl wydaje RCB (`rcb`). Portal Pasażera i SOK to oficjalne informacje przewoźnika, nie organu.
+5. Pole `role: evidence | source_status` w tym samym katalogu. `source_status`: sankcje UE (`webgate.ec.europa.eu/fsd`), sankcje MSWiA, `hole.cert.pl`.
+6. Źródła krótkotrwałe mają `ingest = live` i nie mają `refresh_minutes`: monitoring PAA, GIOŚ, drogi GDDKiA, Portal Pasażera, meteo, hydro i baltyk IMGW. Tak samo Fact Check API oraz AFP i Demagog, których oceny przychodzą przez to API.
+
+Kontrakt odrzuca wpis `live` z `refresh_minutes`.
+
+### Adresy wejścia, podstawy prawne i uwagi
+
+#### `www.gov.pl/web/gov/ostrzezenia`
+
+- Wejście: https://www.gov.pl/web/gov/ostrzezenia
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Brak RSS. Widok wojewódzki: #/_/<województwo>/wszystkie. Wydawcę potwierdzić.
+
+#### `www.gov.pl/web/mswia/regionalny-system-ostrzegania`
+
+- Wejście: https://www.gov.pl/web/mswia/regionalny-system-ostrzegania
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `www.gov.pl/web/rcb`
+
+- Wejście: https://www.gov.pl/web/rcb/raport-dobowy3
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Obejmuje też stronę główną RCB.
+
+#### `www.gov.pl/web/mswia`
+
+- Wejście: https://www.gov.pl/web/mswia
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `www.gov.pl/web/kgpsp`
+
+- Wejście: https://www.gov.pl/web/kgpsp/aktualnosci
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `policja.pl`
+
+- Wejście: https://policja.pl/pol/aktualnosci
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: RSS: https://policja.pl/dokumenty/rss/1-rss-1.rss. robots.txt blokuje tylko /ftp/.
+
+#### `mazowiecka.policja.gov.pl`
+
+- Wejście: https://mazowiecka.policja.gov.pl/ra/aktualnosci/aktualnosci
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: robots.txt blokuje tylko /ftp/.
+
+#### `www.gov.pl/web/obrona-narodowa`
+
+- Wejście: https://www.gov.pl/web/obrona-narodowa/aktualnosci5
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `www.gov.pl/web/gis`
+
+- Wejście: https://www.gov.pl/web/gis/ostrzezenia
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Ostrzeżenia o produktach bywają aktualne dłużej; próg 7 dni do strojenia.
+
+#### `www.gov.pl/web/paa`
+
+- Wejście: https://www.gov.pl/web/paa/panstwowa-agencja-atomistyki
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `monitoring.paa.gov.pl`
+
+- Wejście: https://monitoring.paa.gov.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: robots.txt i tdmrep zwracają 302/403; sprawdzić przed pobraniem.
+
+#### `powietrze.gios.gov.pl`
+
+- Wejście: https://powietrze.gios.gov.pl/pjp/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: API: https://api.gios.gov.pl/pjp-api/v1/rest/ (działa). Brak robots.txt (404).
+
+#### `moje.cert.pl`
+
+- Wejście: https://moje.cert.pl/komunikaty/
+- Uwagi: Zastąpione wpisem cert.pl.
+
+#### `cert.pl`
+
+- Wejście: https://cert.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: RSS: https://cert.pl/feed/ (działa).
+
+#### `www.gov.pl/web/infrastruktura`
+
+- Wejście: https://www.gov.pl/web/infrastruktura/aktualnosci
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Strony prawa-pasazerow, infolinia, dane-kontaktowe są stałe: można je dać osobnym wpisem updated_in_place.
+
+#### `drogi.gddkia.gov.pl`
+
+- Wejście: https://drogi.gddkia.gov.pl/informacje-drogowe/lista-utrudnien
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Ochrona Incapsula: robots.txt zwraca stronę antybotową. Ryzyko braku dostępu.
+
+#### `www.gov.pl/web/gddkia`
+
+- Wejście: https://www.gov.pl/web/gddkia/informacja-drogowa---19-111
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `ulc.gov.pl`
+
+- Wejście: https://ulc.gov.pl/prawa-pasazera/poradnik-dla-pasazerow
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Ochrona Incapsula przy tdmrep; robots.txt bez blokad.
+
+#### `portalpasazera.pl`
+
+- Wejście: https://portalpasazera.pl/
+- Podstawa prawna: do sprawdzenia: spółka, nie organ (art. 4 może nie obejmować)
+- Uwagi: Błąd certyfikatu TLS przy pobraniu (curl 60). Sprawdzić przed włączeniem.
+
+#### `utk.gov.pl`
+
+- Wejście: https://utk.gov.pl/pl/pasazerowie
+- Uwagi: Można zapytać UTK o zgodę albo cytować przez wyszukiwanie na żywo z linkiem.
+
+#### `kgsok.pl`
+
+- Wejście: https://kgsok.pl/
+- Podstawa prawna: SOK jest formacją PKP PLK; status materiału urzędowego do sprawdzenia
+- Uwagi: Mapa strony: https://kgsok.pl/wp-sitemap.xml.
+
+#### `www.sar.gov.pl`
+
+- Wejście: https://www.sar.gov.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Ochrona Incapsula przy tdmrep; robots.txt bez blokad.
+
+#### `www.umgdy.gov.pl`
+
+- Wejście: https://www.umgdy.gov.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: robots.txt wskazuje mapę strony na umgdynia.dev.kdmc.pl (błąd wydawcy, nie używać).
+
+#### `www.ums.gov.pl`
+
+- Wejście: https://www.ums.gov.pl/bezpieczenstwo-morskie/warunki-zeglugi
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+
+#### `www.gov.pl/web/wody-polskie`
+
+- Wejście: https://www.gov.pl/web/wody-polskie/komunikaty-nawigacyjne
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `www.gov.pl/web/dyplomacja`
+
+- Wejście: https://www.gov.pl/web/dyplomacja/informacje-dla-podrozujacych
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Także źródło BIP MSZ.
+
+#### `odyseusz.gov.pl`
+
+- Wejście: https://odyseusz.gov.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Aplikacja SPA bez robots.txt; treść głównie w gov.pl/web/dyplomacja.
+
+#### `www.gov.pl/web/premier`
+
+- Wejście: https://www.gov.pl/web/premier
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+
+#### `meteo.imgw.pl`
+
+- Wejście: https://meteo.imgw.pl/
+- Podstawa prawna: ustawa z 11.08.2021 o otwartych danych; rozp. wyk. (UE) 2023/138; art. 385–387 Prawa wodnego
+- Uwagi: API ostrzeżeń: https://danepubliczne.imgw.pl/api/data/warningsmeteo (działa).
+
+#### `hydro.imgw.pl`
+
+- Wejście: https://hydro.imgw.pl/
+- Podstawa prawna: jak meteo.imgw.pl
+- Uwagi: API: https://danepubliczne.imgw.pl/api/data/warningshydro (działa).
+
+#### `baltyk.imgw.pl`
+
+- Wejście: https://baltyk.imgw.pl/
+- Podstawa prawna: jak meteo.imgw.pl
+- Uwagi: Mapa strony: https://baltyk.imgw.pl/sitemap.xml.
+
+#### `isap.sejm.gov.pl`
+
+- Wejście: https://isap.sejm.gov.pl/
+- Uwagi: Zastąpione wpisem api.sejm.gov.pl; link dla użytkownika może dalej prowadzić do ISAP.
+
+#### `api.sejm.gov.pl`
+
+- Wejście: https://api.sejm.gov.pl/eli/acts/DU/2024
+- Podstawa prawna: art. 4 pkt 1 pr. aut. (akty normatywne nie są utworami)
+- Uwagi: robots.txt: Allow: /. Pobieramy wybrane akty, nie całość.
+
+#### `eur-lex.europa.eu`
+
+- Wejście: https://eur-lex.europa.eu/
+- Podstawa prawna: decyzja Komisji 2011/833/UE; nota prawna EUR-Lex
+- Uwagi: robots.txt i tdmrep zwracają 202 (ochrona przed botami). Lepiej pobierać przez Cellar/SPARQL Urzędu Publikacji.
+
+#### `dane.gov.pl`
+
+- Wejście: https://dane.gov.pl/
+- Podstawa prawna: ustawa z 11.08.2021 o otwartych danych
+- Uwagi: Aplikacja SPA bez robots.txt. Licencję zapisujemy per zbiór.
+
+#### `fakenews.pl`
+
+- Wejście: https://fakenews.pl/
+- Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
+- Uwagi: RSS https://fakenews.pl/feed/, mapa https://fakenews.pl/sitemap_index.xml. robots.txt bez blokad AI.
+
+#### `pravda.org.pl`
+
+- Wejście: https://pravda.org.pl/
+- Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
+- Uwagi: RSS https://pravda.org.pl/rss/, mapa https://pravda.org.pl/sitemap.xml.
+
+#### `euvsdisinfo.eu`
+
+- Wejście: https://euvsdisinfo.eu/
+- Podstawa prawna: nota prawna EEAS; licencja bazy niepotwierdzona
+- Uwagi: MCP https://euvsdisinfo-mcp-server.vercel.app/mcp; instrukcja organizatora: euvsdisinfo.eu/public-docs/How_to_grab_all_Articles_and_Cases_from_disinfo.pdf. robots.txt blokuje */feed/.
+
+#### `factchecktools.googleapis.com`
+
+- Wejście: https://developers.google.com/fact-check/tools/api/reference/rest
+- Podstawa prawna: warunki Google APIs; artykuły należą do wydawców
+- Uwagi: Zapytanie przy każdym sprawdzeniu; bez trwałych kopii ponad nagłówki cache. Podgląd: toolbox.google.com/factcheck/explorer. publisher_id oceny bierzemy od wydawcy ClaimReview.
+
+#### `demagog.org.pl`
+
+- Wejście: https://demagog.org.pl/
+- Podstawa prawna: zastrzeżenie TDM z art. 4 dyrektywy 2019/790
+- Uwagi: publisher_id potrzebny do rozpoznania wydawcy oceny ClaimReview.
+
+#### `sprawdzam.afp.com`
+
+- Wejście: https://sprawdzam.afp.com/
+- Uwagi: robots.txt, RSS i tdmrep zwracają 403 (Akamai). Nie pobieramy treści.
+
+#### `konkret24.tvn24.pl`
+
+- Wejście: https://konkret24.tvn24.pl/
+
+#### `www.gov.pl/web/dyplomacja/bip`
+
+- Wejście: https://www.gov.pl/web/dyplomacja/bip
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: BIP-y innych instytucji z katalogu dopisujemy według potrzeb przypadków testowych; ogólny spis: https://www.gov.pl/bip.
+
+#### `edmo.eu`
+
+- Wejście: https://edmo.eu/
+- Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
+- Uwagi: Mapa strony: https://edmo.eu/sitemap_index.xml (/feed/ zwraca HTML). robots.txt blokuje tylko /wp-json/. Teksty po angielsku.
+
+#### `checkfirst.network`
+
+- Wejście: https://checkfirst.network/
+- Podstawa prawna: art. 29 pr. aut. (prawo cytatu); art. 26^1 pr. aut. (TDM, brak zastrzeżenia)
+- Uwagi: RSS: https://checkfirst.network/feed/. robots.txt wprost dopuszcza roboty AI, llms.txt prosi o podanie źródła.
+
+#### `www.nask.pl`
+
+- Wejście: https://www.nask.pl/aktualnosci
+- Podstawa prawna: art. 29 pr. aut. (prawo cytatu); NASK nie jest organem, więc art. 4 nie obejmuje
+- Uwagi: robots.txt: Allow: /. Bierzemy aktualności z tagiem „Dezinformacja”; brak RSS. Pakiet NASK od organizatora dopiszemy osobno.
+
+#### `www.eeas.europa.eu`
+
+- Wejście: https://www.eeas.europa.eu/eeas/press-material_en
+- Podstawa prawna: nota prawna EEAS: reuse is authorised, provided the source is acknowledged
+- Uwagi: Brak RSS; pobieramy listę materiałów prasowych. Inny publisher_id niż eeas-euvsdisinfo, bo to inna redakcja. Teksty po angielsku.
+
+#### `ec.europa.eu/commission/presscorner`
+
+- Wejście: https://ec.europa.eu/commission/presscorner/home/pl
+- Podstawa prawna: decyzja Komisji 2011/833/UE
+- Uwagi: RSS: https://ec.europa.eu/commission/presscorner/api/rss?language=pl (działa, także po polsku).
+
+#### `www.consilium.europa.eu`
+
+- Wejście: https://www.consilium.europa.eu/pl/press/press-releases/
+- Uwagi: Zastąpione wpisem eur-lex.europa.eu.
+
+#### `www.nato.int`
+
+- Wejście: https://www.nato.int/cps/en/natohq/news.htm
+- Podstawa prawna: do potwierdzenia: warunki ponownego użycia NATO
+- Uwagi: Mapa strony: https://www.nato.int/sitemap.xml. robots.txt blokuje tylko */newsletter/*. Teksty po angielsku.
+
+#### `bdl.stat.gov.pl`
+
+- Wejście: https://bdl.stat.gov.pl/api/v1/subjects?format=json
+- Podstawa prawna: ustawa o statystyce publicznej; ustawa z 11.08.2021 o otwartych danych
+- Uwagi: API BDL działa; także API Dziedzinowej Bazy Wiedzy: https://api-dbw.stat.gov.pl/. Warunki portalu GUS do potwierdzenia.
+
+#### `api.nbp.pl`
+
+- Wejście: https://api.nbp.pl/api/exchangerates/tables/a/?format=json
+- Podstawa prawna: ustawa z 11.08.2021 o otwartych danych
+- Uwagi: API działa, bez klucza.
+
+#### `ec.europa.eu/eurostat`
+
+- Wejście: https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_manr?geo=PL&lastTimePeriod=1
+- Podstawa prawna: decyzja Komisji 2011/833/UE
+- Uwagi: API działa. robots.txt blokuje tylko stare SDMX i wyszukiwarkę.
+
+#### `pkw.gov.pl`
+
+- Wejście: https://pkw.gov.pl/aktualnosci
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: Mapa strony: https://pkw.gov.pl/sitemaps/sitemap_1.xml. Wyniki wyborów: wybory.gov.pl.
+
+#### `webgate.ec.europa.eu/fsd`
+
+- Wejście: https://webgate.ec.europa.eu/fsd/fsf/public/files/csvFullSanctionsList_1_1/content?token=dG9rZW4tMjAxNw
+- Podstawa prawna: decyzja Komisji 2011/833/UE
+- Uwagi: CSV ok. 9 MB, działa. Do zbioru sankcji medialnych (RT, Sputnik) dochodzą rozporządzenia Rady z EUR-Lex.
+
+#### `www.gov.pl/web/mswia/lista-osob-i-podmiotow-objetych-sankcjami`
+
+- Wejście: https://www.gov.pl/web/mswia/lista-osob-i-podmiotow-objetych-sankcjami
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Strona HTML ok. 2 MB.
+
+#### `hole.cert.pl`
+
+- Wejście: https://hole.cert.pl/domains/v2/domains.txt
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Plik tekstowy ok. 2,6 MB, działa. Opis: https://cert.pl/lista-ostrzezen/.
 
 ## Użycie w innym repo
 

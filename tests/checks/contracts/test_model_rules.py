@@ -63,6 +63,14 @@ MUST_REJECT: dict[str, Callable[[], object]] = {
             CATALOG | {"validity": "in_force", "max_age_hours": 24}
         )
     ),
+    "live catalogue entry with a refresh interval": lambda: (
+        c.CatalogEntry.model_validate(
+            CATALOG | {"ingest": "live", "refresh_minutes": 15}
+        )
+    ),
+    "catalogue entry refreshed more often than every 15 minutes": lambda: (
+        c.CatalogEntry.model_validate(CATALOG | {"refresh_minutes": 14})
+    ),
     "'past_event' set for a whole catalogue entry": lambda: (
         c.CatalogEntry.model_validate(CATALOG | {"validity": "past_event"})
     ),
@@ -163,6 +171,9 @@ MUST_ACCEPT: dict[str, Callable[[], object]] = {
     ),
     "case that is both high-risk and repeated": lambda: c.ModeratorCase.model_validate(
         CASE | {"reasons": ["high_risk", "repeated_unanswered"]}
+    ),
+    "live source-status catalogue entry": lambda: c.CatalogEntry.model_validate(
+        CATALOG | {"ingest": "live", "role": "source_status"}
     ),
     "short-lived catalogue entry": lambda: c.CatalogEntry.model_validate(
         CATALOG | {"domain": "meteo.imgw.pl", "validity": "expires", "max_age_hours": 6}

@@ -31,7 +31,10 @@ DEFAULT_CHARSET: Final = "utf-8"
 HTML_CONTENT_TYPES: Final = frozenset({"text/html", "application/xhtml+xml"})
 """Media types whose main text trafilatura extracts."""
 
-ALLOWED_CONTENT_TYPES: Final = HTML_CONTENT_TYPES | {"text/plain"}
+PLAIN_TEXT_CONTENT_TYPE: Final = "text/plain"
+"""Media type of plain text and of a real robots.txt (not an anti-bot page)."""
+
+ALLOWED_CONTENT_TYPES: Final = HTML_CONTENT_TYPES | {PLAIN_TEXT_CONTENT_TYPE}
 """Media types read at all; PDFs, images and the rest are ``unsupported_content``."""
 
 REDIRECT_STATUSES: Final = frozenset({301, 302, 303, 307, 308})
@@ -95,3 +98,21 @@ PASTE_TEXT_REASONS: Final = frozenset(
     }
 )
 """Failures where the citizen is asked to paste the text instead of the link."""
+
+NOT_FOUND_STATUSES: Final = frozenset({404, 410})
+"""Statuses meaning the server has no such page (``not_found``, e.g. no robots.txt)."""
+
+TDM_META_NAME: Final = "tdm-reservation"
+"""TDMRep meta tag; ``content`` equal to ``TDM_RESERVED_VALUE`` reserves mining."""
+
+TDM_RESERVED_VALUE: Final = "1"
+"""TDMRep value of a reservation (W3C TDMRep); ``0`` means none."""
+
+CONTENT_SIGNAL_DENIED: Final = "no"
+"""Content-Signal answer that refuses a use (``ai-input=no``)."""
+
+ROBOTS_META_NAME: Final = "robots"
+"""Robots meta tag, read for the ``noai`` directive."""
+
+NOAI_DIRECTIVE: Final = "noai"
+"""Robots meta directive that opts the page out of AI use."""

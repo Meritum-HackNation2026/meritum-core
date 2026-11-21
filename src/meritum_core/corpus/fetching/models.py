@@ -43,6 +43,8 @@ class FetchFailureReason(StrEnum):
     """DNS or the connection failed."""
     HTTP_ERROR = "http_error"
     """The server answered with an error status."""
+    NOT_FOUND = "not_found"
+    """The server has no such page (404 or 410)."""
     UNSUPPORTED_CONTENT = "unsupported_content"
     """The media type is not one of ``ALLOWED_CONTENT_TYPES``."""
     TOO_LARGE = "too_large"
@@ -67,6 +69,7 @@ class FetchedPage(BaseModel, frozen=True):
         url: the final URL, after redirects.
         content_type: the media type of the response, without parameters.
         untrusted_text: the main text (trafilatura for HTML, the body for text).
+        tdm_reserved: the page's meta tags reserve text and data mining.
 
     Features:
         US-SPR-07, F-06, ADR-12
@@ -75,3 +78,4 @@ class FetchedPage(BaseModel, frozen=True):
     url: str
     content_type: str
     untrusted_text: str
+    tdm_reserved: bool = False

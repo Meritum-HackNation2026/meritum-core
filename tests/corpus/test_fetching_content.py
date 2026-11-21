@@ -122,11 +122,35 @@ def test_paywall_is_reported_separately(
     assert error.reason is FetchFailureReason.PAYWALL
 
 
-@pytest.mark.parametrize("status", [404, 500, 503])
+@pytest.mark.parametrize("status", [500, 503])
 def test_error_status_is_an_http_error(web: Web, status: int) -> None:
     error = failure(web, {"example.org/post": web.html(web.article, status)})
     assert error.reason is FetchFailureReason.HTTP_ERROR
     assert not error.asks_for_text
+
+
+@pytest.mark.parametrize("status", [404, 410])
+def test_missing_page_is_not_found(web: Web, status: int) -> None:
+    error = failure(web, {"example.org/post": web.html(web.article, status)})
+    assert error.reason is FetchFailureReason.NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    ("meta", "reserved"),
+    [
+        ('<meta name="tdm-reservation" content="1">', True),
+        ('<meta name="TDM-Reservation" content="0">', False),
+        ('<meta name="robots" content="index, NoAI">', True),
+        ('<meta name="robots" content="noindex">', False),
+        ("", False),
+    ],
+)
+def test_meta_tags_tell_whether_mining_is_reserved(
+    web: Web, meta: str, *, reserved: bool
+) -> None:
+    html = f"<html><head>{meta}</head><body>{web.article}</body></html>"
+    route = {"example.org/post": lambda _: httpx.Response(200, html=html)}
+    assert fetch(web, route).tdm_reserved is reserved
 
 
 @pytest.mark.parametrize("media", ["application/pdf", "image/png", "application/json"])

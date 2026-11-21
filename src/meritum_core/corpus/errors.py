@@ -21,3 +21,13 @@ class CorpusUnavailableError(Exception):
     Features:
         US-KOR-02, F-12, ADR-04
     """
+
+
+class InvalidCatalogError(ValueError):
+    """The source catalogue file is malformed or one of its entries breaks a rule.
+
+    The message names the entry (``entries[<index>] <domain>``) so a curator can fix it.
+
+    Features:
+        US-KOR-01, F-10
+    """
