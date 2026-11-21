@@ -4,6 +4,8 @@ Features:
     US-MOD-05, F-25
 """
 
+from typing import cast
+
 from psycopg import AsyncConnection
 
 from meritum_core.checks.contracts import StaffRole
@@ -76,4 +78,5 @@ class PostgresStaffRepository:
                 "SELECT role FROM staff_accounts WHERE email = %s", (email,)
             )
             row = await cursor.fetchone()
-        return None if row is None else StaffAccount(email=email, role=row[0]).role
+        # The column's CHECK admits only StaffRole values (0003_staff_accounts.sql).
+        return None if row is None else cast("StaffRole", row[0])

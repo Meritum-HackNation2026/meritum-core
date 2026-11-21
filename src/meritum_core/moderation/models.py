@@ -16,7 +16,7 @@ from meritum_core.moderation.constants import (
     TOPIC_NAME_MAX_CHARS,
 )
 
-type StaffEmail = Annotated[
+type _StaffEmail = Annotated[
     str,
     StringConstraints(
         strip_whitespace=True,
@@ -64,5 +64,5 @@ class StaffAccount(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    email: StaffEmail
+    email: _StaffEmail
     role: StaffRole

@@ -37,7 +37,11 @@ def given_address_with_role(context: Context, email: str, role: StaffRole) -> No
 
 @when("API startuje ponownie z tą samą bazą")
 def when_api_restarts(context: Context) -> None:
-    """The new API process reaches the same store; nothing of the old one stays."""
+    """The new API process reaches the same store.
+
+    In memory this cannot fail; the PostgreSQL restart, two repositories over
+    one URL, is ``test_issue_scenario_role_survives_a_restart`` (local only).
+    """
     staff: StaffRepository = context.database
     context.api_staff = staff
 

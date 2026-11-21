@@ -3,6 +3,7 @@
 import os
 import uuid
 from collections.abc import Iterator
+from importlib.resources import files
 
 import psycopg
 import pytest
@@ -20,6 +21,11 @@ APP_TABLES = {
     "staff_accounts",
     "schema_migrations",
 }
+MIGRATIONS = sorted(
+    f.name
+    for f in (files("meritum_core.shared.database") / "migrations").iterdir()
+    if f.name.endswith(".sql")
+)
 LIST_TABLES = "SELECT table_name FROM information_schema.tables WHERE table_schema = %s"
 SNAPSHOT = """
 SELECT table_name, column_name, data_type FROM information_schema.columns
@@ -51,11 +57,7 @@ def test_issue_scenario_migrations_on_an_empty_schema(
     empty_schema: tuple[str, str],
 ) -> None:
     url, schema = empty_schema
-    assert apply_migrations(url) == [
-        "0001_app_tables.sql",
-        "0002_removed_checks_and_check_index.sql",
-        "0003_staff_accounts.sql",
-    ]
+    assert apply_migrations(url) == MIGRATIONS
     with psycopg.connect(url) as conn:
         tables = {row[0] for row in conn.execute(LIST_TABLES, (schema,)).fetchall()}
     assert tables == APP_TABLES
@@ -85,8 +87,7 @@ def test_issue_scenario_the_deploy_command_migrates_once(
     main()
     main()
     assert capsys.readouterr().out.splitlines() == [
-        "applied: 0001_app_tables.sql, 0002_removed_checks_and_check_index.sql,"
-        " 0003_staff_accounts.sql",
+        f"applied: {', '.join(MIGRATIONS)}",
         "applied: nothing",
     ]
 
