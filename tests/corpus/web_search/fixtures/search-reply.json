@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "id": "6c1f0a0e5d1b4f2a",
+      "document": {
+        "name": "projects/123/locations/global/collections/default_collection/dataStores/meritum-web/branches/0/documents/6c1f0a0e5d1b4f2a",
+        "id": "6c1f0a0e5d1b4f2a",
+        "derivedStructData": {
+          "link": "https://www.gov.pl/web/gov/ostrzezenia",
+          "displayLink": "www.gov.pl",
+          "title": "Ostrzeżenia - Portal Gov.pl",
+          "htmlTitle": "<b>Ostrzeżenia</b> - Portal Gov.pl",
+          "snippets": [{"snippet": "Ostrzeżenia przed burzami dla województw...", "htmlSnippet": "<b>Ostrzeżenia</b> przed burzami..."}]
+        }
+      }
+    },
+    {
+      "id": "9a7d2c11e04b5f63",
+      "document": {
+        "name": "projects/123/locations/global/collections/default_collection/dataStores/meritum-web/branches/0/documents/9a7d2c11e04b5f63",
+        "id": "9a7d2c11e04b5f63",
+        "derivedStructData": {
+          "link": "https://meteo.imgw.pl/dyn/?osmet=true",
+          "displayLink": "meteo.imgw.pl",
+          "title": "Ostrzeżenia meteorologiczne IMGW-PIB"
+        }
+      }
+    },
+    {
+      "id": "0b3e5f7a9c1d2e4f",
+      "document": {
+        "name": "projects/123/locations/global/collections/default_collection/dataStores/meritum-web/branches/0/documents/0b3e5f7a9c1d2e4f",
+        "id": "0b3e5f7a9c1d2e4f",
+        "derivedStructData": {"title": "Wynik bez adresu"}
+      }
+    }
+  ],
+  "totalSize": 3,
+  "attributionToken": "recorded",
+  "nextPageToken": ""
+}

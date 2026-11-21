@@ -1,0 +1,61 @@
+"""Meritum's own catalogue filter: the second control after the provider's sites.
+
+Features:
+    US-KOR-04, F-13, ADR-07
+"""
+
+from collections.abc import Sequence
+from urllib.parse import urlsplit
+
+from meritum_core.checks.contracts import CatalogEntry
+from meritum_core.corpus.web_search.constants import WEB_SCHEMES, WWW_PREFIX
+
+
+def _host(host: str) -> str:
+    return host.lower().removeprefix(WWW_PREFIX)
+
+
+def _segments(path: str) -> list[str]:
+    return [part for part in path.split("/") if part]
+
+
+def _matches(host: str, path: list[str], entry: CatalogEntry) -> bool:
+    entry_host, _, entry_path = entry.domain.partition("/")
+    wanted = _host(entry_host)
+    same_site = host == wanted or host.endswith(f".{wanted}")
+    prefix = _segments(entry_path)
+    return same_site and path[: len(prefix)] == prefix
+
+
+def _specificity(entry: CatalogEntry) -> tuple[int, int]:
+    entry_host, _, entry_path = entry.domain.partition("/")
+    return len(_segments(entry_path)), len(_host(entry_host))
+
+
+def catalog_entry_for(url: str, catalog: Sequence[CatalogEntry]) -> CatalogEntry | None:
+    """Find the catalogue entry an address belongs to, the most specific one first.
+
+    An entry matches its host, its subdomains and, when it names a path
+    (``www.gov.pl/web/gis``), only addresses under that path, segment by segment.
+    ``www.`` is ignored on both sides. Excluded entries and source-status lists
+    never match: their pages are not evidence.
+
+    Args:
+        url: a result address from a provider.
+        catalog: the loaded catalogue.
+
+    Returns:
+        The matching entry, or None for an address outside the catalogue or
+        one that is not a plain http(s) URL with a host.
+
+    Features:
+        US-KOR-04, F-13, ADR-07
+    """
+    parts = urlsplit(url)
+    has_credentials = "@" in parts.netloc
+    if parts.scheme not in WEB_SCHEMES or parts.hostname is None or has_credentials:
+        return None
+    host, path = _host(parts.hostname), _segments(parts.path)
+    usable = (e for e in catalog if not e.excluded and e.role == "evidence")
+    found = [e for e in usable if _matches(host, path, e)]
+    return max(found, key=_specificity, default=None)

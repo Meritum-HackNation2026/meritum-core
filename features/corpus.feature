@@ -37,3 +37,20 @@ Feature: Wyszukiwanie w korpusie
     When kurator uruchamia kontrolę katalogu
     Then pozycja ma tdm_reservation = reserved, excluded = true i exclusion_reason z powodem
     And walidacja CatalogEntry odrzuca taką pozycję bez wykluczenia
+
+  Scenario: wynik spoza katalogu odpada
+    Given katalog z domenami gov.pl i imgw.pl
+    And dostawca zwraca adresy z gov.pl i z example.com
+    When system wyszukuje frazę "ostrzeżenie przed burzami"
+    Then port zwraca tylko adres z gov.pl jako kandydata do pobrania
+    And adres z example.com nie jest pobierany ani cytowany
+
+  Scenario: przekroczony limit czasu
+    Given dostawca nie odpowiada przez 10 s
+    When system czeka na wynik wyszukiwania
+    Then port rzuca udokumentowany błąd przekroczenia czasu, który workflow mapuje na "technical_failure"
+
+  Scenario: stub bez kluczy
+    Given MERITUM_WEB_SEARCH_PROVIDER=stub
+    When system wyszukuje dowolną frazę
+    Then port zwraca kandydatów z fixture, bez wywołań sieci

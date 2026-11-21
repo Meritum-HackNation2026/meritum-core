@@ -127,6 +127,36 @@ MERITUM_CORPUS_DATABASE_URL=postgresql://postgres:test@localhost:55432/meritum u
 
 Migracja `0002_euvsdisinfo_copy.sql` dodaje tabele lokalnej kopii EUvsDisinfo (`euvsdisinfo_entries`, `euvsdisinfo_flagged_domains`), które zapisuje tylko workflow synchronizacji w meritum-worker (worker#59). Test `test_migrations_integration.py` uruchamia wszystkie migracje corpus dwa razy. Późniejsza zmiana tych tabel to nowy plik migracji (`ADD COLUMN IF NOT EXISTS`), bo poprawiony `CREATE TABLE` w 0002 nie dotrze do istniejącej bazy.
 
+## Wyszukiwanie na żywo (`meritum_core.corpus.web_search`)
+
+Przy świeżych twierdzeniach agent badawczy uzupełnia korpus wyszukiwaniem w sieci, ale tylko w domenach z katalogu (US-KOR-04, ADR-07). `build_web_search(WebSearchSettings(), load_catalog())` zwraca `WebSearchPort`; `search(MaskedText, limit=...)` daje listę `WebSearchCandidate` (adres, domena z katalogu, `publisher_id`). Port nie pobiera stron i nie zwraca ich treści: adres czyta potem fetcher (`corpus.fetching`, `FetchPurpose.SOURCE`, z robots.txt i Content-Signal) i dopiero wtedy można go cytować.
+
+| Co | Wartość |
+| --- | --- |
+| Dostawca | Vertex AI Search (Discovery Engine v1, `:search` na `default_search`), basic website search z wzorcami INCLUDE dla domen katalogu. Data store, aplikację i wzorce zakłada Terraform w meritum-infra (infra#16) |
+| Region | basic website search działa tylko w lokalizacji `global`, czyli **poza UE**. Dlatego do zapytania trafia wyłącznie twierdzenie po maskowaniu danych osobowych (`MaskedText`); nic więcej nie wychodzi |
+| Filtr Meritum | druga kontrola po stronie dostawcy: `catalog_entry_for` dopasowuje host (z subdomenami, bez `www.`) i ścieżkę wpisu segment po segmencie (`www.gov.pl/web/gis/ostrzezenia`); wygrywa najdokładniejszy wpis. Wpisy wykluczone i listy `source_status` niczego nie przepuszczają |
+| Limity | `SEARCH_TIMEOUT_S` 10 s na jedno wyszukiwanie, `MAX_QUERIES_PER_MINUTE` 60 wyszukiwań na proces w oknie 60 s, `limit` od 1 do 25 (maksimum basic website search) |
+| Koszt | edycja Enterprise, 4 USD za 1 000 zapytań po 10 000 darmowych miesięcznie |
+
+Błędy (wszystkie dziedziczą po `WebSearchError`, `check_status` = `technical_failure`): `WebSearchTimeoutError` (przekroczony czas), `WebSearchRateLimitError` (nasz limit zapytań albo 429 od dostawcy), `WebSearchUnavailableError` (inny błąd dostawcy, odrzucone dane logowania, nieczytelna odpowiedź). Komunikaty nie zawierają zapytania.
+
+Zapasowy dostawca (core/024) implementuje `WebSearchProviderPort` (zapytanie → adresy) i przechodzi przez ten sam filtr i limity; jego testy wołają `provider_contract_violations(adapter)` i oczekują pustej listy.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_WEB_SEARCH_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex_search` |
+| `MERITUM_WEB_SEARCH_PROJECT` | brak | projekt Google Cloud aplikacji wyszukiwania; wymagany dla `vertex_search` |
+| `MERITUM_WEB_SEARCH_ENGINE` | brak | id aplikacji (engine) Vertex AI Search nad website data store; wymagany dla `vertex_search` |
+| `MERITUM_WEB_SEARCH_STUB_FIXTURE` | brak | plik JSON z listą adresów, które zwraca stub; bez niego stub nic nie znajduje |
+
+Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na nagranych odpowiedziach w formacie Discovery Engine (`tests/corpus/web_search/fixtures/`), bez sieci. Zapytanie do prawdziwego data store tylko lokalnie:
+
+```bash
+gcloud auth application-default login
+MERITUM_WEB_SEARCH_PROJECT=<projekt> MERITUM_WEB_SEARCH_ENGINE=<engine> uv run pytest -m integration tests/corpus/web_search
+```
+
 ## Transkrypcja nagrań (`meritum_core.checks.transcription`)
 
 Nagranie z formularza albo wiadomość głosowa z Discorda leży w `BlobStore` (ADR-31). Workflow woła `TranscriptionPort.transcribe(audio_id)` i dostaje `Transcript` (tekst i język), który sprawdza jak zwykły tekst (US-SPR-11, F-08).
