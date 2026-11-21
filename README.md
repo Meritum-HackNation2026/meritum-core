@@ -127,7 +127,7 @@ gcloud auth application-default login
 uv run python scripts/transcribe_audio.py wiadomosc-glosowa.ogg --project <projekt>
 ```
 
-Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga projektu GCP z włączonym API). Wpisz go tutaj i w załączniku B dokumentu produktowego.
+Wynik: jeszcze nie uruchomiony na prawdziwej wiadomości z Discorda (wymaga projektu GCP z włączonym API, zgłoszenie #62). Wpisz go tutaj i w załączniku B dokumentu produktowego. Skrypt sprawdza tylko tryb synchroniczny (do 55 s); trybu batch na prawdziwym dostawcy nie sprawdził.
 
 ## Użycie w innym repo
 

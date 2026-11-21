@@ -10,6 +10,7 @@ from meritum_core.checks.transcription.audio import inspect_audio
 from meritum_core.checks.transcription.constants import (
     MAX_AUDIO_BYTES,
     MAX_AUDIO_SECONDS,
+    SUPPORTED_FORMATS,
 )
 from meritum_core.checks.transcription.errors import (
     TranscriptionError,
@@ -27,6 +28,7 @@ from meritum_core.checks.transcription.settings import (
 __all__ = [
     "MAX_AUDIO_BYTES",
     "MAX_AUDIO_SECONDS",
+    "SUPPORTED_FORMATS",
     "AudioFormat",
     "AudioInfo",
     "Transcript",

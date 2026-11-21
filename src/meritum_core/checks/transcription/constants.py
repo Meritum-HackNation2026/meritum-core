@@ -8,8 +8,13 @@ from typing import Final
 
 from pydantic import JsonValue
 
+from meritum_core.checks.transcription.models import AudioFormat
+
 MAX_AUDIO_BYTES: Final = 20 * 1024 * 1024
 """Largest recording accepted, 20 MiB; larger files are unsupported (US-SPR-11)."""
+
+SUPPORTED_FORMATS: Final = frozenset(AudioFormat)
+"""Recording formats accepted: OGG with Opus, MP3, M4A (AAC) and WAV (US-SPR-11)."""
 
 MAX_AUDIO_SECONDS: Final = 600
 """Longest recording accepted, 10 minutes; MP3 length is estimated from the bitrate."""
@@ -51,6 +56,9 @@ BATCH_POLL_SECONDS: Final = 2.0
 BATCH_TIMEOUT_SECONDS: Final = 900.0
 """Longest wait for a batch operation before the provider counts as failed."""
 
+OPERATION_NAME_PATTERN: Final = r"^projects/[^/]+/locations/[^/]+/operations/[\w-]+$"
+"""Name of a long-running operation; only such a path is polled with the token."""
+
 ENV_PREFIX: Final = "MERITUM_TRANSCRIPTION_"
 """Prefix of every transcription setting in the environment."""
 
@@ -91,7 +99,10 @@ MP4_FTYP: Final = b"ftyp"
 """Type of the first box of an MP4/M4A file, at offset 4; the major brand follows."""
 
 M4A_BRANDS: Final = frozenset({b"M4A ", b"M4B ", b"mp41", b"mp42", b"isom", b"iso2"})
-"""Major brands of MP4 audio files; QuickTime, 3GP and HEIF brands are not audio."""
+"""Major brands of MP4 audio files; QuickTime, 3GP and HEIF brands are not audio.
+
+The generic brands (``mp4*``, ``iso*``) also mark video; such a file reaches the
+provider and fails as ``technical_failure`` when it holds no audio track."""
 
 MP4_MOVIE: Final = b"moov"
 """Top-level MP4 box holding the movie's metadata."""

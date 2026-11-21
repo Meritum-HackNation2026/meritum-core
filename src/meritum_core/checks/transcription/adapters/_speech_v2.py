@@ -1,8 +1,8 @@
 """Speech-to-Text v2 adapter over REST: Chirp 3 in the ``eu`` multi-region, pl-PL.
 
-Short recordings go inline to synchronous ``recognize``; longer ones, and those
-whose length the container does not state, go to ``batchRecognize``, which reads
-the file from the blob store's ``gs://`` address.
+Recordings up to ``SYNC_MAX_SECONDS`` go inline to synchronous ``recognize``;
+longer ones go to ``batchRecognize``, which reads the file from the blob store's
+``gs://`` address.
 
 Features:
     US-SPR-11, F-08, ADR-14, ADR-30, ADR-31
@@ -10,6 +10,7 @@ Features:
 
 import asyncio
 import base64
+import math
 
 from google.auth import default as adc_lookup
 from google.auth.credentials import Credentials
@@ -25,6 +26,7 @@ from meritum_core.checks.transcription.constants import (
     GCS_SCHEME,
     HTTP_TIMEOUT_SECONDS,
     LANGUAGE,
+    OPERATION_NAME_PATTERN,
     RECOGNITION_CONFIG,
     RETRY_BACKOFF_SECONDS,
     SPEECH_ENDPOINT,
@@ -69,7 +71,7 @@ class _BatchResponse(BaseModel):
 
 
 class _Operation(BaseModel):
-    name: str
+    name: str = Field(pattern=OPERATION_NAME_PATTERN)
     done: bool = False
     error: _Status | None = None
     response: _BatchResponse | None = None
@@ -224,7 +226,7 @@ class SpeechV2Transcriber:
 
 
 def _fits_sync(info: AudioInfo, size: int) -> bool:
-    base64_size = 4 * -(-size // 3)
+    base64_size = math.ceil(size / 3) * 4  # every 3 bytes become 4 characters
     return info.duration_seconds <= SYNC_MAX_SECONDS and base64_size <= SYNC_MAX_BYTES
 
 

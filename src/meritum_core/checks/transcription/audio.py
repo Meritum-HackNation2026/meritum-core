@@ -37,6 +37,7 @@ from meritum_core.checks.transcription.constants import (
     OPUS_HEAD_OFFSET,
     RIFF_HEADER_BYTES,
     RIFF_MAGIC,
+    SUPPORTED_FORMATS,
     WAV_BYTE_RATE_OFFSET,
     WAV_DATA_CHUNK,
     WAV_FMT_CHUNK,
@@ -68,7 +69,8 @@ def inspect_audio(data: bytes) -> AudioInfo:
         raise UnsupportedAudioError(msg)
     audio_format, seconds = _probe(data)
     if audio_format is None or seconds is None:
-        msg = "recording is not OGG Opus, MP3, M4A or WAV with a readable length"
+        formats = ", ".join(sorted(SUPPORTED_FORMATS))
+        msg = f"recording is not one of {formats} with a readable length"
         raise UnsupportedAudioError(msg)
     if seconds > MAX_AUDIO_SECONDS:
         msg = f"recording length {seconds:.0f} s is over {MAX_AUDIO_SECONDS} s"

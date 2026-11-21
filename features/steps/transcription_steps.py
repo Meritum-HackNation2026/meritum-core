@@ -35,6 +35,7 @@ def _store(context: Context, data: bytes) -> None:
     )
     context.audio_id = ref.blob_id
     context.reply = (200, "recognize-reply.json")
+    context.retries = 2
 
 
 @given("nagranie głosowe OGG z Opus 48 kHz o długości 40 s")
@@ -61,9 +62,15 @@ def when_system_transcribes(context: Context) -> None:
     """Transcribe through the port built by the factory; keep the error, if any."""
     status, name = context.reply
     payload = (FIXTURES / name).read_bytes()
-    transport = httpx2.MockTransport(lambda _: httpx2.Response(status, content=payload))
+    context.sent = []
+
+    def reply(request: httpx2.Request) -> httpx2.Response:
+        context.sent.append(request)
+        return httpx2.Response(status, content=payload)
+
+    transport = httpx2.MockTransport(reply)
     settings = TranscriptionSettings(
-        provider="speech_v2", project="meritum-test", retries=1
+        provider="speech_v2", project="meritum-test", retries=context.retries
     )
     speech = build_transcriber(
         settings,
@@ -98,3 +105,4 @@ def then_provider_failure(context: Context, status: str) -> None:
     """The port reports the provider failure, and the error names the check status."""
     assert isinstance(context.error, TranscriptionUnavailableError)
     assert context.error.check_status == status
+    assert len(context.sent) == context.retries  # every attempt was made

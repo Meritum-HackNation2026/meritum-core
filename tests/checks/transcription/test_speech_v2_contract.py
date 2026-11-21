@@ -157,3 +157,12 @@ def test_rejected_credentials_raise_unavailable(
     speech = build_transcriber(settings, blobs, credentials=expired)
     with pytest.raises(TranscriptionUnavailableError):
         asyncio.run(speech.transcribe(audio_id("voice-40s.ogg")))
+
+
+def test_operation_with_an_unexpected_name_is_not_polled(
+    recorded_speech: SpeechFactory, audio_id: StoreAudio
+) -> None:
+    speech, sent = recorded_speech([(200, "batch-bad-name.json")])
+    with pytest.raises(TranscriptionUnavailableError):
+        asyncio.run(speech.transcribe(audio_id("voice-90s.ogg")))
+    assert len(sent) == 1
