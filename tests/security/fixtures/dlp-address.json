@@ -1,17 +1,31 @@
 {
   "item": {
-    "value": "Mieszkam przy [adres] i widziałem, że szczepionki zawierają chipy."
+    "value": "Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy."
   },
   "overview": {
-    "transformedBytes": "34",
+    "transformedBytes": "38",
     "transformationSummaries": [
       {
-        "infoType": {"name": "STREET_ADDRESS"},
-        "transformation": {
-          "replaceConfig": {"newValue": {"stringValue": "[adres]"}}
+        "infoType": {
+          "name": "STREET_ADDRESS",
+          "sensitivityScore": {
+            "score": "SENSITIVITY_MODERATE"
+          }
         },
-        "results": [{"count": "1", "code": "SUCCESS"}],
-        "transformedBytes": "34"
+        "transformation": {
+          "replaceConfig": {
+            "newValue": {
+              "stringValue": "[adres]"
+            }
+          }
+        },
+        "results": [
+          {
+            "count": "1",
+            "code": "SUCCESS"
+          }
+        ],
+        "transformedBytes": "38"
       }
     ]
   }

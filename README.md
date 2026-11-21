@@ -201,10 +201,10 @@ Logi nigdy nie zawierają maskowanego tekstu.
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |
 | `MERITUM_PII_GATE` | `none` | `none` (tylko wzorce, log zapisuje pominięcie) albo `sdp` |
-| `MERITUM_PII_PROJECT` | brak | projekt Google Cloud z włączonym Sensitive Data Protection API; wymagany dla `sdp` |
+| `MERITUM_PII_PROJECT` | brak | projekt Google Cloud z włączonym Sensitive Data Protection API; wymagany dla `sdp`. Adapter wysyła go też w nagłówku `x-goog-user-project`, bo bez niego DLP odrzuca lokalne poświadczenia użytkownika (403). Konto serwisowe API i workera potrzebuje więc w tym projekcie `roles/dlp.user` i `serviceusage.services.use` (np. `roles/serviceusage.serviceUsageConsumer`) |
 | `MERITUM_PII_LOCATION` | `europe-central2` | region UE endpointu |
 
-Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na odpowiedziach w formacie DLP podanych przez atrapę HTTP (`tests/security/fixtures/`), bez sieci. Prawdziwe wywołanie (lokalnie, nigdy w CI):
+Uwierzytelnienie przez Application Default Credentials. Testy w CI działają bez sieci na odpowiedziach z atrapy HTTP (`tests/security/fixtures/`); `dlp-address.json` to odpowiedź prawdziwego DLP w `europe-central2`, nagrana 2026-11-21. Prawdziwy DLP zostawia przedrostek ulicy („ul. [adres]”) i nie maskuje telefonu `601 234 567` przy progu `LIKELY`, więc telefon łapią wzorce. Prawdziwe wywołanie (lokalnie, nigdy w CI):
 
 ```bash
 MERITUM_PII_PROJECT=<projekt> uv run pytest -m integration tests/security/test_pii_gate_integration.py

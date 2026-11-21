@@ -71,20 +71,42 @@ def when_system_masks(context: Context) -> None:
     _mask(context)
 
 
-@when("system maskuje tekst z włączoną bramką DLP")
-def when_system_masks_with_dlp(context: Context) -> None:
-    """Mask through Sensitive Data Protection answering with a recorded reply."""
+def _recorded_dlp(context: Context) -> None:
+    """Build Sensitive Data Protection answering with the recorded reply."""
     reply = (FIXTURES / "dlp-address.json").read_bytes()
-    transport = httpx2.MockTransport(
-        lambda _request: httpx2.Response(200, content=reply)
-    )
+    context.sent = []
+
+    def answer(request: httpx2.Request) -> httpx2.Response:
+        context.sent.append(request)
+        return httpx2.Response(200, content=reply)
+
     settings = PiiGateSettings(gate="sdp", project="meritum-test")
     context.gate = build_pii_gate(
         settings,
         credentials=Credentials(token="recorded"),  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
-        http_client=httpx2.AsyncClient(transport=transport),
+        http_client=httpx2.AsyncClient(transport=httpx2.MockTransport(answer)),
     )
+
+
+@given("bramka DLP z projektem z konfiguracji")
+def given_dlp_with_project(context: Context) -> None:
+    """Sensitive Data Protection configured with the project ``meritum-test``."""
+    context.raw_text = ADDRESS_TEXT
+    _recorded_dlp(context)
+
+
+@when("system maskuje tekst z włączoną bramką DLP")
+def when_system_masks_with_dlp(context: Context) -> None:
+    """Mask through Sensitive Data Protection answering with a recorded reply."""
+    _recorded_dlp(context)
     _mask(context)
+
+
+@then("żądanie do DLP niesie ten projekt jako projekt limitów")
+def then_request_names_quota_project(context: Context) -> None:
+    """The quota project header names the configured project."""
+    [request] = context.sent
+    assert request.headers["x-goog-user-project"] == "meritum-test", request.headers
 
 
 @then('wynik zawiera "{phone}", "{email}" i "{pesel}" zamiast tych danych')
@@ -114,7 +136,7 @@ def then_number_is_kept(context: Context) -> None:
 @then("adres jest zastąpiony znacznikiem, a reszta tekstu jest bez zmian")
 def then_address_is_masked(context: Context) -> None:
     """The DLP marker stands where the address was; nothing else moved."""
-    expected = "Mieszkam przy [adres] i widziałem, że szczepionki zawierają chipy."
+    expected = "Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy."
     assert context.masked.text == expected, context.masked.text
     assert context.masked.replaced == 1
 

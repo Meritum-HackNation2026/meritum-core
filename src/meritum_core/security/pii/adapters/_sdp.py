@@ -21,6 +21,7 @@ from meritum_core.security.pii.constants import (
     HTTP_TIMEOUT_SECONDS,
     INFO_TYPE_MARKERS,
     MIN_LIKELIHOOD,
+    QUOTA_PROJECT_HEADER,
     SCOPES,
     SUCCESS_CODE,
 )
@@ -77,6 +78,9 @@ class SensitiveDataProtectionGate:
         credentials: Google credentials; Application Default Credentials when None.
         http_client: HTTP client to use; tests pass one with recorded replies.
 
+    Raises:
+        ValueError: The settings name no project (validation was bypassed).
+
     Features:
         US-BEZ-04, F-20, ADR-13, ADR-14, ADR-35
     """
@@ -88,11 +92,15 @@ class SensitiveDataProtectionGate:
         credentials: Credentials | None = None,
         http_client: AsyncClient | None = None,
     ) -> None:
+        if settings.project is None:
+            msg = "sensitive data protection needs a project"
+            raise ValueError(msg)
         self._credentials = credentials
         self._client = http_client or AsyncClient(timeout=HTTP_TIMEOUT_SECONDS)
         location = settings.location
+        self._project = settings.project
         self._url = (
-            f"{ENDPOINT.format(location=location)}/projects/{settings.project}"
+            f"{ENDPOINT.format(location=location)}/projects/{self._project}"
             f"/locations/{location}/content:deidentify"
         )
 
@@ -116,7 +124,10 @@ class SensitiveDataProtectionGate:
             "inspectConfig": _inspect_config(),
             "deidentifyConfig": _deidentify_config(),
         }
-        headers = {"Authorization": f"Bearer {await self._token()}"}
+        headers = {
+            "Authorization": f"Bearer {await self._token()}",
+            QUOTA_PROJECT_HEADER: self._project,
+        }
         try:
             response = await self._client.post(self._url, json=body, headers=headers)
         except TransportError as exc:
