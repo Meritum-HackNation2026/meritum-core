@@ -11,3 +11,7 @@ TOPIC_NAME_MAX_CHARS: Final = 80
 
 KEYWORD_MAX_CHARS: Final = 80
 """Longest keyword of a high-risk topic (the fallback classifier matches them)."""
+
+CASE_WRITE_LOCK: Final = 74_0001
+"""PostgreSQL advisory lock key taken by every case write, so a save racing a
+check removal waits for it and then sees the removed checks (core#74)."""

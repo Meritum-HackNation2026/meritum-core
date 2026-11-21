@@ -171,7 +171,7 @@ Migracje leżą w `src/meritum_core/shared/database/migrations/` (SQL, w kolejno
 MERITUM_DATABASE_URL=... uv run meritum-migrate-app
 ```
 
-Każdy plik idzie raz (tabela `schema_migrations`), wszystko w jednej transakcji pod blokadą doradczą, więc drugie uruchomienie niczego nie zmienia, a dwa deploye naraz czekają na siebie. `SubjectEraser` w PostgreSQL usuwa w jednej transakcji zapisy osoby, jej powiadomienia, powiadomienia o jej sprawdzeniach (także te wysłane na jej drugi identyfikator) i jej sprawdzenia ze spraw moderatora.
+Każdy plik idzie raz (tabela `schema_migrations`), wszystko w jednej transakcji pod blokadą doradczą, więc drugie uruchomienie niczego nie zmienia, a dwa deploye naraz czekają na siebie. `SubjectEraser` w PostgreSQL usuwa w jednej transakcji zapisy osoby, jej powiadomienia, powiadomienia o jej sprawdzeniach (także te wysłane na jej drugi identyfikator) i jej sprawdzenia ze spraw moderatora. Identyfikatory usuniętych ze spraw sprawdzeń trafiają do tabeli `removed_case_checks`, a `ModeratorCaseRepository.save()` je pomija, więc sprawa wczytana przed usunięciem nie przywraca ich przy zapisie. Zapisy spraw idą pod jedną blokadą doradczą (`CASE_WRITE_LOCK`), żeby zapis równoległy z usuwaniem zawsze widział usunięte sprawdzenia.
 
 Testy kontraktowe na prawdziwym PostgreSQL działają tylko lokalnie. Biorą adres z osobnej zmiennej `MERITUM_TEST_DATABASE_URL`, żeby nie trafić w bazę dev ustawioną w `MERITUM_DATABASE_URL`. Każdy test dostaje własny, świeżo zmigrowany schemat i usuwa go po sobie:
 

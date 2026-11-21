@@ -16,6 +16,7 @@ APP_TABLES = {
     "moderator_cases",
     "high_risk_topics",
     "notifications",
+    "removed_case_checks",
     "schema_migrations",
 }
 LIST_TABLES = "SELECT table_name FROM information_schema.tables WHERE table_schema = %s"
@@ -49,7 +50,10 @@ def test_issue_scenario_migrations_on_an_empty_schema(
     empty_schema: tuple[str, str],
 ) -> None:
     url, schema = empty_schema
-    assert apply_migrations(url) == ["0001_app_tables.sql"]
+    assert apply_migrations(url) == [
+        "0001_app_tables.sql",
+        "0002_removed_checks_and_check_index.sql",
+    ]
     with psycopg.connect(url) as conn:
         tables = {row[0] for row in conn.execute(LIST_TABLES, (schema,)).fetchall()}
     assert tables == APP_TABLES
@@ -79,6 +83,20 @@ def test_issue_scenario_the_deploy_command_migrates_once(
     main()
     main()
     assert capsys.readouterr().out.splitlines() == [
-        "applied: 0001_app_tables.sql",
+        "applied: 0001_app_tables.sql, 0002_removed_checks_and_check_index.sql",
         "applied: nothing",
     ]
+
+
+@pytest.mark.integration
+def test_notifications_are_indexed_by_check_id(empty_schema: tuple[str, str]) -> None:
+    url, schema = empty_schema
+    apply_migrations(url)
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            "SELECT indexdef FROM pg_indexes WHERE schemaname = %s"
+            " AND indexname = 'notifications_check_id'",
+            (schema,),
+        ).fetchone()
+    assert row is not None
+    assert "check_id" in str(row[0])
