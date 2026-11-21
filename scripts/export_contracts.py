@@ -15,10 +15,12 @@ from meritum_core.checks import contracts as c
 ROOTS: dict[str, Any] = {
     "CheckRequest": c.CheckRequest,
     "CheckResult": c.CheckResult,
+    "CachedResult": c.CachedResult,
     "AnalysisStatus": c.AnalysisStatus,
     "CheckRecord": c.CheckRecord,
     "ModeratorCase": c.ModeratorCase,
     "CatalogEntry": c.CatalogEntry,
+    "Notification": c.Notification,
 }
 
 

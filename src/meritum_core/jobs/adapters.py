@@ -15,6 +15,9 @@ class DbosJobQueue:
     Args:
         client: client bound to the worker's system database and schema.
         app_version: the environment name; the worker only dequeues its own.
+
+    Features:
+        ADR-03
     """
 
     def __init__(self, client: DBOSClient, app_version: str) -> None:
@@ -29,6 +32,11 @@ class DbosJobQueue:
         workflow_id: str | None = None,
     ) -> str:
         """Enqueue `spec` with one portable JSON argument.
+
+        Args:
+            spec: the workflow to run.
+            payload: its input model, sent as a JSON object.
+            workflow_id: an idempotency key; DBOS generates one when None.
 
         Returns:
             The workflow id (the given one, or a generated one).
@@ -49,6 +57,9 @@ class DbosJobQueue:
 
     async def state(self, workflow_id: str) -> JobState | None:
         """Read the workflow status.
+
+        Args:
+            workflow_id: the id `enqueue` returned.
 
         Returns:
             The state, or None when DBOS does not know the id.
