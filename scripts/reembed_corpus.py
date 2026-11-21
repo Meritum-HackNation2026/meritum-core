@@ -26,6 +26,7 @@ from meritum_core.shared.embeddings import (
     EmbeddingsSettings,
     build_embeddings,
 )
+from meritum_core.shared.embeddings.constants import DEFAULT_DIMENSIONS
 
 BATCH = 8
 """Passages per Vertex call: 8 x 2048 tokens stays under the 20,000-token cap."""
@@ -33,12 +34,19 @@ BATCH = 8
 USAGE_ERROR = 2
 """Exit code when the settings do not describe an EU Vertex run on a database."""
 
-_SELECT = "SELECT passage_id, text FROM corpus.passages ORDER BY passage_id"
+_SELECT = """
+SELECT passage_id, text FROM corpus.passages
+WHERE passage_id LIKE %s ORDER BY passage_id
+"""
 _UPDATE = "UPDATE corpus.passages SET embedding = %s::vector WHERE passage_id = %s"
 
 
 async def reembed(
-    conninfo: str, embeddings: EmbeddingsPort, *, batch: int = BATCH
+    conninfo: str,
+    embeddings: EmbeddingsPort,
+    *,
+    batch: int = BATCH,
+    passage_ids: str = "%",
 ) -> int:
     """Replace the vector of every passage, committing after each batch.
 
@@ -46,6 +54,7 @@ async def reembed(
         conninfo: libpq connection string of the database with the ``corpus`` schema.
         embeddings: The model the corpus is re-embedded with.
         batch: Passages per embeddings call.
+        passage_ids: SQL ``LIKE`` pattern of the passages to re-embed; all by default.
 
     Returns:
         How many passages got a new vector.
@@ -56,7 +65,7 @@ async def reembed(
     async with await AsyncConnection.connect(conninfo) as conn:
         # shortcut: loads all ids and texts at once; page by passage_id once the
         # corpus outgrows a few hundred MB of text.
-        rows = await (await conn.execute(_SELECT)).fetchall()
+        rows = await (await conn.execute(_SELECT, (passage_ids,))).fetchall()
         for start in range(0, len(rows), batch):
             chunk = rows[start : start + batch]
             vectors = await embeddings.embed_documents([text for _, text in chunk])
@@ -74,7 +83,8 @@ def main() -> int:
     """Run the re-embedding and print its metadata as one JSON line.
 
     Returns:
-        0 on success, ``USAGE_ERROR`` when the settings are not an EU Vertex run.
+        0 on success, ``USAGE_ERROR`` when the settings are not an EU Vertex run
+        with the corpus table's vector size.
 
     Features:
         US-KOR-02, F-12, ADR-04, ADR-14
@@ -85,9 +95,12 @@ def main() -> int:
     except ValidationError as exc:
         sys.stderr.write(f"{exc}\n")
         return USAGE_ERROR
-    if settings.provider is not EmbeddingsProvider.VERTEX or database_url is None:
+    is_vertex = settings.provider is EmbeddingsProvider.VERTEX
+    fits_the_table = settings.dimensions == DEFAULT_DIMENSIONS
+    if not is_vertex or database_url is None or not fits_the_table:
         sys.stderr.write(
-            "set MERITUM_EMBEDDINGS_PROVIDER=vertex and MERITUM_CORPUS_DATABASE_URL\n"
+            "set MERITUM_EMBEDDINGS_PROVIDER=vertex and MERITUM_CORPUS_DATABASE_URL;"
+            f" dimensions must be {DEFAULT_DIMENSIONS} (corpus migration)\n"
         )
         return USAGE_ERROR
     started_at = datetime.now(UTC)

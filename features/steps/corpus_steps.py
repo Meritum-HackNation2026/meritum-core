@@ -104,15 +104,16 @@ def given_corpus_reembedded(context: Context) -> None:
         context.add_cleanup(_restore_env, name, os.environ.pop(name, None))
     context.settings = EmbeddingsSettings(provider="vertex", project="meritum-test")
     context.sent = []
+    texts = DISTRACTORS[:3]
 
     def reply(request: httpx2.Request) -> httpx2.Response:
         context.sent.append(request)
-        return httpx2.Response(200, json={"predictions": [_PREDICTION] * 3})
+        return httpx2.Response(200, json={"predictions": [_PREDICTION] * len(texts)})
 
     client = httpx2.AsyncClient(transport=httpx2.MockTransport(reply), timeout=60)
     token = Credentials(token="recorded")  # ruff: ignore[hardcoded-password-func-arg]  # fake token, no network
     port = build_embeddings(context.settings, credentials=token, http_client=client)
-    asyncio.run(port.embed_documents(DISTRACTORS[:3]))
+    asyncio.run(port.embed_documents(texts))
 
 
 @when("sprawdzam metadane przebiegów embeddingów i logi Vertex AI")
