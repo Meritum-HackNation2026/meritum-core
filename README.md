@@ -402,7 +402,7 @@ Paragraf 5 zadania mówi, że objęcie podmiotu sankcjami UE nie może przesądz
 
 ### Ryzyka dostępu
 
-- **GDDKiA, ULC, SAR:** ochrona Incapsula zwraca stronę antybotową zamiast robots.txt i tdmrep (`tdm_reservation = unknown`). Pobranie może się nie udać.
+- **GDDKiA, ULC:** ochrona Incapsula zwraca stronę antybotową zamiast robots.txt i tdmrep (`tdm_reservation = unknown`). Pobranie może się nie udać. SAR ma tę samą ochronę, ale kontrola z 21.11 odczytała jego robots.txt i znaczniki meta bez zastrzeżenia (`none`).
 - **portalpasazera.pl:** błąd certyfikatu TLS (curl 60).
 - **monitoring.paa.gov.pl:** robots.txt przekierowuje, tdmrep zwraca 403.
 - **umgdy.gov.pl:** robots.txt wskazuje mapę strony na serwerze deweloperskim wykonawcy. Nie używamy jej.

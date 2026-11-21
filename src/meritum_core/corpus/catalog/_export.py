@@ -67,8 +67,9 @@ def catalog_markdown(entries: Sequence[CatalogEntry]) -> str:
 
 def _yaml_entry(entry: CatalogEntry) -> str:
     dumped_fields = entry.model_dump(mode="json", exclude_none=True)
-    # the curators' layout leaves out excluded: false and empty lists
-    fields = {k: v for k, v in dumped_fields.items() if v is not False and v != []}
+    fields = {k: v for k, v in dumped_fields.items() if v != []}  # e.g. signatory_of
+    if not entry.excluded:
+        del fields["excluded"]
     dumped = yaml.safe_dump([fields], allow_unicode=True, sort_keys=False, width=10_000)
     return str(dumped)  # PyYAML ships no stubs
 

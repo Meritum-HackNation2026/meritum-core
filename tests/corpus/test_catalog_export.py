@@ -54,3 +54,13 @@ def test_yaml_export_writes_an_exclusion_and_reloads(tmp_path: Path) -> None:
     path.write_text(catalog_yaml((EXCLUDED,), "# nagłówek\n"), encoding="utf-8")
     assert load_catalog(path) == (EXCLUDED,)
     assert path.read_text(encoding="utf-8").startswith("# nagłówek\n")
+
+
+def test_yaml_export_keeps_a_filled_list_and_an_included_entry(tmp_path: Path) -> None:
+    signatory = EXCLUDED.model_copy(
+        update={"excluded": False, "exclusion_reason": None, "signatory_of": ["ifcn"]}
+    )
+    path = tmp_path / "catalog.yaml"
+    path.write_text(catalog_yaml((signatory,), ""), encoding="utf-8")
+    assert load_catalog(path) == (signatory,)
+    assert "excluded" not in path.read_text(encoding="utf-8")
