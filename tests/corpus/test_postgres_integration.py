@@ -63,6 +63,7 @@ def url() -> str:
     if not found:
         pytest.skip("set MERITUM_CORPUS_DATABASE_URL to the meritum-postgres image")
     with psycopg.connect(found, autocommit=True) as conn:
+        conn.execute("CREATE SCHEMA IF NOT EXISTS corpus")  # the platform's job
         conn.execute(MIGRATION.read_bytes())
     return found
 
