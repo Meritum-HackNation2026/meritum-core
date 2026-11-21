@@ -17,6 +17,11 @@ Feature: Maskowanie danych osobowych
     When system maskuje tekst z włączoną bramką DLP
     Then adres jest zastąpiony znacznikiem, a reszta tekstu jest bez zmian
 
+  Scenario: DLP rozlicza wywołanie w projekcie z konfiguracji
+    Given bramka DLP z projektem z konfiguracji
+    When system maskuje tekst
+    Then żądanie do DLP niesie ten projekt jako projekt limitów
+
   Scenario: bramka wyłączona
     Given wdrożenie bez konfiguracji DLP
     When system maskuje tekst

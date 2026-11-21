@@ -91,10 +91,13 @@ class SensitiveDataProtectionGate:
     ) -> None:
         self._credentials = credentials
         self._client = http_client or AsyncClient(timeout=HTTP_TIMEOUT_SECONDS)
+        if settings.project is None:
+            msg = "sensitive data protection needs a project"
+            raise ValueError(msg)
         location = settings.location
-        self._project = str(settings.project)
+        self._project = settings.project
         self._url = (
-            f"{ENDPOINT.format(location=location)}/projects/{settings.project}"
+            f"{ENDPOINT.format(location=location)}/projects/{self._project}"
             f"/locations/{location}/content:deidentify"
         )
 

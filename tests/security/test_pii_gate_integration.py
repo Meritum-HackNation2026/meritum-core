@@ -16,6 +16,7 @@ from meritum_core.security import (
     build_pii_gate,
     mask_personal_data,
 )
+from meritum_core.security.pii.constants import HTTP_TIMEOUT_SECONDS
 
 
 @pytest.mark.integration
@@ -33,7 +34,7 @@ def test_real_sensitive_data_protection_masks_a_polish_address() -> None:
 
 async def _mask_twice(project: str, text: str) -> tuple[MaskedText, MaskedText]:
     """Mask, then mask the result: one event loop, one HTTP client, closed after."""
-    async with httpx2.AsyncClient(timeout=10) as client:
+    async with httpx2.AsyncClient(timeout=HTTP_TIMEOUT_SECONDS) as client:
         settings = PiiGateSettings(gate="sdp", project=project)
         gate = build_pii_gate(settings, http_client=client)
         once = await mask_personal_data(text, gate)
