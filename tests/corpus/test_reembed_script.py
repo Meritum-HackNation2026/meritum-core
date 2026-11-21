@@ -36,6 +36,7 @@ def clean_environment(monkeypatch: pytest.MonkeyPatch) -> None:
         {"PROVIDER": "stub"},
         {"PROVIDER": "vertex", "REGION": "us-central1"},
         {"PROVIDER": "vertex", "DIMENSIONS": "3072"},
+        {"PROVIDER": "vertex", "MODEL": "text-multilingual-embedding-002"},
     ],
 )
 def test_non_eu_or_mismatched_runs_are_refused(

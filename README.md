@@ -112,7 +112,7 @@ MERITUM_EMBEDDINGS_PROVIDER=vertex MERITUM_CORPUS_DATABASE_URL=postgresql://... 
   uv run python scripts/reembed_corpus.py
 ```
 
-Skrypt odmawia pracy ze stubem, bez bazy, z regionem spoza UE i z rozmiarem wektora innym niż 768. Wektory zmienia też we fragmentach wycofanych, więc stare migawki widzą ten sam tekst, ale szukają już nowym modelem. Test integracyjny skryptu bierze adres z `MERITUM_TEST_DATABASE_URL` i przelicza tylko wstawione przez siebie wiersze.
+Skrypt odmawia pracy ze stubem, bez bazy, z regionem spoza UE, z innym modelem niż `gemini-embedding-001` i z rozmiarem wektora innym niż 768. Zatwierdza wektory po każdej paczce, więc przerwany przebieg trzeba uruchomić ponownie, a linię JSON z wynikiem wkleić do PR albo zgłoszenia. Wektory zmienia też we fragmentach wycofanych, więc stare migawki widzą ten sam tekst, ale szukają już nowym modelem. Test integracyjny skryptu bierze adres z `MERITUM_TEST_DATABASE_URL` i przelicza tylko wstawione przez siebie wiersze.
 
 Migracje leżą w `src/meritum_core/corpus/migrations/` (SQL, w kolejności numerów) i trafiają do pakietu. Są tylko wstecznie zgodne (dodajemy, nie usuwamy i nie zmieniamy nazw), bo schemat `corpus` czytają dev i prd; uruchamia je deploy z `main` (infra/004). Wymagają obrazu `meritum-postgres` z meritum-infra (pgvector, `pg_trgm`, `public.polish`).
 

@@ -26,7 +26,7 @@ from meritum_core.shared.embeddings import (
     EmbeddingsSettings,
     build_embeddings,
 )
-from meritum_core.shared.embeddings.constants import DEFAULT_DIMENSIONS
+from meritum_core.shared.embeddings.constants import DEFAULT_DIMENSIONS, DEFAULT_MODEL
 
 BATCH = 8
 """Passages per Vertex call: 8 x 2048 tokens stays under the 20,000-token cap."""
@@ -84,7 +84,7 @@ def main() -> int:
 
     Returns:
         0 on success, ``USAGE_ERROR`` when the settings are not an EU Vertex run
-        with the corpus table's vector size.
+        of the chosen model with the corpus table's vector size.
 
     Features:
         US-KOR-02, F-12, ADR-04, ADR-14
@@ -96,11 +96,13 @@ def main() -> int:
         sys.stderr.write(f"{exc}\n")
         return USAGE_ERROR
     is_vertex = settings.provider is EmbeddingsProvider.VERTEX
+    is_chosen_model = settings.model == DEFAULT_MODEL
     fits_the_table = settings.dimensions == DEFAULT_DIMENSIONS
-    if not is_vertex or database_url is None or not fits_the_table:
+    is_chosen_run = is_vertex and is_chosen_model and fits_the_table
+    if not is_chosen_run or database_url is None:
         sys.stderr.write(
             "set MERITUM_EMBEDDINGS_PROVIDER=vertex and MERITUM_CORPUS_DATABASE_URL;"
-            f" dimensions must be {DEFAULT_DIMENSIONS} (corpus migration)\n"
+            f" the run uses {DEFAULT_MODEL} with {DEFAULT_DIMENSIONS} dimensions\n"
         )
         return USAGE_ERROR
     started_at = datetime.now(UTC)

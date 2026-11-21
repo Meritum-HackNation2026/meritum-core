@@ -128,7 +128,10 @@ def when_checking_run_metadata(context: Context) -> None:
     "a wektory z us-central1 są usunięte"
 )
 def then_vectors_come_from_the_eu(context: Context) -> None:
-    """Warsaw and gemini-embedding-001 by default; us-central1 cannot be configured."""
+    """Warsaw and gemini-embedding-001 by default; us-central1 cannot be configured.
+
+    The script overwrites every vector, so no us-central1 vector survives a run.
+    """
     assert context.run == ("gemini-embedding-001", "europe-central2")
     assert context.paths
     for path in context.paths:
