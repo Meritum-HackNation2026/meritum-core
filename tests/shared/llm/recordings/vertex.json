@@ -1,0 +1,50 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {
+            "text": "**Wyodrębnienie twierdzeń**\n\nTekst zawiera jedno twierdzenie.",
+            "thought": true
+          },
+          {
+            "functionCall": {
+              "name": "final_result",
+              "args": {
+                "claims": [
+                  "Sejm przyjął ustawę o ochronie zwierząt."
+                ]
+              },
+              "id": "call_4456696456389920652"
+            },
+            "thoughtSignature": "cmVjb3JkZWQ="
+          }
+        ]
+      },
+      "finishReason": "STOP"
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 54,
+    "candidatesTokenCount": 28,
+    "totalTokenCount": 265,
+    "trafficType": "ON_DEMAND",
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 54
+      }
+    ],
+    "candidatesTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 28
+      }
+    ],
+    "thoughtsTokenCount": 183
+  },
+  "modelVersion": "gemini-3.5-flash",
+  "createTime": "2026-11-21T21:55:13.867605Z",
+  "responseId": "QRMCa5X6NLSsn_EPutm1kAQ"
+}

@@ -48,11 +48,62 @@ def test_stub_with_an_invalid_fixture_fails_as_provider_unavailable(
         asyncio.run(llm.complete(PROMPT, claim_list))
 
 
-def test_default_provider_is_the_stub(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.delenv("MERITUM_LLM_PROVIDER", raising=False)
+def test_default_is_claude_haiku_5_5_on_openrouter_with_high_reasoning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in ("PROVIDER", "MODEL", "REGION", "REASONING"):
+        monkeypatch.delenv(f"MERITUM_LLM_{name}", raising=False)
+    monkeypatch.setenv("OPENROUTER_API_KEY", "sk-or-test")  # fake key, no network
     settings = LlmSettings()
-    assert settings.provider == "stub"
-    assert type(build_llm(settings)).__name__ == "StubLlm"
+    assert (settings.provider, settings.model, settings.region, settings.reasoning) == (
+        "openrouter",
+        "anthropic/claude-haiku-5.5",
+        "global",
+        "high",
+    )
+    assert type(build_llm(settings)).__name__ == "OpenRouterLlm"
+
+
+def test_default_provider_without_a_key_fails_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("MERITUM_LLM_PROVIDER", raising=False)
+    monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
+    with pytest.raises(ValidationError, match="OPENROUTER_API_KEY"):
+        LlmSettings()
+
+
+@pytest.mark.parametrize("reasoning", ["low", "medium", "high"])
+def test_reasoning_reads_low_medium_or_high_from_the_environment(
+    monkeypatch: pytest.MonkeyPatch, reasoning: str
+) -> None:
+    monkeypatch.setenv("MERITUM_LLM_REASONING", reasoning)
+    assert LlmSettings(provider="stub").reasoning == reasoning
+
+
+@pytest.mark.parametrize("reasoning", ["none", "max", "HIGH"])
+def test_reasoning_outside_low_medium_high_is_rejected(
+    monkeypatch: pytest.MonkeyPatch, reasoning: str
+) -> None:
+    monkeypatch.setenv("MERITUM_LLM_REASONING", reasoning)
+    with pytest.raises(ValidationError):
+        LlmSettings(provider="stub")
+
+
+def test_vertex_needs_its_own_model_not_the_openrouter_default(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("MERITUM_LLM_MODEL", raising=False)
+    with pytest.raises(ValidationError, match="MERITUM_LLM_MODEL"):
+        LlmSettings(provider="vertex", region="europe-west3")
+
+
+def test_vertex_model_missing_from_the_price_list_is_logged(
+    vertex_settings: LlmSettings, caplog: pytest.LogCaptureFixture
+) -> None:
+    build_llm(vertex_settings)
+    assert "gemini-2.5-flash-001" in caplog.text
+    assert "cost" in caplog.text
 
 
 def test_factory_builds_vertex_from_settings(vertex_settings: LlmSettings) -> None:
