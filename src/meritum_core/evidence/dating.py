@@ -60,7 +60,11 @@ def outdated_verdict(
     with technique ``outdated`` (never ``insufficient_evidence``: superseded
     evidence does not conflict). A present-tense claim confirmed only by stale
     expiring evidence becomes ``misleading``, ``outdated`` and archival. A claim
-    with an explicit past date is judged by the evidence valid on that date.
+    with an explicit past date is judged by the evidence valid on that date:
+    evidence published later still counts (it can describe that date, e.g. a
+    later report on a past event) and its age is 0; only a newer document of the
+    same series published by the claim date supersedes older evidence
+    (:func:`meritum_core.evidence.assign_validity`).
 
     Args:
         verdict: The verdict settled from current evidence.

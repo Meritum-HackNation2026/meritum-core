@@ -5,7 +5,7 @@ from datetime import date, datetime, timedelta, timezone
 import pytest
 from tests.evidence.samples import CLAIM_DATE, cite
 
-from meritum_core.evidence import outdated_verdict, resolve_claim_date
+from meritum_core.evidence import compute_premises, outdated_verdict, resolve_claim_date
 
 TODAY = date(2026, 11, 21)
 PUBLISHED = datetime(2026, 11, 2, 23, 30, tzinfo=timezone(timedelta(hours=1)))
@@ -89,4 +89,22 @@ def test_a_superseded_refutation_next_to_a_current_one_is_not_outdated() -> None
         "false",
         None,
         False,
+    )
+
+
+def test_evidence_published_after_a_past_claim_date_still_counts_with_age_zero() -> (
+    None
+):
+    later = cite(
+        "supports", "kprm", "primary", published_at="2025-06-01T00:00:00+02:00"
+    )
+    past = date(2024, 3, 1)
+    assert outdated_verdict("confirmed", [later], claim_date=past) == (
+        "confirmed",
+        None,
+        False,
+    )
+    assert (
+        compute_premises("confirmed", [later], claim_date=past).newest_source_age_hours
+        == 0
     )

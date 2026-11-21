@@ -123,7 +123,12 @@ def given_superseding_pair(context: Context) -> None:
 def then_superseded_is_left_out(context: Context) -> None:
     """The older one is superseded: no conflict, only the newer one counts."""
     assert [c.validity for c in context.result.citations] == ["superseded", "expires"]
-    assert context.result.strength.premises.agreement == "consistent"
+    premises = context.result.strength.premises
+    assert premises.agreement == "consistent"
+    assert premises.independent_sources == 1
+    assert (
+        premises.newest_source_published_at == context.citations[1].source.published_at
+    )
 
 
 @then(
