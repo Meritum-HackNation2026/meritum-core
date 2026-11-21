@@ -104,9 +104,8 @@ class PostgresNotificationRepository:
         """
         async with await self._connect() as conn:
             await conn.execute(
-                "UPDATE notifications"
-                " SET body = jsonb_set(body, '{status}', '\"read\"') WHERE id = %s",
-                (notification_id,),
+                "UPDATE notifications SET body = body || %s WHERE id = %s",
+                (Jsonb({"status": "read"}), notification_id),
             )
 
     async def delete_for(self, kind: RecipientKind, value: str) -> int:

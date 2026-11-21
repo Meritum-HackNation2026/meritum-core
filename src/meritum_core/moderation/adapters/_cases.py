@@ -114,9 +114,9 @@ class PostgresModeratorCaseRepository:
         async with await self._connect() as conn:
             cursor = await conn.execute(
                 "SELECT body FROM moderator_cases"
-                " WHERE state = 'open' AND body -> 'claims' @> %s"
+                " WHERE state = %s AND body -> 'claims' @> %s"
                 " ORDER BY last_seen DESC, id LIMIT 1",
-                (Jsonb([{"claim": claim}]),),
+                ("open", Jsonb([{"claim": claim}])),
             )
             row = await cursor.fetchone()
         return None if row is None else ModeratorCase.model_validate(row[0])

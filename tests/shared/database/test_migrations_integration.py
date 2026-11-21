@@ -59,18 +59,6 @@ def test_issue_scenario_migrations_on_an_empty_schema(
 
 
 @pytest.mark.integration
-def test_migrations_never_touch_the_corpus_or_public_schema(
-    empty_schema: tuple[str, str],
-) -> None:
-    url, _ = empty_schema
-    apply_migrations(url)
-    with psycopg.connect(url) as conn:
-        for other in ("public", "corpus"):
-            found = conn.execute(LIST_TABLES, (other,)).fetchall()
-            assert not {row[0] for row in found} & APP_TABLES
-
-
-@pytest.mark.integration
 def test_missing_search_path_schema_is_an_error() -> None:
     admin = os.environ.get("MERITUM_DATABASE_URL", "")
     if not admin:

@@ -9,7 +9,12 @@ from importlib.resources import files
 
 import psycopg
 
-from meritum_core.shared.database.constants import MIGRATIONS_LOCK, MIGRATIONS_PACKAGE
+from meritum_core.shared.database.constants import (
+    MIGRATION_SUFFIX,
+    MIGRATIONS_DIRECTORY,
+    MIGRATIONS_LOCK,
+    MIGRATIONS_PACKAGE,
+)
 from meritum_core.shared.database.settings import DatabaseProvider, DatabaseSettings
 
 
@@ -31,9 +36,9 @@ def apply_migrations(conninfo: str) -> list[str]:
     Features:
         US-OBS-01, US-BEZ-05, F-22, ADR-03, ADR-04
     """
-    directory = files(MIGRATIONS_PACKAGE) / "migrations"
+    directory = files(MIGRATIONS_PACKAGE) / MIGRATIONS_DIRECTORY
     scripts = sorted(
-        (f for f in directory.iterdir() if f.name.endswith(".sql")),
+        (f for f in directory.iterdir() if f.name.endswith(MIGRATION_SUFFIX)),
         key=lambda f: f.name,
     )
     with psycopg.connect(conninfo) as conn, conn.transaction():

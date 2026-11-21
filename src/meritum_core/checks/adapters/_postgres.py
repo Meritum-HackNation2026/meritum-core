@@ -4,6 +4,7 @@ Features:
     US-OBS-01, US-BEZ-05, F-22, F-24, ADR-13
 """
 
+import operator
 from collections.abc import Sequence
 from datetime import datetime
 from itertools import starmap
@@ -34,16 +35,17 @@ async def delete_subject_records(
         value: the session id, user id or channel user hash.
 
     Returns:
-        The deleted ``check_id`` values.
+        The deleted ``check_id`` values, newest ``received_at`` first.
 
     Features:
         US-BEZ-05, F-24
     """
     query = sql.SQL(
-        "DELETE FROM check_records WHERE {} = %s RETURNING check_id"
+        "DELETE FROM check_records WHERE {} = %s RETURNING check_id, received_at"
     ).format(_COLUMN[kind])
     cursor = await conn.execute(query, (value,))
-    return sorted(check_id for (check_id,) in await cursor.fetchall())
+    rows = sorted(await cursor.fetchall(), key=operator.itemgetter(1), reverse=True)
+    return [check_id for check_id, _ in rows]
 
 
 class PostgresCheckRecordRepository:
