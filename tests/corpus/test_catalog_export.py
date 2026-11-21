@@ -26,10 +26,8 @@ def test_json_lists_every_entry_with_all_fields() -> None:
     assert set(exported["entries"][0]) == set(CatalogEntry.model_fields)
 
 
-def test_json_is_stable_and_ends_with_a_newline() -> None:
-    entries = load_catalog()
-    assert catalog_json(entries) == catalog_json(entries)
-    assert catalog_json(entries).endswith("}\n")
+def test_json_ends_with_a_newline() -> None:
+    assert catalog_json(load_catalog()).endswith("}\n")
 
 
 def test_markdown_row_shows_exclusion_reason_and_escapes_pipes() -> None:

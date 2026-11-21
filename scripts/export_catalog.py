@@ -28,9 +28,15 @@ def readme_with(table: str, readme: str) -> str:
 
     Returns:
         The README with the new table.
+
+    Raises:
+        SystemExit: The README lacks the markers.
     """
-    head, _, rest = readme.partition(START)
-    _, _, tail = rest.partition(END)
+    head, found_start, rest = readme.partition(START)
+    _, found_end, tail = rest.partition(END)
+    if not (found_start and found_end):
+        msg = f"README.md needs the markers {START!r} and {END!r}"
+        raise SystemExit(msg)
     return f"{head}{START}\n{table}\n{END}{tail}"
 
 

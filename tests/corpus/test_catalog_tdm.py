@@ -65,7 +65,22 @@ def test_primary_source_with_reservation_stays_included() -> None:
 @pytest.mark.parametrize(
     "reason", [FetchFailureReason.TIMEOUT, FetchFailureReason.HTTP_ERROR]
 )
-def test_unreadable_source_is_unknown(reason: FetchFailureReason) -> None:
-    checked = run(SECONDARY, FakeFetcher(PageFetchError(reason)))
-    assert checked.tdm_reservation == "unknown"
+def test_failed_fetch_keeps_the_recorded_value(reason: FetchFailureReason) -> None:
+    recorded = PRIMARY.model_copy(update={"tdm_reservation": "reserved"})
+    checked = run(recorded, FakeFetcher(PageFetchError(reason)))
+    assert checked == recorded
+
+
+def test_lifted_reservation_brings_back_an_entry_the_check_excluded() -> None:
+    reserved = run(SECONDARY, FakeFetcher(RobotsDisallowedError()))
+    checked = run(reserved, FakeFetcher())
+    assert checked.tdm_reservation == "none"
     assert not checked.excluded
+    assert checked.exclusion_reason is None
+
+
+def test_lifted_reservation_keeps_an_exclusion_with_another_reason() -> None:
+    excluded = SECONDARY.model_copy(
+        update={"excluded": True, "exclusion_reason": "Brak w IFCN i EFCSN."}
+    )
+    assert run(excluded, FakeFetcher()).excluded

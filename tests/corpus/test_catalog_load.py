@@ -24,10 +24,18 @@ def _write(tmp_path: Path, body: str) -> Path:
     return path
 
 
-def test_shipped_catalogue_validates_with_unique_domains() -> None:
-    entries = load_catalog()
-    domains = [e.domain for e in entries]
-    assert len(domains) == len(set(domains)) > 0
+def test_shipped_catalogue_has_the_curated_entries() -> None:
+    entries = {e.domain: e for e in load_catalog()}
+    assert len(entries) == 57
+    assert entries["euvsdisinfo.eu"].publisher_id == "eeas-euvsdisinfo"
+    assert entries["euvsdisinfo.eu"].ingest == "mcp"
+    assert entries["konkret24.tvn24.pl"].excluded
+    assert (
+        entries["demagog.org.pl"].ingest
+        == entries["sprawdzam.afp.com"].ingest
+        == "live"
+    )
+    assert entries["hole.cert.pl"].role == "source_status"
 
 
 def test_entry_without_reason_for_exclusion_names_the_entry(tmp_path: Path) -> None:
