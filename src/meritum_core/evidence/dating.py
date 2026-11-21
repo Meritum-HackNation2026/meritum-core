@@ -17,6 +17,7 @@ from meritum_core.checks.contracts import (
     Verdict,
     is_stale,
 )
+from meritum_core.evidence.constants import OUTDATED_VERDICTS
 from meritum_core.evidence.strength import compute_premises
 
 
@@ -54,7 +55,8 @@ def outdated_verdict(
 ) -> tuple[Verdict, TechniqueCode | None, bool]:
     """Adjust a verdict for evidence that was true once but is not any more.
 
-    A claim refuted by evidence that superseded its support keeps its verdict
+    A claim refuted by evidence that superseded its support (a superseded
+    supporting citation) keeps its verdict
     with technique ``outdated`` (never ``insufficient_evidence``: superseded
     evidence does not conflict). A present-tense claim confirmed only by stale
     expiring evidence becomes ``misleading``, ``outdated`` and archival. A claim
@@ -73,8 +75,10 @@ def outdated_verdict(
     Features:
         US-ZRD-05, US-ZRD-10, F-15, ADR-25
     """
-    has_superseded = any(c.validity == "superseded" for c in citations)
-    if has_superseded and verdict in {"false", "misleading"}:
+    support_replaced = any(
+        c.validity == "superseded" and c.stance == "supports" for c in citations
+    )
+    if support_replaced and verdict in OUTDATED_VERDICTS:
         return verdict, "outdated", False
     premises = compute_premises(
         verdict, citations, claim_date=claim_date, max_age_hours=max_age_hours

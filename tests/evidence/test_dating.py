@@ -73,3 +73,20 @@ def test_past_dated_claim_with_evidence_valid_then_keeps_the_verdict() -> None:
         None,
         False,
     )
+
+
+def test_a_superseded_refutation_next_to_a_current_one_is_not_outdated() -> None:
+    citations = [
+        cite(
+            "refutes",
+            "kprm",
+            published_at="2025-01-10T00:00:00+01:00",
+            validity="superseded",
+        ),
+        cite("refutes", "kprm", "primary", page="b"),
+    ]
+    assert outdated_verdict("false", citations, claim_date=CLAIM_DATE) == (
+        "false",
+        None,
+        False,
+    )

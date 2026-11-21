@@ -147,3 +147,14 @@ def test_a_fact_checker_rating_can_create_the_conflict() -> None:
 def test_consistent_sources_keep_the_proposed_verdict() -> None:
     citations = [cite("refutes", "kprm", "primary"), cite("context", "demagog")]
     assert settle_verdict("false", citations) == "false"
+
+
+def test_catalogue_threshold_shorter_than_a_year_makes_evidence_stale() -> None:
+    citation = cite(
+        "supports", "imgw", "primary", published_at="2026-11-17T00:00:00+01:00"
+    )
+    strength = compute_strength(
+        "confirmed", [citation], claim_date=CLAIM_DATE, max_age_hours=48
+    )
+    assert strength is not None
+    assert strength.level == "weak"
