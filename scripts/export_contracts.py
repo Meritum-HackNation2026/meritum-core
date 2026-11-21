@@ -20,6 +20,7 @@ ROOTS: dict[str, Any] = {
     "CheckRecord": c.CheckRecord,
     "ModeratorCase": c.ModeratorCase,
     "CatalogEntry": c.CatalogEntry,
+    "Notification": c.Notification,
 }
 
 
