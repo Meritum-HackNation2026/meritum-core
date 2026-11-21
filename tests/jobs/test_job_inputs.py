@@ -143,7 +143,7 @@ def test_user_dispute_may_come_without_a_justification() -> None:
     )
 
 
-def test_an_empty_justification_is_sent_as_none() -> None:
+def test_user_dispute_rejects_an_empty_justification() -> None:
     with pytest.raises(ValidationError):
         EscalateClaimInput(
             check_id="c1", claim_index=0, reason="user_dispute", justification_masked=""
