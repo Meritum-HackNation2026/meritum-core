@@ -5,7 +5,7 @@
 
 -- One row per fetched URL; its passages in corpus.passages share source_id.
 -- full_text is for the system only (search, re-chunking); users see passages.
--- Retention (meritum-worker#24) clears full_text 90 days after fetched_at and
+-- Retention (meritum-worker#77) clears full_text 90 days after fetched_at and
 -- keeps the row; a refetch moves fetched_at, so the period starts again.
 CREATE TABLE IF NOT EXISTS corpus.documents (
     source_id text PRIMARY KEY,
@@ -26,8 +26,13 @@ CREATE TABLE IF NOT EXISTS corpus.documents (
 CREATE INDEX IF NOT EXISTS documents_fetched_at ON corpus.documents (fetched_at);
 CREATE INDEX IF NOT EXISTS documents_domain ON corpus.documents (domain);
 
+-- A changed page retires its live passages by source_id.
+CREATE INDEX IF NOT EXISTS passages_live_source_id
+    ON corpus.passages (source_id) WHERE retired_at IS NULL;
+
 -- What one corpus_version saw: each live document with its checksum and fetch
--- time, written in the same transaction as the corpus.snapshots row.
+-- time, written in the same transaction as the corpus.snapshots row. No foreign
+-- key to corpus.documents: deleting a document must not touch old manifests.
 CREATE TABLE IF NOT EXISTS corpus.snapshot_manifest (
     version text NOT NULL REFERENCES corpus.snapshots (version),
     source_id text NOT NULL,

@@ -2,7 +2,8 @@
 
 Needs the meritum-postgres image and ``MERITUM_CORPUS_DATABASE_URL`` (like
 test_migrations_integration.py); runs every corpus migration twice and only
-reads the catalogue of the two tables, so it needs no empty database.
+reads the catalogue of the three tables and their indexes, so it needs no
+empty database.
 """
 
 import os
@@ -19,6 +20,13 @@ JOIN pg_attribute ON attrelid = format('%I.%I', table_schema, table_name)::regcl
     AND attname = column_name
 WHERE table_schema = 'corpus' AND table_name IN ('documents', 'ingest_attempts', 'snapshot_manifest')
 ORDER BY table_name, ordinal_position
+"""
+INDEXES = """
+SELECT indexname FROM pg_indexes
+WHERE schemaname = 'corpus' AND indexname IN (
+    'documents_fetched_at', 'documents_domain', 'passages_live_source_id'
+)
+ORDER BY indexname
 """
 TIMESTAMP = "timestamp with time zone"
 EXPECTED = [
@@ -43,7 +51,7 @@ EXPECTED = [
 
 
 @pytest.mark.integration
-def test_corpus_migrations_create_documents_and_snapshot_manifest() -> None:
+def test_corpus_migrations_create_documents_attempts_and_snapshot_manifest() -> None:
     url = os.environ.get("MERITUM_CORPUS_DATABASE_URL", "")
     if not url:
         pytest.skip("set MERITUM_CORPUS_DATABASE_URL to the meritum-postgres image")
@@ -56,3 +64,8 @@ def test_corpus_migrations_create_documents_and_snapshot_manifest() -> None:
             for script in scripts:
                 conn.execute(script.read_bytes())
         assert conn.execute(COLUMNS).fetchall() == EXPECTED
+        assert conn.execute(INDEXES).fetchall() == [
+            ("documents_domain",),
+            ("documents_fetched_at",),
+            ("passages_live_source_id",),
+        ]
