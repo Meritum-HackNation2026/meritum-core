@@ -1,11 +1,13 @@
 """DBOS implementation of the JobQueue port."""
 
+from collections.abc import AsyncIterator
 from typing import Any
 
 from dbos import DBOSClient, EnqueueOptions, WorkflowSerializationFormat
 from pydantic import BaseModel
 
-from meritum_core.jobs.contracts import APPLICATION_NAME, WorkflowSpec
+from meritum_core.jobs.constants import APPLICATION_NAME, EVENT_TIMEOUT_SECONDS
+from meritum_core.jobs.contracts import WorkflowSpec
 from meritum_core.jobs.ports import JobState
 
 
@@ -74,3 +76,41 @@ class DbosJobQueue:
             output=status.output if isinstance(status.output, dict) else None,
             error=None if status.error is None else str(status.error),
         )
+
+    async def stream[T: BaseModel](
+        self, workflow_id: str, key: str, model: type[T]
+    ) -> AsyncIterator[T]:
+        """Yield the values of a DBOS stream, validated against `model`.
+
+        Args:
+            workflow_id: the id `enqueue` returned.
+            key: the stream key.
+            model: the model every value validates against.
+
+        Yields:
+            The stream values in the order the workflow wrote them.
+        """
+        async for value in self._client.read_stream_async(workflow_id, key):
+            yield model.model_validate(value)
+
+    async def event[T: BaseModel](
+        self,
+        workflow_id: str,
+        key: str,
+        model: type[T],
+        *,
+        timeout_seconds: float = EVENT_TIMEOUT_SECONDS,
+    ) -> T | None:
+        """Read a DBOS event, validated against `model`.
+
+        Args:
+            workflow_id: the id `enqueue` returned.
+            key: the event key.
+            model: the model the value validates against.
+            timeout_seconds: how long DBOS waits for the event.
+
+        Returns:
+            The value, or None when it was not set in time.
+        """
+        value = await self._client.get_event_async(workflow_id, key, timeout_seconds)
+        return None if value is None else model.model_validate(value)

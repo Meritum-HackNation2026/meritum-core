@@ -23,5 +23,5 @@ Obecne wyjątki:
 
 - `src/meritum_core/checks/contracts.py`: limit linii, sekcje `Features:`/`Attributes:` i `constants.py` (861 linii po kontraktach v3; podział na pakiet `checks/contracts/` i stałe w `checks/constants.py` w zgłoszeniu core/001), vulture (pola kontraktów czyta JSON i inne repo), ruff `too-many-boolean-expressions` (warunek wejścia `CheckRequest` z v3, do nazwanych warunków przy podziale);
 - `tests/test_checks_contracts.py`: limit linii (dzielony razem z modułem);
-- `src/meritum_core/jobs/contracts.py`: stałe poza `constants.py`, bo `PING` i `WORKFLOWS` powstają z modeli z tego modułu (osobny `constants.py` dałby cykl importów).
+- `src/meritum_core/jobs/contracts/_workflows.py`: stałe poza `constants.py`, bo specyfikacje workflowów (`PING`, `CHECK`…) i `WORKFLOWS` powstają z modeli kontraktu (osobny `constants.py` dałby cykl importów).
 - `features/steps/`: ty `not-callable` i `dynamic-function-decorator-return` (behave podmienia `given`/`when`/`then` na prawdziwe dekoratory dopiero przy ładowaniu kroków), vulture `ignore_decorators` dla tych dekoratorów (kroki woła behave), ruff `assert` (kroki sprawdzają jak testy).
