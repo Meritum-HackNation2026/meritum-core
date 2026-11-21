@@ -14,6 +14,7 @@
       "max_age_hours": 48,
       "qualified_because": "Lista organizatora; urzędowe ostrzeżenia dla obywateli, także w podziale na województwa.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -31,6 +32,7 @@
       "max_age_hours": 48,
       "qualified_because": "Lista organizatora; RSO, oficjalny kanał powiadamiania o zagrożeniach.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -48,6 +50,7 @@
       "max_age_hours": 72,
       "qualified_because": "Lista organizatora; raport dobowy KCZK o sytuacjach kryzysowych w kraju i za granicą.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -65,6 +68,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty ministerstwa właściwego dla bezpieczeństwa wewnętrznego.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -82,6 +86,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty PSP o zdarzeniach i zagrożeniach.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -99,6 +104,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty Policji, częsty cel podszywania się w dezinformacji.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -116,6 +122,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; przykład komunikatów regionalnych Policji.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -133,6 +140,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty MON, częsty temat operacji informacyjnych.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -150,6 +158,7 @@
       "max_age_hours": 168,
       "qualified_because": "Lista organizatora; ostrzeżenia sanitarne i o produktach.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -167,6 +176,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty o bezpieczeństwie jądrowym i radiologicznym.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -184,6 +194,7 @@
       "max_age_hours": 6,
       "qualified_because": "Lista organizatora; bieżący pomiar mocy dawki promieniowania, kluczowy przy plotkach o skażeniu.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -201,6 +212,7 @@
       "max_age_hours": 3,
       "qualified_because": "Lista organizatora; urzędowe pomiary jakości powietrza.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -218,6 +230,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty o oszustwach i zagrożeniach w sieci.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "robots.txt: Disallow: / dla wszystkich robotów. Zamiast tego pobieramy cert.pl (RSS)."
     },
@@ -235,6 +248,7 @@
       "max_age_hours": null,
       "qualified_because": "Zastępuje moje.cert.pl (blokada robots.txt); ten sam wydawca, ostrzeżenia o kampaniach oszustw.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -252,6 +266,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty i prawa pasażerów, infolinia i dane kontaktowe resortu.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -269,6 +284,7 @@
       "max_age_hours": 6,
       "qualified_because": "Lista organizatora; utrudnienia na drogach krajowych.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -286,6 +302,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; opis infolinii drogowej 19 111.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -303,6 +320,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; prawa pasażera lotniczego i poradnik.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -320,6 +338,7 @@
       "max_age_hours": 6,
       "qualified_because": "Lista organizatora; rozkłady i utrudnienia kolejowe.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -337,6 +356,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; prawa pasażerów kolei.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "robots.txt: Disallow: / dla wszystkich robotów."
     },
@@ -354,6 +374,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty o bezpieczeństwie na kolei.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -371,6 +392,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; ratownictwo morskie.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -388,6 +410,7 @@
       "max_age_hours": 72,
       "qualified_because": "Lista organizatora; ostrzeżenia nawigacyjne i komunikaty morskie.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -405,6 +428,7 @@
       "max_age_hours": 72,
       "qualified_because": "Lista organizatora; warunki żeglugi.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -422,6 +446,7 @@
       "max_age_hours": 72,
       "qualified_because": "Lista organizatora; komunikaty nawigacyjne na drogach wodnych.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -439,6 +464,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; ostrzeżenia dla podróżujących, oficjalne stanowisko MSZ.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -456,6 +482,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; system rejestracji podróży MSZ.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -473,6 +500,7 @@
       "max_age_hours": null,
       "qualified_because": "Lista organizatora; komunikaty Prezesa Rady Ministrów.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -490,6 +518,7 @@
       "max_age_hours": 24,
       "qualified_because": "Lista organizatora; urzędowe ostrzeżenia meteorologiczne.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -507,6 +536,7 @@
       "max_age_hours": 24,
       "qualified_because": "Lista organizatora; ostrzeżenia hydrologiczne i stany wód.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -524,6 +554,7 @@
       "max_age_hours": 24,
       "qualified_because": "Lista organizatora; prognozy i ostrzeżenia dla Bałtyku.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -541,6 +572,7 @@
       "max_age_hours": null,
       "qualified_because": "Akty prawne RP: podstawa twierdzeń o przepisach.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "robots.txt: Disallow: / dla wszystkich robotów. Te same akty pobieramy z api.sejm.gov.pl (ELI)."
     },
@@ -558,6 +590,7 @@
       "max_age_hours": null,
       "qualified_because": "Zastępuje ISAP: oficjalne API ELI z tekstami Dziennika Ustaw i Monitora Polskiego.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -575,6 +608,7 @@
       "max_age_hours": null,
       "qualified_because": "Akty prawne UE: twierdzenia o przepisach unijnych, sankcjach, prawach pasażerów.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -592,6 +626,7 @@
       "max_age_hours": null,
       "qualified_because": "Portal otwartych danych: liczby do twierdzeń statystycznych.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -609,6 +644,7 @@
       "max_age_hours": null,
       "qualified_because": "Sygnatariusz IFCN, bez blokad dla robotów, z RSS i mapą strony.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -626,6 +662,7 @@
       "max_age_hours": null,
       "qualified_because": "Sygnatariusz IFCN, bez blokad dla robotów, z RSS i mapą strony.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -643,6 +680,7 @@
       "max_age_hours": null,
       "qualified_because": "Baza przypadków prorosyjskiej dezinformacji: dopasowanie do znanych operacji (punkt 3 listy organizatora).",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -660,6 +698,7 @@
       "max_age_hours": null,
       "qualified_because": "Punkt 2 listy organizatora; znajduje oceny fact-checkerów IFCN/EFCSN do twierdzenia.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -677,6 +716,7 @@
       "max_age_hours": null,
       "qualified_because": "Sygnatariusz IFCN; ocena wchodzi tylko przez Fact Check API.",
       "tdm_reservation": "reserved",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "Content-Signal ai-train=no, use=reference i blokady botów AI w robots.txt: nie pobieramy treści, tylko ocena z Fact Check API."
     },
@@ -694,6 +734,7 @@
       "max_age_hours": null,
       "qualified_because": "Sygnatariusz IFCN; ocena wchodzi tylko przez Fact Check API.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -711,6 +752,7 @@
       "max_age_hours": null,
       "qualified_because": "Polski serwis fact-checkingowy, rozważony i odrzucony.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "Brak w IFCN i EFCSN; TVN wymaga umowy licencyjnej (zastrzeżenie z art. 25 ust. 1 pkt 1 lit. b pr. aut.)."
     },
@@ -728,6 +770,7 @@
       "max_age_hours": null,
       "qualified_because": "Punkt odniesienia organizatora (BIP); dokumenty urzędowe MSZ: struktura, akty wewnętrzne, sprawozdania.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -745,6 +788,7 @@
       "max_age_hours": null,
       "qualified_because": "Punkt odniesienia organizatora; briefy i przeglądy dezinformacji w UE oparte na pracy fact-checkerów EDMO.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -762,6 +806,7 @@
       "max_age_hours": null,
       "qualified_because": "Punkt odniesienia organizatora; raporty OSINT o konkretnych operacjach FIMI (np. sieć Pravda, Operation Overload), do dopasowania incydentów.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -779,6 +824,7 @@
       "max_age_hours": null,
       "qualified_because": "Punkt odniesienia organizatora (materiały NASK o dezinformacji); analizy narracji dezinformacyjnych w Polsce.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -796,6 +842,7 @@
       "max_age_hours": null,
       "qualified_because": "Oficjalne stanowiska UE w polityce zagranicznej, w tym o operacjach FIMI; główny partner tematu MSZ.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -813,6 +860,7 @@
       "max_age_hours": null,
       "qualified_because": "Oficjalne komunikaty KE: twierdzenia o decyzjach i przepisach UE.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -830,6 +878,7 @@
       "max_age_hours": null,
       "qualified_because": "Decyzje i komunikaty Rady, m.in. o sankcjach.",
       "tdm_reservation": "unknown",
+      "signatory_of": [],
       "excluded": true,
       "exclusion_reason": "Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex."
     },
@@ -847,6 +896,7 @@
       "max_age_hours": null,
       "qualified_because": "Stanowiska NATO: częsty temat dezinformacji o wojsku i bezpieczeństwie; źródło pierwotne tylko tam.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -864,6 +914,7 @@
       "max_age_hours": null,
       "qualified_because": "Oficjalna statystyka publiczna: twierdzenia liczbowe i rozbieżne dane (scenariusz C).",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -881,6 +932,7 @@
       "max_age_hours": null,
       "qualified_because": "Urzędowe kursy walut i ceny złota: twierdzenia o kursie i inflacji.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -898,6 +950,7 @@
       "max_age_hours": null,
       "qualified_because": "Porównania Polski z UE; drugi niezależny wydawca dla danych GUS (scenariusz C).",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -915,6 +968,7 @@
       "max_age_hours": null,
       "qualified_because": "Wybory są klasycznym celem FIMI; komunikaty i wyniki PKW są źródłem pierwotnym.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -932,6 +986,7 @@
       "max_age_hours": 48,
       "qualified_because": "Status źródła: czy podmiot jest objęty sankcjami UE. Wyłącznie do neutralnego ostrzeżenia, nigdy jako podstawa werdyktu.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -949,6 +1004,7 @@
       "max_age_hours": 48,
       "qualified_because": "Status źródła: krajowa lista sankcyjna. Wyłącznie do neutralnego ostrzeżenia, nigdy jako podstawa werdyktu.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     },
@@ -966,6 +1022,7 @@
       "max_age_hours": 24,
       "qualified_because": "Status URL: domeny wyłudzające z Listy ostrzeżeń CERT. Wyłącznie do ostrzeżenia przy linku (scenariusz I), nie werdykt o treści.",
       "tdm_reservation": "none",
+      "signatory_of": [],
       "excluded": false,
       "exclusion_reason": null
     }

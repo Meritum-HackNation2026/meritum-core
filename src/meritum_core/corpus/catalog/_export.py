@@ -66,9 +66,9 @@ def catalog_markdown(entries: Sequence[CatalogEntry]) -> str:
 
 
 def _yaml_entry(entry: CatalogEntry) -> str:
-    fields = entry.model_dump(mode="json", exclude_none=True)
-    if not entry.excluded:
-        del fields["excluded"]
+    dumped_fields = entry.model_dump(mode="json", exclude_none=True)
+    # the curators' layout leaves out excluded: false and empty lists
+    fields = {k: v for k, v in dumped_fields.items() if v is not False and v != []}
     dumped = yaml.safe_dump([fields], allow_unicode=True, sort_keys=False, width=10_000)
     return str(dumped)  # PyYAML ships no stubs
 
@@ -76,8 +76,8 @@ def _yaml_entry(entry: CatalogEntry) -> str:
 def catalog_yaml(entries: Sequence[CatalogEntry], current: str) -> str:
     """Render the catalogue back to ``catalog.yaml`` in the curators' layout.
 
-    Keeps the leading comment lines of ``current``, omits empty fields and
-    ``excluded: false`` and puts a blank line between entries, so rewriting an
+    Keeps the leading comment lines of ``current``, omits empty fields, empty
+    lists and ``excluded: false`` and puts a blank line between entries, so rewriting an
     unchanged catalogue gives the same bytes.
 
     Args:
