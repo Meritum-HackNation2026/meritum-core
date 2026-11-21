@@ -102,7 +102,7 @@ def test_uri_names_the_blob_for_providers_that_read_from_storage(
     assert run.run(store.uri(ref.blob_id)).endswith(ref.blob_id)
 
 
-def test_naive_expiry_is_rejected_before_anything_is_stored(
+def test_naive_expiry_is_rejected(
     run: asyncio.Runner, store: BlobStore
 ) -> None:
     naive = EXPIRES_AT.replace(tzinfo=None)
