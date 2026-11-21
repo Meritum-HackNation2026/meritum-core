@@ -151,3 +151,33 @@ def then_other_reasons_refuse_a_justification(context: Context) -> None:
     except ValidationError:
         refused = True
     assert refused
+
+
+@given('CheckRequest z kanału web z session_id "{session_id}"')
+def given_web_request_with_session(context: Context, session_id: str) -> None:
+    """A web request that names its own browser session."""
+    context.request = CheckRequest(
+        channel="web", text="Polska przyjęła euro.", session_id=session_id
+    )
+
+
+@when('backend buduje wejście sprawdzania z innym session_id "{session_id}"')
+def when_backend_builds_with_session(context: Context, session_id: str) -> None:
+    """Build the job input with a session id other than the request's."""
+    try:
+        CheckInput(
+            request=context.request,
+            session_id=session_id,
+            received_at=datetime.now(UTC),
+        )
+    except ValidationError as error:
+        context.error = error
+    else:
+        context.error = None
+
+
+@then("walidacja odrzuca wejście")
+def then_input_rejected(context: Context) -> None:
+    """The job contract refused the input for its session id."""
+    assert context.error is not None
+    assert "session id" in str(context.error)

@@ -16,3 +16,8 @@ Feature: Kontrakt zadań
     When kontrakt go waliduje
     Then walidacja przechodzi
     And uzasadnienie przy powodzie innym niż "user_dispute" nadal jest odrzucane
+
+  Scenario: wejście workflowu sprawdzania z cudzym session_id w żądaniu
+    Given CheckRequest z kanału web z session_id "session-1"
+    When backend buduje wejście sprawdzania z innym session_id "session-2"
+    Then walidacja odrzuca wejście

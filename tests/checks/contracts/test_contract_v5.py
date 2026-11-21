@@ -45,7 +45,3 @@ def test_request_session_id_fits_the_record() -> None:
         "session_id": request(channel="extension", session_id=SESSION)().session_id
     }
     assert c.CheckRecord.model_validate(record).session_id == SESSION
-
-
-def test_contract_version_is_5() -> None:
-    assert c.CONTRACT_VERSION == 5

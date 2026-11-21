@@ -26,8 +26,8 @@ def _discord(**identity: str) -> CheckInput:
     return CheckInput(request=request, received_at=NOW, **identity)
 
 
-def test_contract_version_is_3_and_every_workflow_is_listed() -> None:
-    assert CONTRACT_VERSION == 3
+def test_contract_version_is_4_and_every_workflow_is_listed() -> None:
+    assert CONTRACT_VERSION == 4
     assert {s.name for s in WORKFLOWS} == {
         "ping",
         "check",
@@ -170,3 +170,13 @@ def test_readiness_report_lists_what_is_missing() -> None:
         checked_at=NOW,
     )
     assert report.model_dump(mode="json")["missing_env"] == ["MERITUM_LLM_PROVIDER"]
+
+
+def test_check_input_rejects_a_request_session_id_other_than_its_own() -> None:
+    request = CheckRequest(channel="web", text="Tekst testowy.", session_id="session-1")
+    with pytest.raises(ValidationError, match="session id"):
+        CheckInput(request=request, session_id="session-2", received_at=NOW)
+    with pytest.raises(ValidationError, match="session id"):
+        CheckInput(request=request, user_id="user-0001", received_at=NOW)
+    same = CheckInput(request=request, session_id="session-1", received_at=NOW)
+    assert same.request.session_id == same.session_id

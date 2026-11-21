@@ -20,7 +20,9 @@ class CheckInput(JobModel):
     The backend masks personal data in `request` before enqueueing, hashes
     `request.channel_user_id` into `channel_user_hash` and clears it from `request`.
     The channel user id reaches the workflow only in that hashed form: DBOS stores the
-    input, so a request still carrying the raw id is rejected.
+    input, so a request still carrying the raw id is rejected. A request that names a
+    browser session names this input's session: any other request.session_id is
+    rejected, so a check never lands in a session other than the one it came from.
 
     Attributes:
         request: the channel's request with personal data already masked.
@@ -55,6 +57,14 @@ class CheckInput(JobModel):
             raise ValueError(msg)
         if is_sessionless and self.session_id != self.channel_user_hash:
             msg = "on Discord, SMS and MCP the session id is the hashed user id"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _one_session_id(self) -> Self:
+        sent = self.request.session_id
+        if sent is not None and sent != self.session_id:
+            msg = "the request's session id is the job's session id"
             raise ValueError(msg)
         return self
 
