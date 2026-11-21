@@ -4,27 +4,34 @@ Features:
     US-ZRD-07, US-ZRD-08, ADR-02
 """
 
+from __future__ import annotations
+
 from datetime import datetime
 from typing import Annotated, Literal
 
-from pydantic import Field, HttpUrl
+from pydantic import Field, HttpUrl, model_validator
+
+from meritum_core.checks.constants import REQUIRED_MATCH_BASIS
 
 from ._base import _Model
+from ._types import MatchBasis, MatchedOn
 
 
 class IncidentMatch(_Model):
-    """Similarity to a known incident (organiser's database or the local EUvsDisinfo copy). Context only.
+    """Similarity to a known incident (organiser's database, the local EUvsDisinfo copy or a checked fact-check). Context only.
 
     Never a basis for the verdict by itself, and never changes it. An EUvsDisinfo `fact` text is cited as a Citation,
     not carried here.
 
     `domain` is the one explicitly defined warning case: the checked URL is on a domain the incident database lists
-    (for EUvsDisinfo: linksToDisinformation), and the incident's topic matches the claim.
+    (for EUvsDisinfo: linksToDisinformation), and the incident's topic matches the claim. A content match needs a
+    matching title, topic and date; the domain alone never makes one. `match_basis` lists what matched and is shown.
 
     Attributes:
         database: the incident database that matched.
         incident_id: the incident's id in that database.
         matched_on: whether the content or the domain matched.
+        match_basis: what agreed between the claim and the incident.
         title: the incident title.
         date: the incident date.
         url: the incident link.
@@ -34,13 +41,32 @@ class IncidentMatch(_Model):
         US-ZRD-08, ADR-02
     """
 
-    database: Literal["organiser", "euvsdisinfo"] = "organiser"
+    database: Annotated[
+        Literal["organiser", "euvsdisinfo", "fact_check"],
+        Field(
+            description="fact_check: the entry matched an already checked publication."
+        ),
+    ] = "organiser"
     incident_id: Annotated[str, Field(min_length=1, max_length=80)]
-    matched_on: Literal["content", "domain"] = "content"
+    matched_on: MatchedOn = "content"
+    match_basis: Annotated[
+        list[MatchBasis],
+        Field(min_length=1, description="What agreed; shown with the match."),
+    ]
     title: Annotated[str, Field(max_length=200)]
     date: datetime
     url: HttpUrl
     similarity: Annotated[float, Field(ge=0, le=1)]
+
+    @model_validator(mode="after")
+    def _basis_fits_the_match(self) -> IncidentMatch:
+        required = REQUIRED_MATCH_BASIS[self.matched_on]
+        if not required.issubset(self.match_basis):
+            raise ValueError(
+                "a content match needs a matching title, topic and date; a domain"
+                " match needs the domain and the topic"
+            )
+        return self
 
 
 class ClaimReviewContext(_Model):

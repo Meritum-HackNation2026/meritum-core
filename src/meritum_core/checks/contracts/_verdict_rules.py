@@ -1,7 +1,7 @@
 """The MSZ rules a ClaimResult must satisfy, one small check per rule.
 
 Features:
-    US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02
+    US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02, ADR-34
 """
 
 from __future__ import annotations
@@ -14,8 +14,8 @@ from ._strength import is_stale
 
 if TYPE_CHECKING:
     from ._claims import ClaimResult
-    from ._sources import Citation
-    from ._types import Stance
+    from ._sources import Citation, ClaimReviewPremise
+    from ._types import PublisherId, Stance
 
 
 def check_verdict_rules(claim: ClaimResult) -> None:
@@ -28,16 +28,16 @@ def check_verdict_rules(claim: ClaimResult) -> None:
         ValueError: the claim breaks a rule; the message names it.
 
     Features:
-        US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02
+        US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, ADR-02, ADR-34
     """
     current = [c for c in claim.citations if c.validity != "superseded"]
     _superseded_next_to_newer(claim.citations, current)
-    stances = {c.stance for c in current}
+    reviews = claim.claim_review_premises
+    stances = {c.stance for c in current} | {r.stance for r in reviews}
     conflicting = {"supports", "refutes"} <= stances
     _conflict_rules(claim, conflicting=conflicting)
-    if (claim.claim_date is None) != (claim.claim_date_source is None):
-        raise ValueError("a claim date comes with where it was taken from")
     _settling_rules(claim, stances)
+    # ClaimReview-only premises have no citation validity, so they stay "expires".
     _premises_rules(claim, current, conflicting=conflicting)
     if claim.verdict == "insufficient_evidence" and (
         claim.unresolved is None or not claim.unresolved
@@ -63,6 +63,10 @@ def _superseded_next_to_newer(
             )
 
 
+def _has_evidence(claim: ClaimResult) -> bool:
+    return bool(claim.citations or claim.claim_review_premises)
+
+
 def _conflict_rules(claim: ClaimResult, *, conflicting: bool) -> None:
     insufficient = claim.verdict == "insufficient_evidence"
     if conflicting and (not insufficient or claim.strength is not None):
@@ -70,10 +74,10 @@ def _conflict_rules(claim: ClaimResult, *, conflicting: bool) -> None:
             "conflicting sources give 'insufficient_evidence' with both sides cited "
             "and no strength"
         )
-    if insufficient and claim.citations and not conflicting:
+    if insufficient and _has_evidence(claim) and not conflicting:
         raise ValueError(
-            "'insufficient_evidence' carries citations only when credible sources "
-            "conflict"
+            "'insufficient_evidence' carries citations or ratings only when "
+            "credible sources conflict"
         )
 
 
@@ -85,8 +89,11 @@ def _settling_rules(claim: ClaimResult, stances: set[Stance]) -> None:
         )
     if not settling:
         return
-    if not claim.citations or claim.strength is None:
-        raise ValueError(f"verdict {claim.verdict!r} needs citations and premises")
+    if not _has_evidence(claim) or claim.strength is None:
+        raise ValueError(
+            f"verdict {claim.verdict!r} needs citations or fact-checkers' ratings,"
+            " and premises"
+        )
     if claim.verdict == "confirmed" and "supports" not in stances:
         raise ValueError("'confirmed' needs a supporting citation")
     if claim.verdict == "false" and "refutes" not in stances:
@@ -104,18 +111,27 @@ def _premises_rules(
     if claim.strength is None or claim.verdict not in SETTLING:
         return
     p = claim.strength.premises
-    agreeing = [c for c in current if c.stance == AGREEING_STANCE[claim.verdict]]
-    publishers = {c.source.publisher_id for c in agreeing}
+    stance = AGREEING_STANCE[claim.verdict]
+    agreeing = [c for c in current if c.stance == stance]
+    reviews = _agreeing_reviews(claim.claim_review_premises, stance)
+    publishers = {c.source.publisher_id for c in agreeing} | reviews
     primary = {c.source.publisher_id for c in agreeing if c.source.tier == "primary"}
     if p.agreement != ("conflicting" if conflicting else "consistent"):
         raise ValueError("agreement must follow from the citation stances")
     if (p.independent_sources, p.primary_sources) != (len(publishers), len(primary)):
         raise ValueError(
             "independent and primary sources are counted per publisher among the "
-            "citations that agree with the verdict"
+            "citations and fact-checkers' ratings that agree with the verdict"
         )
     if p.validity != "expires" and p.validity not in {c.validity for c in agreeing}:
         raise ValueError("the premises' validity must come from an agreeing citation")
+
+
+def _agreeing_reviews(
+    reviews: list[ClaimReviewPremise], stance: Stance
+) -> set[PublisherId]:
+    # A fact-checker's rating counts as one secondary-tier publisher (ADR-34).
+    return {r.publisher_id for r in reviews if r.stance == stance}
 
 
 def _age_rules(claim: ClaimResult) -> None:

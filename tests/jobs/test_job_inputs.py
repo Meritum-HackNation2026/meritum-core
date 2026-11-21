@@ -26,8 +26,8 @@ def _discord(**identity: str) -> CheckInput:
     return CheckInput(request=request, received_at=NOW, **identity)
 
 
-def test_contract_version_is_2_and_every_workflow_is_listed() -> None:
-    assert CONTRACT_VERSION == 2
+def test_contract_version_is_3_and_every_workflow_is_listed() -> None:
+    assert CONTRACT_VERSION == 3
     assert {s.name for s in WORKFLOWS} == {
         "ping",
         "check",
@@ -61,6 +61,16 @@ def test_check_input_rejects_a_raw_channel_user_id() -> None:
         _discord(session_id=raw, channel_user_hash=HASH)
     with pytest.raises(ValidationError):
         _discord(session_id=HASH, channel_user_hash=HASH, user_id=raw)
+
+
+def test_check_input_rejects_a_request_still_carrying_the_raw_id() -> None:
+    request = CheckRequest(
+        channel="sms", text="Polska przyjęła euro.", channel_user_id="+48500000000"
+    )
+    with pytest.raises(ValidationError, match="raw channel user id"):
+        CheckInput(
+            request=request, session_id=HASH, channel_user_hash=HASH, received_at=NOW
+        )
 
 
 def test_check_input_rejects_an_unknown_field_for_the_raw_id() -> None:

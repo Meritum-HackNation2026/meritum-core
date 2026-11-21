@@ -126,6 +126,7 @@ MUST_ACCEPT: dict[str, Callable[[], object]] = {
             "database": "euvsdisinfo",
             "incident_id": "eu-1",
             "matched_on": "domain",
+            "match_basis": ["domain", "topic"],
             "title": "Przypadek testowy",
             "date": "2025-01-01T00:00:00+01:00",
             "url": "https://euvsdisinfo.eu/report/test/",

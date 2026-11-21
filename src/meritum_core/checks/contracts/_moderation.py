@@ -47,7 +47,8 @@ class ModeratorCase(_Model):
         assignee_role: the staff role the case is assigned to.
 
     Features:
-        US-MOD-01, US-MOD-02, US-MOD-05, US-MOD-06, US-MOD-07, US-OBS-03, ADR-02
+        US-MOD-01, US-MOD-02, US-MOD-05, US-MOD-06, US-MOD-07, US-OBS-03, ADR-02,
+        ADR-35
     """
 
     id: Annotated[str, Field(pattern=r"^#S-\d+$")]
@@ -61,9 +62,9 @@ class ModeratorCase(_Model):
         ),
     ] = None
     high_risk_classified_by: Annotated[
-        Literal["model", "keywords"] | None,
+        Literal["embeddings", "keywords"] | None,
         Field(
-            description="Model classification against the admin list, or the keyword list as a fallback."
+            description="Embedding similarity to the admin list above a threshold, or the keyword list as a fallback (ADR-35)."
         ),
     ] = None
     summary: Annotated[str, Field(min_length=5, max_length=300)]

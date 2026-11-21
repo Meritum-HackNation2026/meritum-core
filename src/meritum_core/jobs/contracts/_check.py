@@ -17,8 +17,10 @@ from meritum_core.jobs.contracts._base import Identifier, JobModel
 class CheckInput(JobModel):
     """Input of the `check` workflow, built by the backend from a channel request.
 
-    The backend masks personal data in `request` before enqueueing and hashes the
-    channel user id; the worker never sees the raw id.
+    The backend masks personal data in `request` before enqueueing, hashes
+    `request.channel_user_id` into `channel_user_hash` and clears it from `request`.
+    The channel user id reaches the workflow only in that hashed form: DBOS stores the
+    input, so a request still carrying the raw id is rejected.
 
     Attributes:
         request: the channel's request with personal data already masked.
@@ -30,7 +32,7 @@ class CheckInput(JobModel):
         received_at: when the backend received the request.
 
     Features:
-        US-SPR-01, US-SPR-02, US-BEZ-05, F-09, ADR-03
+        US-SPR-01, US-SPR-02, US-BEZ-05, US-BEZ-06, F-09, ADR-03
     """
 
     request: CheckRequest
@@ -53,6 +55,13 @@ class CheckInput(JobModel):
             raise ValueError(msg)
         if is_sessionless and self.session_id != self.channel_user_hash:
             msg = "on Discord, SMS and MCP the session id is the hashed user id"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _no_raw_channel_user_id(self) -> Self:
+        if self.request.channel_user_id is not None:
+            msg = "the raw channel user id never enters a job; send channel_user_hash"
             raise ValueError(msg)
         return self
 

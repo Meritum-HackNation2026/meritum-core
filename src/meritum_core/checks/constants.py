@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from meritum_core.checks.contracts import (
         Channel,
+        MatchBasis,
+        MatchedOn,
         NotificationKind,
         Stance,
         Validity,
@@ -69,7 +71,7 @@ URL_TRAILING_PUNCTUATION: Final = ".,;:!?)\"'"
 URL_SCHEMES: Final = frozenset({"http", "https"})
 """Schemes a post URL may have; anything else is dropped from the context."""
 
-CONTRACT_VERSION: Final = 3
+CONTRACT_VERSION: Final = 4
 """Version of the check contracts (CheckRequest, CheckResult, ...).
 
 Independent of the job contract version in meritum_core.jobs.contracts. Raise it on
@@ -122,3 +124,9 @@ CASE_KINDS: Final[frozenset[NotificationKind]] = frozenset(
     }
 )
 """Notification kinds that name the moderator case they are about."""
+
+REQUIRED_MATCH_BASIS: Final[dict[MatchedOn, frozenset[MatchBasis]]] = {
+    "content": frozenset({"title", "topic", "date"}),
+    "domain": frozenset({"domain", "topic"}),
+}
+"""What an incident match must agree on; a domain alone never makes a content match."""
