@@ -9,7 +9,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania i czyta ich strumienie (`stream`) i zdarzenia (`event`) |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
 | `meritum_core.jobs.fakes` | `InMemoryJobQueue`: port w pamięci do testów backendu i workera (nagrywa zlecone zadania, odtwarza strumienie i zdarzenia) |
-| `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci, adaptery systemu plików i prywatnego bucketu GCS oraz fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (zob. [Magazyn plików](#magazyn-plików)); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
+| `meritum_core.shared.blobs` | port `BlobStore` na pliki audio i obrazy wspólne dla backendu i workera (ADR-31), `BlobRef`, `BlobNotFoundError`, fake w pamięci, adaptery systemu plików, prywatnego bucketu GCS i dowolnego magazynu zgodnego z S3 oraz fabryka `build_blob_store` według `MERITUM_BLOB_PROVIDER` (zob. [Magazyn plików](#magazyn-plików)); test kontraktowy w `tests/shared/blobs/`, który przechodzi każdy adapter |
 | `meritum_core.shared.llm` | port `LlmPort` (strukturalna odpowiedź jako model Pydantic plus zużycie tokenów i koszt, instrukcje osobno od danych), adaptery OpenRouter, Vertex AI i stub, poziom rozumowania z konfiguracji, fabryka `build_llm(LlmSettings())`, błąd `ProviderUnavailableError` |
 | `meritum_core.corpus` | port `CorpusSearchPort` (wyszukiwanie hybrydowe w przypiętej migawce `corpus_version`), `Passage`, reguła `fuse_rankings` (RRF ważone świeżością), adaptery PostgreSQL i w pamięci, fabryka `build_corpus_search`, migracje schematu `corpus` |
 | `meritum_core.shared.embeddings` | port `EmbeddingsPort`, adaptery Vertex AI i stub, fabryka `build_embeddings(EmbeddingsSettings())` |
@@ -51,13 +51,18 @@ Backend i worker budują `BlobStore` przez `build_blob_store(BlobSettings())`, a
 
 | Zmienna | Kiedy | Znaczenie |
 | --- | --- | --- |
-| `MERITUM_BLOB_PROVIDER` | zawsze | `memory` (testy), `filesystem` (lokalnie i serwer zespołu), `gcs` (chmura) |
+| `MERITUM_BLOB_PROVIDER` | zawsze | `memory` (testy), `filesystem` (lokalnie i serwer zespołu), `gcs` (chmura GCP), `s3` (dowolny magazyn zgodny z S3: MinIO, Cloudflare R2, usługa dostawcy z UE) |
 | `MERITUM_BLOB_DIRECTORY` | `filesystem` | katalog na wolumenie wspólnym dla backendu i workera; tworzony, jeśli go nie ma |
-| `MERITUM_BLOB_BUCKET` | `gcs` | nazwa prywatnego bucketu Cloud Storage |
+| `MERITUM_BLOB_BUCKET` | `gcs`, `s3` | nazwa prywatnego bucketu |
+| `MERITUM_BLOB_ENDPOINT_URL` | `s3` | adres usługi, np. `http://minio:9000`; bez niego adapter łączy się z AWS S3 |
+| `MERITUM_BLOB_REGION` | `s3` | region bucketu; dla Cloudflare R2 `auto` |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | `s3` | klucze dostępu, tylko ze zmiennych środowiska (standardowe zmienne boto3) |
 
 Bucket leży w regionie `europe-central2`, nie ma publicznego dostępu, a reguła cyklu życia usuwa obiekty po 30 dniach (zakłada go meritum-infra). Adapter GCS loguje się przez Application Default Credentials i nie wydaje publicznych ani podpisanych adresów, tylko bajty albo adres `gs://` dla Speech-to-Text w trybie batch. Adapter systemu plików nazywa pliki wyłącznie identyfikatorem bloba i nie wychodzi poza katalog.
 
-Test kontraktowy uruchamia adapter GCS na emulatorze w procesie (`gcp-storage-emulator` na localhost), bez sieci. Zapis do prawdziwego bucketu sprawdza się tylko lokalnie: `MERITUM_BLOB_BUCKET=<bucket> uv run pytest -m integration`.
+Samodzielne hostowanie bez GCP: ustaw `MERITUM_BLOB_PROVIDER=s3`, endpoint, bucket (prywatny, z regułą wygasania obiektów po 30 dniach) i klucze; adapter używa adresowania ścieżkowego, więc działa z MinIO bez dodatkowych ustawień. Adres z `uri()` ma postać `s3://bucket/id`; Speech-to-Text batch czyta tylko `gs://`, więc transkrypcja z tym adapterem idzie ścieżką bajtów.
+
+Test kontraktowy uruchamia adapter GCS na emulatorze w procesie (`gcp-storage-emulator` na localhost), a adapter S3 na serwerze `moto` w procesie, bez sieci. Zapis do prawdziwego bucketu sprawdza się tylko lokalnie: `MERITUM_BLOB_BUCKET=<bucket> uv run pytest -m integration`.
 
 ## Kontrakty dla TypeScriptu i design systemu
 

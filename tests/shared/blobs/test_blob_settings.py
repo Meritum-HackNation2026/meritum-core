@@ -38,3 +38,10 @@ def test_provider_without_its_location_fails_loudly(
     monkeypatch.delenv(variable, raising=False)
     with pytest.raises(BlobError, match=variable):
         build_blob_store(BlobSettings())
+
+
+def test_s3_without_a_bucket_fails_loudly(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("MERITUM_BLOB_PROVIDER", "s3")
+    monkeypatch.delenv("MERITUM_BLOB_BUCKET", raising=False)
+    with pytest.raises(BlobError, match="MERITUM_BLOB_BUCKET"):
+        build_blob_store(BlobSettings())
