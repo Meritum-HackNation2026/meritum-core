@@ -10,6 +10,7 @@ from pydantic import Field
 
 from ._base import _Model
 from ._results import CheckResult
+from ._types import AnalysisStepCode
 
 
 class AnalysisStep(_Model):
@@ -23,20 +24,7 @@ class AnalysisStep(_Model):
         US-SPR-02, US-SPR-11, ADR-02
     """
 
-    code: Literal[
-        "receive",
-        "fetch_url",
-        "transcribe_audio",
-        "screen_injection",
-        "extract_claims",
-        "search_corpus",
-        "search_web",
-        "search_fact_checks",
-        "assess_evidence",
-        "verify_citations",
-        "write_answer",
-        "save_record",
-    ]
+    code: AnalysisStepCode
     status: Literal["pending", "active", "done", "skipped", "failed"]
 
 

@@ -70,7 +70,3 @@ def test_schema_describes_the_code() -> None:
     for model in (c.CheckResult, c.CachedResult):
         prop = model.model_json_schema()["properties"]["out_of_scope_code"]
         assert "out_of_scope only" in prop["description"]
-
-
-def test_contract_version_is_8() -> None:
-    assert c.CONTRACT_VERSION == 8

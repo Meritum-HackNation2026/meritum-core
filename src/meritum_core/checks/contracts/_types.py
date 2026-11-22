@@ -74,6 +74,26 @@ NotificationKind = Literal[
     "case_assigned",  # staff: a case was created or updated for the moderator
     "system",
 ]
+# A step of the check pipeline, shown in the processing strip and named by a
+# check_progress notification; the text is analysis.steps.<code> in copy/pl.json.
+AnalysisStepCode = Literal[
+    "receive",
+    "fetch_url",
+    "transcribe_audio",
+    "screen_injection",
+    "extract_claims",
+    "search_corpus",
+    "search_web",
+    "search_fact_checks",
+    "assess_evidence",
+    "verify_citations",
+    "write_answer",
+    "save_record",
+]
+# What a system notification says; text from copy/pl.json, never free (ADR-29).
+SystemMessageCode = Literal[
+    "maintenance_planned", "service_degraded", "service_restored"
+]
 
 # Why a check ended in technical_failure; never names a key or a provider.
 FailureCode = Literal[
