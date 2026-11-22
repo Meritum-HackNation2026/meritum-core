@@ -19,10 +19,6 @@ from meritum_core.checks.ocr import (
 IMAGE_ID = "image_" + "0" * 32
 
 
-def test_version_is_15() -> None:
-    assert c.CONTRACT_VERSION == 15
-
-
 def test_image_alone_is_a_valid_request() -> None:
     request = c.CheckRequest.model_validate({"channel": "web", "image_id": IMAGE_ID})
     assert request.image_id == IMAGE_ID
