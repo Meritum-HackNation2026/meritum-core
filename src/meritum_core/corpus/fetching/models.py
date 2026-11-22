@@ -55,7 +55,7 @@ class FetchFailureReason(StrEnum):
     PAYWALL = "paywall"
     """The page needs a payment; the citizen should paste the text."""
     JAVASCRIPT_REQUIRED = "javascript_required"
-    """No main text without running JavaScript; the core/025 adapter renders it."""
+    """No main text without running JavaScript; Crawl4AI renders it when configured."""
     ROBOTS_DISALLOWED = "robots_disallowed"
     """robots.txt or its Content-Signal forbids fetching the source."""
 

@@ -1,0 +1,14 @@
+{
+  "success": true,
+  "results": [
+    {
+      "url": "https://example.org/app",
+      "html": "",
+      "success": false,
+      "status_code": null,
+      "redirected_url": null,
+      "error_message": "net::ERR_NAME_NOT_RESOLVED",
+      "response_headers": {}
+    }
+  ]
+}
