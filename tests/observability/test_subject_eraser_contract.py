@@ -5,8 +5,10 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from meritum_core.checks.constants import CHECK_KINDS
 from meritum_core.checks.contracts import CheckRecord, ModeratorCase, Notification
 from meritum_core.observability import AppRepositories
+from meritum_core.observability.constants import ERASED_KINDS
 
 EXAMPLES = json.loads(
     (Path(__file__).parents[2] / "contracts" / "examples.json").read_text("utf-8")
@@ -101,3 +103,33 @@ def test_a_case_saved_from_before_the_erase_stays_without_erased_checks(
     stored = run.run(app.cases.get("#S-1"))
     assert stored is not None
     assert stored.check_ids == ["c_keep"]
+
+
+def to_user(note_id: str, kind: str, **fields: object) -> Notification:
+    recipient = {"session_id": None, "user_id": USER, "check_id": None, "kind": kind}
+    return note(note_id, **(recipient | fields))
+
+
+def test_erasing_a_user_keeps_their_case_system_and_eval_notifications(
+    run: asyncio.Runner, app: AppRepositories
+) -> None:
+    seed(run, app)
+    notes = [
+        to_user("n_case", "case_assigned", case_id="#S-1"),
+        to_user("n_sys", "system", message_code="service_restored"),
+        to_user("n_eval", "eval_run_done"),
+        to_user("n_answer", "moderator_answer", case_id="#S-2"),
+        to_user("n_step", "check_progress", check_id="c_x", step_code="receive"),
+        to_user("n_new", "new_evidence", check_id="c_y"),
+    ]
+    for item in notes:
+        run.run(app.notifications.save(item))
+    # c_u and n_u from the seed, then the answer, step and evidence notifications
+    assert run.run(app.eraser.erase("user_id", USER)) == 5
+    left = run.run(app.notifications.list_for("user_id", USER))
+    assert sorted(n.id for n in left) == ["n_case", "n_eval", "n_sys"]
+
+
+def test_every_kind_that_names_a_check_is_erased() -> None:
+    assert CHECK_KINDS <= ERASED_KINDS
+    assert not ERASED_KINDS & {"case_assigned", "system", "eval_run_done"}

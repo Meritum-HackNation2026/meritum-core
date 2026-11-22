@@ -4,11 +4,11 @@ Features:
     US-POW-01, US-BEZ-05, F-22, ADR-13
 """
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from datetime import datetime
 from typing import Literal, Protocol
 
-from meritum_core.checks.contracts import Notification
+from meritum_core.checks.contracts import Notification, NotificationKind
 
 type RecipientKind = Literal["session_id", "user_id"]
 """The Notification field that names its recipient.
@@ -56,12 +56,18 @@ class NotificationRepository(Protocol):
         """
         ...
 
-    async def delete_for(self, kind: RecipientKind, value: str) -> int:
-        """Delete every notification of one recipient (US-BEZ-05).
+    async def delete_for(
+        self,
+        kind: RecipientKind,
+        value: str,
+        kinds: Collection[NotificationKind] | None = None,
+    ) -> int:
+        """Delete one recipient's notifications, all or only some kinds (US-BEZ-05).
 
         Args:
             kind: whether the recipient is a session or an account.
             value: the session id or user id.
+            kinds: only these notification kinds; every kind when None.
 
         Returns:
             How many notifications were deleted.

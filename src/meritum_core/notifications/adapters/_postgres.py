@@ -4,7 +4,7 @@ Features:
     US-POW-01, US-BEZ-05, F-22, ADR-13
 """
 
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from datetime import datetime
 from itertools import starmap
 from typing import Final
@@ -12,7 +12,7 @@ from typing import Final
 from psycopg import AsyncConnection, sql
 from psycopg.types.json import Jsonb
 
-from meritum_core.checks.contracts import Notification
+from meritum_core.checks.contracts import Notification, NotificationKind
 from meritum_core.notifications.ports import RecipientKind
 
 _COLUMN: Final[dict[RecipientKind, sql.Identifier]] = {
@@ -23,7 +23,10 @@ _COLUMN: Final[dict[RecipientKind, sql.Identifier]] = {
 
 
 async def delete_recipient_notifications(
-    conn: AsyncConnection, kind: RecipientKind, value: str
+    conn: AsyncConnection,
+    kind: RecipientKind,
+    value: str,
+    kinds: Collection[NotificationKind] | None = None,
 ) -> int:
     """Delete one recipient's notifications inside the caller's transaction.
 
@@ -31,6 +34,7 @@ async def delete_recipient_notifications(
         conn: the connection; the caller owns the transaction.
         kind: whether the recipient is a session or an account.
         value: the session id or user id.
+        kinds: only these notification kinds; every kind when None.
 
     Returns:
         How many were deleted.
@@ -39,7 +43,11 @@ async def delete_recipient_notifications(
         US-POW-01, US-BEZ-05, F-22
     """
     query = sql.SQL("DELETE FROM notifications WHERE {} = %s").format(_COLUMN[kind])
-    cursor = await conn.execute(query, (value,))
+    if kinds is None:
+        cursor = await conn.execute(query, (value,))
+    else:
+        query += sql.SQL(" AND body ->> 'kind' = ANY(%s)")
+        cursor = await conn.execute(query, (value, sorted(kinds)))
     return cursor.rowcount
 
 
@@ -131,18 +139,24 @@ class PostgresNotificationRepository:
                 (Jsonb({"status": "read"}), notification_id),
             )
 
-    async def delete_for(self, kind: RecipientKind, value: str) -> int:
-        """Delete one recipient's notifications.
+    async def delete_for(
+        self,
+        kind: RecipientKind,
+        value: str,
+        kinds: Collection[NotificationKind] | None = None,
+    ) -> int:
+        """Delete one recipient's notifications, all or only some kinds.
 
         Args:
             kind: whether the recipient is a session or an account.
             value: its id.
+            kinds: only these notification kinds; every kind when None.
 
         Returns:
             How many were deleted.
         """
         async with await self._connect() as conn:
-            return await delete_recipient_notifications(conn, kind, value)
+            return await delete_recipient_notifications(conn, kind, value, kinds)
 
     async def delete_for_checks(self, check_ids: Sequence[str]) -> int:
         """Delete notifications about the given checks.

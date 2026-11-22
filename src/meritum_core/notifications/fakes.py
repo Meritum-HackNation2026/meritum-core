@@ -4,10 +4,10 @@ Features:
     US-POW-01, US-BEZ-05, F-22
 """
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from datetime import datetime
 
-from meritum_core.checks.contracts import Notification
+from meritum_core.checks.contracts import Notification, NotificationKind
 from meritum_core.notifications.ports import RecipientKind
 
 
@@ -52,17 +52,25 @@ class InMemoryNotificationRepository:
         if note is not None:
             self._notes[note.id] = note.model_copy(update={"status": "read"})
 
-    async def delete_for(self, kind: RecipientKind, value: str) -> int:
-        """Delete one recipient's notifications.
+    async def delete_for(
+        self,
+        kind: RecipientKind,
+        value: str,
+        kinds: Collection[NotificationKind] | None = None,
+    ) -> int:
+        """Delete one recipient's notifications, all or only some kinds.
 
         Args:
             kind: whether the recipient is a session or an account.
             value: its id.
+            kinds: only these notification kinds; every kind when None.
 
         Returns:
             How many were deleted.
         """
-        return self._delete_where(lambda n: getattr(n, kind) == value)
+        return self._delete_where(
+            lambda n: getattr(n, kind) == value and (kinds is None or n.kind in kinds)
+        )
 
     async def delete_for_checks(self, check_ids: Sequence[str]) -> int:
         """Delete notifications about the given checks.
