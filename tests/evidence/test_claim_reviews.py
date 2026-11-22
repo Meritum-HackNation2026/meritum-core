@@ -68,6 +68,16 @@ def test_rating_with_its_explanation_becomes_a_premise_with_the_whole_rating() -
         ),
         ("demagog", "Prawda! Dane GUS to potwierdzają.", "supports"),
         ("demagog", "Brakujący kontekst.", "context"),
+        # Labels of matched ratings that make a claim misleading (worker#280).
+        ("demagog", "Częściowy fałsz", "context"),
+        ("demagog", "Nieprawda", "refutes"),
+        ("afp", "Częściowo fałsz", "context"),
+        ("afp", "Partly false", "context"),
+        ("afp", "Missing context", "context"),
+        ("afp", "Wprowadzające w błąd", "context"),
+        ("fakenews-pl", "Manipulacja", "context"),
+        ("fakenews-pl", "Fake news", "refutes"),
+        ("konkret24", "Wprowadza w błąd", "context"),
         ("demagog", "Fałszywy alarm w tytule", "context"),
     ],
 )
@@ -93,6 +103,34 @@ def test_rating_outside_the_table_stays_context_with_its_link() -> None:
 def test_context_rating_keeps_its_exact_wording() -> None:
     rated = rate_review(found("Częściowa prawda"), cache_control="max-age=60")
     assert rated.evidence.rating == "Częściowa prawda"
+
+
+@pytest.mark.parametrize(
+    ("publisher_id", "rating"),
+    [
+        ("demagog", "Częściowa prawda"),
+        ("demagog", "Manipulacja"),
+        ("afp", "Brak kontekstu"),
+        ("fakenews-pl", "Częściowy fałsz"),
+    ],
+)
+def test_partial_rating_in_the_table_is_a_context_premise(
+    publisher_id: str, rating: str
+) -> None:
+    rated = rate_review(found(rating, publisher_id), cache_control="max-age=60")
+    assert isinstance(rated.evidence, ClaimReviewPremise)
+    assert rated.evidence.stance == "context"
+    assert rated.evidence.rating == rating
+
+
+def test_partial_rating_alone_gives_misleading_its_strength() -> None:
+    premise = rate_review(found("Częściowa prawda"), cache_control="max-age=60")
+    assert isinstance(premise.evidence, ClaimReviewPremise)
+    strength = compute_strength(
+        "misleading", [], claim_date=CLAIM_DATE, reviews=[premise.evidence]
+    )
+    assert strength is not None
+    assert strength.premises.signatory_reviews == 1
 
 
 def test_rating_of_a_non_signatory_is_never_a_premise() -> None:

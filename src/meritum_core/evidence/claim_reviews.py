@@ -1,7 +1,7 @@
 """Fact-checkers' ClaimReview ratings turned into a premise of the verdict or context.
 
 The rating table in ``constants`` gives a normalized rating its stance per publisher;
-a decisive rating of an IFCN or EFCSN signatory becomes a premise that the strength rule
+a listed rating of an IFCN or EFCSN signatory becomes a premise that the strength rule
 counts as one secondary publisher, anything else stays context with a link. The rating
 is never paraphrased, and it is kept no longer than the API's cache headers allow.
 
@@ -62,12 +62,7 @@ def rating_stance(publisher_id: str, rating: str) -> Stance:
     Features:
         US-KOR-01, F-14, ADR-34
     """
-    table = CLAIM_REVIEW_STANCES.get(publisher_id)
-    if table is None:
-        return "context"
-    verdict = RATING_SENTENCE_END.split(rating, maxsplit=1)[0]
-    stance = table.get(normalize_rating(rating)) or table.get(normalize_rating(verdict))
-    return stance or "context"
+    return _listed_stance(publisher_id, rating) or "context"
 
 
 def rate_review(found: FoundClaimReview, *, cache_control: str | None) -> RatedReview:
@@ -78,14 +73,15 @@ def rate_review(found: FoundClaimReview, *, cache_control: str | None) -> RatedR
         cache_control: The API response's Cache-Control header, when sent.
 
     Returns:
-        A premise for a decisive rating of a signatory, otherwise context with a link;
+        A premise for a listed rating of a signatory (a ``context`` one backs
+        ``misleading``), otherwise context with a link;
         either way with the rating verbatim and the end of its retention.
 
     Features:
         US-KOR-01, US-ZRD-03, F-14, F-15, ADR-24, ADR-34
     """
-    stance = rating_stance(found.publisher_id, found.rating)
-    is_premise = stance != "context" and bool(found.signatory_of)
+    stance = _listed_stance(found.publisher_id, found.rating)
+    is_premise = stance is not None and bool(found.signatory_of)
     evidence = (
         ClaimReviewPremise.model_validate(found.model_dump() | {"stance": stance})
         if is_premise
@@ -100,6 +96,14 @@ def rate_review(found: FoundClaimReview, *, cache_control: str | None) -> RatedR
         evidence=evidence,
         keep_until=found.fetched_at + _retention(cache_control),
     )
+
+
+def _listed_stance(publisher_id: str, rating: str) -> Stance | None:
+    table = CLAIM_REVIEW_STANCES.get(publisher_id)
+    if table is None:
+        return None
+    verdict = RATING_SENTENCE_END.split(rating, maxsplit=1)[0]
+    return table.get(normalize_rating(rating)) or table.get(normalize_rating(verdict))
 
 
 def _retention(cache_control: str | None) -> timedelta:
