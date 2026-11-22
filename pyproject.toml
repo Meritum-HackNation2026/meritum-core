@@ -148,6 +148,7 @@ max-lines = 250
 [tool.meritum-conventions.constants-exceptions]
 "src/meritum_core/jobs/contracts/_workflows.py" = "the workflow specs and WORKFLOWS are built from the contract models; a constants.py would import them back (cycle)"
 "src/meritum_core/corpus/adapters/_postgres.py" = "SQL text of the PostgreSQL adapter stays next to the code that runs it; the tunable weights are in corpus/constants.py"
+"src/meritum_core/corpus/adapters/_legal_meta.py" = "SQL text of the PostgreSQL adapter stays next to the code that runs it"
 "src/meritum_core/checks/adapters/_postgres.py" = "the kind-to-column map is SQL of the PostgreSQL adapter and stays next to the queries that use it"
 "src/meritum_core/notifications/adapters/_postgres.py" = "the kind-to-column map is SQL of the PostgreSQL adapter and stays next to the queries that use it"
 

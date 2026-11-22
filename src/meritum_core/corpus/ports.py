@@ -4,11 +4,12 @@ Features:
     US-KOR-02, US-ZRD-05, F-12, ADR-19, ADR-32
 """
 
+from collections.abc import Sequence
 from datetime import date
 from typing import Protocol, runtime_checkable
 
 from meritum_core.corpus.constants import DEFAULT_LIMIT
-from meritum_core.corpus.models import Passage
+from meritum_core.corpus.models import LegalActMeta, Passage
 
 
 @runtime_checkable
@@ -45,5 +46,44 @@ class CorpusSearchPort(Protocol):
             UnknownCorpusVersionError: No snapshot has this version.
             CorpusUnavailableError: The corpus store failed.
             EmbeddingsUnavailableError: The query could not be embedded.
+        """
+        ...
+
+
+@runtime_checkable
+class LegalActMetaPort(Protocol):
+    """Legal act metadata of corpus documents, one record per ``source_id``.
+
+    Internal to the corpus: the worker's ingestion writes it, ``corpus_ready``
+    and the evidence steps read it. Not part of the checks contract.
+
+    Features:
+        US-KOR-02, US-ZRD-05, F-12
+    """
+
+    async def save(self, source_id: str, meta: LegalActMeta) -> None:
+        """Store the act's metadata, replacing what the document had.
+
+        Args:
+            source_id: The ``corpus.documents`` row the act was ingested as.
+            meta: What ELI says about the act.
+
+        Raises:
+            CorpusUnavailableError: The corpus store failed, or no document
+                has this ``source_id``.
+        """
+        ...
+
+    async def read(self, source_ids: Sequence[str]) -> dict[str, LegalActMeta]:
+        """Return the metadata of those documents that are legal acts.
+
+        Args:
+            source_ids: Documents to look up.
+
+        Returns:
+            Metadata per ``source_id``; a document outside ELI is missing.
+
+        Raises:
+            CorpusUnavailableError: The corpus store failed.
         """
         ...

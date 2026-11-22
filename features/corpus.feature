@@ -69,3 +69,9 @@ Feature: Wyszukiwanie w korpusie
     Given migracja corpus 0007_documents_via.sql
     When sprawdzam kolumnę via w corpus.documents
     Then dopuszcza dokładnie wartości SourceVia, w tym "rss", a dokumenty sprzed migracji mają via = "corpus"
+
+  Scenario: dokument aktu prawnego ma metadane aktu w korpusie
+    Given akt DU/2024/1362 z ELI z in_force_until 2025-12-31
+    When ingest zapisuje dokument w corpus.documents
+    Then wiersz dokumentu ma eli "DU/2024/1362", document_type "Rozporządzenie" i in_force_until 2025-12-31
+    And dokument strony spoza ELI ma te pola puste

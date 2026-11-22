@@ -5,7 +5,7 @@ Run: ``uv run vulture`` (paths come from ``[tool.vulture]`` in pyproject.toml).
 
 from meritum_core.checks import constants
 from meritum_core.checks.ocr import ImageInfo, ImageOccurrence
-from meritum_core.corpus import CorpusSettings, Passage
+from meritum_core.corpus import CorpusSettings, LegalActMeta, Passage
 from meritum_core.corpus.constants import FULL_TEXT_RETENTION_DAYS
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
@@ -83,3 +83,10 @@ ArchivePageOutput.archive_id  # read by the backend (core#144)
 ArchivePageOutput.owner_id  # read by the backend access check
 ArchivePageOutput.archived_at  # shown in the archive view
 ArchivePageOutput.refusal  # shown in the archive view
+LegalActMeta.legal_status  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.in_force  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.in_force_from  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.journal_publisher  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.journal_year  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.journal_position  # read by the worker's corpus_ready and evidence steps
+LegalActMeta.display_address  # read by the worker's corpus_ready and evidence steps
