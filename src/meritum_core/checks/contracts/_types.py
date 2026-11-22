@@ -20,7 +20,12 @@ CheckStatus = Literal[
 ]
 
 SourceKind = Literal[
-    "akt_prawny", "dane_publiczne", "instytucja", "fact_check", "media"
+    "akt_prawny",
+    "dane_publiczne",
+    "instytucja",
+    "fact_check",
+    "media",
+    "transcript",
 ]
 # primary: official documents and public data; secondary: fact-checkers (media only if
 # the catalogue admits them).

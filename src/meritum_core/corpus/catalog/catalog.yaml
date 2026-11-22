@@ -437,6 +437,8 @@ entries:
   publisher: Kancelaria Sejmu
   publisher_id: kancelaria-sejmu
   kind: akt_prawny
+  kind_by_path:
+    /transcripts/: transcript
   tier: primary
   role: evidence
   license: materiał urzędowy (akty normatywne)
