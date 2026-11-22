@@ -13,7 +13,6 @@ from datetime import date, datetime
 from operator import itemgetter
 
 from meritum_core.checks.contracts import (
-    AGREEING_STANCE,
     DEFAULT_MAX_AGE_HOURS,
     SETTLING,
     Citation,
@@ -22,9 +21,10 @@ from meritum_core.checks.contracts import (
     Premises,
     Validity,
     Verdict,
+    agreeing_evidence,
     evidence_age_hours,
-    is_expired,
     max_age_for,
+    sources_conflict,
     strength_for,
 )
 
@@ -52,7 +52,7 @@ def settle_verdict(
     Features:
         US-ZRD-04, US-SPR-04, US-SPR-05, F-15, ADR-05
     """
-    conflicting = _conflicting(citations, reviews, claim_date)
+    conflicting = sources_conflict(citations, reviews, claim_date)
     return "insufficient_evidence" if conflicting else verdict
 
 
@@ -88,12 +88,8 @@ def compute_premises(
     Features:
         US-ZRD-03, US-ZRD-04, F-15, ADR-05
     """
-    stance = AGREEING_STANCE.get(verdict)
-    agreeing = [c for c in _current(citations) if c.stance == stance]
-    agreeing_reviews = [r for r in reviews if r.stance == stance]
-    publishers = {c.source.publisher_id for c in agreeing}
-    publishers |= {r.publisher_id for r in agreeing_reviews}
-    primary = {c.source.publisher_id for c in agreeing if c.source.tier == "primary"}
+    found = agreeing_evidence(verdict, citations, reviews)
+    agreeing, agreeing_reviews = found.citations, found.reviews
     evidence: list[tuple[datetime | None, Validity]] = [
         (c.source.published_at, c.validity) for c in agreeing
     ]
@@ -102,14 +98,14 @@ def compute_premises(
     # Evidence that does not expire (law in force...) keeps the premises fresh.
     _, validity = _newest([e for e in evidence if e[1] != "expires"])
     return Premises(
-        independent_sources=len(publishers),
-        primary_sources=len(primary),
+        independent_sources=len(found.publishers),
+        primary_sources=len(found.primary),
         newest_source_published_at=newest_at,
         newest_source_age_hours=evidence_age_hours(newest_at, claim_date),
         max_age_hours=max_age_hours or _threshold(agreeing),
         validity=validity,
         agreement="conflicting"
-        if _conflicting(citations, reviews, claim_date)
+        if sources_conflict(citations, reviews, claim_date)
         else "consistent",
     )
 
@@ -139,7 +135,7 @@ def compute_strength(
     Features:
         US-ZRD-03, US-ZRD-04, F-15, ADR-05
     """
-    if verdict not in SETTLING or _conflicting(citations, reviews, claim_date):
+    if verdict not in SETTLING or sources_conflict(citations, reviews, claim_date):
         return None
     premises = compute_premises(
         verdict,
@@ -160,24 +156,6 @@ def _threshold(agreeing: Sequence[Citation]) -> int:
         if dated
         else DEFAULT_MAX_AGE_HOURS
     )
-
-
-def _current(citations: Sequence[Citation]) -> list[Citation]:
-    return [c for c in citations if c.validity != "superseded"]
-
-
-def _conflicting(
-    citations: Sequence[Citation],
-    reviews: Sequence[ClaimReviewPremise],
-    claim_date: date | None,
-) -> bool:
-    fresh = [
-        c
-        for c in _current(citations)
-        if claim_date is None or not is_expired(c, claim_date)
-    ]
-    stances = {c.stance for c in fresh} | {r.stance for r in reviews}
-    return {"supports", "refutes"} <= stances
 
 
 def _newest(

@@ -85,6 +85,9 @@ MIN_TEXT_CHARS: Final = 3
 STRONG_MIN_SOURCES: Final = 2
 """Agreeing independent publishers for a strong or moderate verdict (US-ZRD-03)."""
 
+STRONG_MIN_PRIMARY: Final = 1
+"""Agreeing primary or official publishers for a strong or moderate verdict."""
+
 SETTLING: Final[frozenset[Verdict]] = frozenset({"confirmed", "false", "misleading"})
 """Verdicts that settle a claim: only they need citations and have a strength."""
 
