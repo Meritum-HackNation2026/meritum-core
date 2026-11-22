@@ -517,6 +517,7 @@ entries:
   validity: expires
   qualified_because: 'Baza przypadków prorosyjskiej dezinformacji: dopasowanie do znanych operacji (punkt 3 listy organizatora).'
   tdm_reservation: none
+  disclaimer: Przypadki w bazie EUvsDisinfo nie stanowią oficjalnego stanowiska Unii Europejskiej.
 
 - domain: factchecktools.googleapis.com
   publisher: Google (agregator ocen ClaimReview)
