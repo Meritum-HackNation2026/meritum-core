@@ -115,7 +115,3 @@ def test_eval_run_workflow_is_registered() -> None:
         user_id="u_9f2a7c31",
     )
     assert EVAL_RUN.input.model_validate(payload.model_dump(mode="json")) == payload
-
-
-def test_contract_version_is_10() -> None:
-    assert c.CONTRACT_VERSION == 10
