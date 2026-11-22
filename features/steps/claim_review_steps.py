@@ -107,3 +107,26 @@ def then_context_only(context: Context) -> None:
 def then_verbatim_rating(context: Context, rating: str) -> None:
     """The rating is shown exactly as the fact-checker published it."""
     assert context.review_evidence.rating == rating
+
+
+@when("system liczy werdykt „wprowadzające w błąd”")
+def when_misleading_is_counted(context: Context) -> None:
+    """A context rating backs ``misleading``; its strength is counted."""
+    evidence = rate_review(context.found_review, cache_control=_CACHE_CONTROL).evidence
+    context.review_evidence = evidence
+    reviews = [evidence] if isinstance(evidence, ClaimReviewPremise) else []
+    context.strength = compute_strength(
+        "misleading", [], claim_date=_CLAIM_DATE, reviews=reviews
+    )
+
+
+@then(
+    'ocena jest przesłanką ze stance "context", a werdykt ma siłę z jednej oceny'
+    " sygnatariusza"
+)
+def then_context_premise(context: Context) -> None:
+    """The rating is a premise of ``misleading``, counted as one signatory rating."""
+    assert isinstance(context.review_evidence, ClaimReviewPremise)
+    assert context.review_evidence.stance == "context"
+    assert context.strength is not None
+    assert context.strength.premises.signatory_reviews == 1

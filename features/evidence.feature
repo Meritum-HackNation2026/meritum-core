@@ -87,6 +87,11 @@ Feature: Cytaty ze źródeł i siła dowodów
     When system liczy werdykt
     Then ocena zostaje kontekstem z linkiem i nie jest przesłanką
 
+  Scenario: ocena częściowej prawdy jest przesłanką kontekstową (worker#280)
+    Given ClaimReview od Demagogu z textualRating "Częściowa prawda", tytułem, datą i linkiem
+    When system liczy werdykt „wprowadzające w błąd”
+    Then ocena jest przesłanką ze stance "context", a werdykt ma siłę z jednej oceny sygnatariusza
+
   Scenario: dosłowny tekst oceny
     Given ClaimReview z textualRating "Częściowa prawda"
     When kanał pokazuje przesłankę

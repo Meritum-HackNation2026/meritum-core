@@ -44,14 +44,28 @@ _COMMON_RATINGS: Final[Mapping[str, Stance]] = MappingProxyType(
     {
         "falsz": "refutes",
         "false": "refutes",
+        "nieprawda": "refutes",
+        "fake news": "refutes",
         "prawda": "supports",
         "true": "supports",
+        # A matched rating with stance context makes the claim misleading (worker#280).
         "czesciowa prawda": "context",
+        "czesciowy falsz": "context",
+        "czesciowo falsz": "context",
+        "czesciowo prawda": "context",
         "manipulacja": "context",
+        "wprowadzajace w blad": "context",
+        "wprowadza w blad": "context",
+        "brak kontekstu": "context",
+        "brakujacy kontekst": "context",
         "misleading": "context",
+        "partly false": "context",
+        "half true": "context",
+        "missing context": "context",
     }
 )
-"""Normalized Polish and English ratings shared by the catalogue's fact-checkers."""
+"""Normalized Polish and English ratings shared by the catalogue's fact-checkers
+(Demagog, AFP Sprawdzam, Fakenews.pl, Pravda, Konkret24)."""
 
 CLAIM_REVIEW_STANCES: Final[Mapping[PublisherId, Mapping[str, Stance]]] = (
     MappingProxyType(
@@ -59,15 +73,14 @@ CLAIM_REVIEW_STANCES: Final[Mapping[PublisherId, Mapping[str, Stance]]] = (
             "demagog": _COMMON_RATINGS,
             "fakenews-pl": _COMMON_RATINGS,
             "pravda": _COMMON_RATINGS,
-            "afp": MappingProxyType(
-                dict(_COMMON_RATINGS)
-                | {"wprowadzajace w blad": "context", "brak kontekstu": "context"}
-            ),
+            "afp": _COMMON_RATINGS,
+            "konkret24": _COMMON_RATINGS,
         }
     )
 )
 """Stance of a fact-checker's normalized textualRating, per catalogue ``publisher_id``
-(ADR-34: each fact-checker has its own wording). A rating not listed for its publisher
+(ADR-34: each fact-checker has its own wording). A rating listed for a signatory is a
+premise, ``context`` ones included (they back ``misleading``); a rating not listed
 stays context and is never a premise. Verdicts in scenarios A, C and G depend on this
 table: change it together with their tests (US-KOR-01, F-14)."""
 
