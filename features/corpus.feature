@@ -64,3 +64,8 @@ Feature: Wyszukiwanie w korpusie
     Given MERITUM_WEB_SEARCH_PROVIDER=linkup bez klucza albo z wyłączonym wyłącznikiem
     When fabryka buduje adapter wyszukiwania
     Then zgłasza błąd konfiguracji, który test gotowości wymienia z nazwy zmiennej
+
+  Scenario: dokument z kanału RSS zapisuje drogę pozyskania
+    Given migracja corpus 0007_documents_via.sql
+    When sprawdzam kolumnę via w corpus.documents
+    Then dopuszcza dokładnie wartości SourceVia, w tym "rss", a dokumenty sprzed migracji mają via = "corpus"
