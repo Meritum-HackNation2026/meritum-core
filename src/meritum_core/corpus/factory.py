@@ -14,6 +14,8 @@ from meritum_core.corpus.adapters import (
 from meritum_core.corpus.fakes import InMemoryLegalActMeta
 from meritum_core.corpus.models import Passage
 from meritum_core.corpus.ports import CorpusSearchPort, LegalActMetaPort
+from meritum_core.corpus.ready import CorpusReadySettings
+from meritum_core.corpus.ready.adapters import PostgresGoldSearch
 from meritum_core.corpus.settings import CorpusProvider, CorpusSettings
 from meritum_core.shared.embeddings import EmbeddingsPort
 
@@ -33,7 +35,8 @@ def build_corpus_search(
             ignored by postgres.
 
     Returns:
-        The in-memory or the PostgreSQL adapter.
+        The in-memory or the PostgreSQL adapter; with ``MERITUM_CORPUS_READY``
+        on, the PostgreSQL one wrapped so gold chunks join its results.
 
     Raises:
         ValueError: postgres without a database URL (settings built unvalidated).
@@ -47,7 +50,10 @@ def build_corpus_search(
                 msg = "MERITUM_CORPUS_DATABASE_URL is required for postgres"
                 raise ValueError(msg)
             conninfo = settings.database_url.get_secret_value()
-            return PostgresCorpusSearch(conninfo, embeddings)
+            bronze = PostgresCorpusSearch(conninfo, embeddings)
+            if not CorpusReadySettings().enabled:
+                return bronze
+            return PostgresGoldSearch(bronze, conninfo, embeddings)
         case CorpusProvider.MEMORY:
             return MemoryCorpusSearch(snapshots or {}, embeddings)
 

@@ -7,6 +7,7 @@ from meritum_core.checks import constants
 from meritum_core.checks.ocr import ImageInfo, ImageOccurrence
 from meritum_core.corpus import CorpusSettings, LegalActMeta, Passage
 from meritum_core.corpus.constants import FULL_TEXT_RETENTION_DAYS
+from meritum_core.corpus.ready import DocumentKind, GoldChunk, NumberTag
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
     ArchivePageOutput,
@@ -90,3 +91,13 @@ LegalActMeta.journal_publisher  # read by the worker's corpus_ready and evidence
 LegalActMeta.journal_year  # read by the worker's corpus_ready and evidence steps
 LegalActMeta.journal_position  # read by the worker's corpus_ready and evidence steps
 LegalActMeta.display_address  # read by the worker's corpus_ready and evidence steps
+DocumentKind.DRAFT  # written by the worker's gold build (worker#253)
+DocumentKind.STATEMENT  # written by the worker's gold build
+DocumentKind.PAGE  # written by the worker's gold build
+NumberTag.unit  # written by the worker's gold build, stored as jsonb
+NumberTag.period  # written by the worker's gold build, stored as jsonb
+GoldChunk.checksum  # written to corpus_ready.gold_chunks by the worker
+GoldChunk.eli  # written to corpus_ready.gold_chunks by the worker
+GoldChunk.subject  # written to corpus_ready.gold_chunks by the worker
+GoldChunk.numbers  # written to corpus_ready.gold_chunks by the worker
+GoldChunk.summary  # written to corpus_ready.gold_chunks by the worker
