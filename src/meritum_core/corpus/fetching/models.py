@@ -56,6 +56,8 @@ class FetchFailureReason(StrEnum):
     """The page needs a payment; the citizen should paste the text."""
     JAVASCRIPT_REQUIRED = "javascript_required"
     """No main text without running JavaScript; Crawl4AI renders it when configured."""
+    BLOCKED_BY_BOT_PROTECTION = "blocked_by_bot_protection"
+    """An anti-bot layer answered with its block or challenge page; never bypassed."""
     ROBOTS_DISALLOWED = "robots_disallowed"
     """robots.txt or its Content-Signal forbids fetching the source."""
 

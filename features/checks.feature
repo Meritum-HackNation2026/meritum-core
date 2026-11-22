@@ -52,6 +52,16 @@ Feature: Sprawdzanie treści
     When system pobiera stronę
     Then wynik to "technical_failure" z prośbą o wklejenie tekstu
 
+  Scenario Outline: strona blokady antybotowej nie jest treścią
+    Given serwis za ochroną antybotową odpowiada stroną blokady <dostawca>
+    When system pobiera stronę
+    Then wynik to "technical_failure" z powodem "blocked_by_bot_protection"
+
+    Examples:
+      | dostawca              |
+      | Incapsula z kodem 200 |
+      | AWS WAF z kodem 202   |
+
   Scenario: artykuł z datą publikacji w metadanych
     Given publiczna strona HTML z datą publikacji 2026-11-18 w metadanych
     When fetcher pobiera ją jako link użytkownika

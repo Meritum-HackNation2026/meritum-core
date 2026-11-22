@@ -61,6 +61,23 @@ def test_html_without_main_text_needs_javascript(web: Web) -> None:
     assert error.asks_for_text
 
 
+INCAPSULA_BLOCK = "Request unsuccessful. Incapsula incident ID: 1234-5678"
+
+
+@pytest.mark.parametrize(
+    ("body", "status"),
+    [(INCAPSULA_BLOCK, 200), ("<script></script>", 202)],
+)
+def test_anti_bot_block_page_is_a_failure_not_content(
+    web: Web, body: str, status: int
+) -> None:
+    error = failure(
+        web, {"example.org/post": web.html(body, status)}, FetchPurpose.SOURCE
+    )
+    assert error.reason is FetchFailureReason.BLOCKED_BY_BOT_PROTECTION
+    assert (error.check_status, error.asks_for_text) == ("technical_failure", True)
+
+
 @pytest.mark.parametrize("status", [401, 403, 407])
 def test_status_asking_for_an_account_is_a_login_wall(web: Web, status: int) -> None:
     error = failure(web, {"example.org/post": web.html("Zaloguj się", status)})

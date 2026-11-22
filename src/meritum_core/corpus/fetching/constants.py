@@ -60,6 +60,12 @@ PASSWORD_INPUT: Final = re.compile(
 LOGIN_WALL_MAX_TEXT_CHARS: Final = 500
 """Main text shorter than this next to a password field counts as a login wall."""
 
+BOT_CHALLENGE_STATUSES: Final = frozenset({202})
+"""Statuses of an anti-bot challenge page instead of content (AWS WAF: 202)."""
+
+BOT_BLOCK_MARKER: Final = re.compile(r"Incapsula incident ID", re.IGNORECASE)
+"""Text of the Imperva Incapsula block page, which it serves with status 200."""
+
 PAYWALL_MARKER: Final = re.compile(
     r"\"isAccessibleForFree\"\s*:\s*\"?false", re.IGNORECASE
 )
@@ -95,6 +101,7 @@ PASTE_TEXT_REASONS: Final = frozenset(
         FetchFailureReason.LOGIN_WALL,
         FetchFailureReason.PAYWALL,
         FetchFailureReason.JAVASCRIPT_REQUIRED,
+        FetchFailureReason.BLOCKED_BY_BOT_PROTECTION,
     }
 )
 """Failures where the citizen is asked to paste the text instead of the link."""
