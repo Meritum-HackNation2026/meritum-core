@@ -23,5 +23,11 @@ MEMORY_URI_SCHEME: Final = "memory://"
 GCS_URI_SCHEME: Final = "gs://"
 """Scheme of Cloud Storage addresses, read by Speech-to-Text batch (ADR-30)."""
 
+S3_URI_SCHEME: Final = "s3://"
+"""Scheme of addresses on an S3-compatible bucket."""
+
+S3_MISSING_CODES: Final = frozenset({"404", "NoSuchKey", "NotFound"})
+"""Error codes with which an S3 service says an object does not exist."""
+
 PARTIAL_SUFFIX: Final = ".part"
 """Suffix of a file the filesystem adapter is still writing; renamed when complete."""

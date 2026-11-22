@@ -8,6 +8,7 @@ from meritum_core.shared.blobs.adapters import (
     FilesystemBlobStore,
     GcsBlobStore,
     MemoryBlobStore,
+    S3BlobStore,
 )
 from meritum_core.shared.blobs.constants import ENV_PREFIX
 from meritum_core.shared.blobs.errors import BlobError
@@ -28,7 +29,7 @@ def build_blob_store(settings: BlobSettings) -> BlobStore:
         BlobError: the provider's directory or bucket is not configured.
 
     Features:
-        US-SPR-11, US-BEZ-05, F-08, F-20, ADR-31
+        US-SPR-11, US-BEZ-05, US-WDR-01, F-08, F-20, F-30, ADR-31
     """
     match settings.provider:
         case BlobProvider.MEMORY:
@@ -41,6 +42,10 @@ def build_blob_store(settings: BlobSettings) -> BlobStore:
             if settings.bucket is None:
                 raise BlobError(_missing("bucket", settings.provider))
             return GcsBlobStore(settings.bucket)
+        case BlobProvider.S3:
+            if settings.bucket is None:
+                raise BlobError(_missing("bucket", settings.provider))
+            return S3BlobStore(settings.bucket, settings.endpoint_url, settings.region)
 
 
 def _missing(field: str, provider: BlobProvider) -> str:

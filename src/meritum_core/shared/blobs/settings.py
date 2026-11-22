@@ -24,6 +24,7 @@ class BlobProvider(StrEnum):
     MEMORY = "memory"
     FILESYSTEM = "filesystem"
     GCS = "gcs"
+    S3 = "s3"
 
 
 class BlobSettings(BaseSettings):
@@ -32,7 +33,10 @@ class BlobSettings(BaseSettings):
     Attributes:
         provider: which adapter to build.
         directory: the volume directory of ``filesystem`` (``MERITUM_BLOB_DIRECTORY``).
-        bucket: the private bucket of ``gcs`` (``MERITUM_BLOB_BUCKET``).
+        bucket: the private bucket of ``gcs`` or ``s3`` (``MERITUM_BLOB_BUCKET``).
+        endpoint_url: the S3-compatible service (``MERITUM_BLOB_ENDPOINT_URL``);
+            unset means AWS S3.
+        region: the S3 region (``MERITUM_BLOB_REGION``); R2 takes ``auto``.
 
     Features:
         ADR-31
@@ -43,3 +47,5 @@ class BlobSettings(BaseSettings):
     provider: BlobProvider
     directory: Path | None = None
     bucket: Annotated[str, Field(min_length=1)] | None = None
+    endpoint_url: Annotated[str, Field(min_length=1)] | None = None
+    region: Annotated[str, Field(min_length=1)] | None = None

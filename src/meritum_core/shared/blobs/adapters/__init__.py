@@ -3,5 +3,6 @@
 from ._filesystem import FilesystemBlobStore
 from ._gcs import GcsBlobStore
 from ._memory import MemoryBlobStore
+from ._s3 import S3BlobStore
 
-__all__ = ["FilesystemBlobStore", "GcsBlobStore", "MemoryBlobStore"]
+__all__ = ["FilesystemBlobStore", "GcsBlobStore", "MemoryBlobStore", "S3BlobStore"]
