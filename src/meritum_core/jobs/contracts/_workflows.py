@@ -15,6 +15,7 @@ from meritum_core.jobs.contracts._escalation import (
     EscalateClaimInput,
     EscalateClaimOutput,
 )
+from meritum_core.jobs.contracts._eval_run import EvalRunInput, EvalRunOutput
 from meritum_core.jobs.contracts._ping import PingInput, PingOutput
 from meritum_core.jobs.contracts._readiness import ReadinessInput, ReadinessReport
 from meritum_core.jobs.contracts._subjects import (
@@ -64,11 +65,15 @@ READINESS: Final = WorkflowSpec(
 )
 """Reports what the worker lacks; also sets the READINESS_KEY event (US-WDR-08)."""
 
+EVAL_RUN: Final = WorkflowSpec("eval_run", DEFAULT_QUEUE, EvalRunInput, EvalRunOutput)
+"""Runs the golden set or a staff file; ends with eval_run_done (US-OBS-06, F-28)."""
+
 WORKFLOWS: Final[tuple[WorkflowSpec[Any, Any], ...]] = (
     PING,
     CHECK,
     ESCALATE_CLAIM,
     DELETE_SUBJECT,
     READINESS,
+    EVAL_RUN,
 )
 """Every workflow of the contract (names must be unique)."""

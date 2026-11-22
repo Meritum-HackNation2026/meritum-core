@@ -21,6 +21,7 @@ ROOTS: dict[str, Any] = {
     "ModeratorCase": c.ModeratorCase,
     "CatalogEntry": c.CatalogEntry,
     "Notification": c.Notification,
+    "EvalRun": c.EvalRun,
 }
 
 

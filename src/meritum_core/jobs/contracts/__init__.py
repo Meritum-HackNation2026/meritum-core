@@ -3,7 +3,7 @@
 Every input and output is one portable JSON object with `contract_version`.
 
 Features:
-    US-SPR-01, US-SPR-02, US-MOD-03, US-BEZ-05, US-WDR-08, F-09, ADR-03
+    US-SPR-01, US-SPR-02, US-MOD-03, US-BEZ-05, US-WDR-08, US-OBS-06, F-09, F-28, ADR-03
 """
 
 from meritum_core.jobs.constants import (
@@ -17,6 +17,7 @@ from meritum_core.jobs.contracts._escalation import (
     EscalateClaimOutput,
     EscalationReason,
 )
+from meritum_core.jobs.contracts._eval_run import EvalRunInput, EvalRunOutput
 from meritum_core.jobs.contracts._ping import PingInput, PingOutput
 from meritum_core.jobs.contracts._readiness import ReadinessInput, ReadinessReport
 from meritum_core.jobs.contracts._subjects import (
@@ -28,6 +29,7 @@ from meritum_core.jobs.contracts._workflows import (
     CHECK,
     DELETE_SUBJECT,
     ESCALATE_CLAIM,
+    EVAL_RUN,
     PING,
     READINESS,
     WORKFLOWS,
@@ -41,6 +43,7 @@ __all__ = [
     "DEFAULT_QUEUE",
     "DELETE_SUBJECT",
     "ESCALATE_CLAIM",
+    "EVAL_RUN",
     "PING",
     "READINESS",
     "WORKFLOWS",
@@ -51,6 +54,8 @@ __all__ = [
     "EscalateClaimInput",
     "EscalateClaimOutput",
     "EscalationReason",
+    "EvalRunInput",
+    "EvalRunOutput",
     "PingInput",
     "PingOutput",
     "ReadinessInput",
