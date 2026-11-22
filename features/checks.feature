@@ -143,3 +143,8 @@ Feature: Sprawdzanie treści
     Given dostawca OCR zwraca błąd po wyczerpaniu ponowień
     When system zleca OCR
     Then port rzuca udokumentowany błąd, który workflow mapuje na "technical_failure"
+
+  Scenario: lista sprawdzeń z okresu do eksportu
+    Given CheckRecord ze stanem done i dwoma werdyktami
+    When analityk pobiera sprawdzenia z okresu obejmującego ten zapis
+    Then lista do eksportu zawiera zapisane sprawdzenie

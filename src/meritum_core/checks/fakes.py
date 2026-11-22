@@ -53,6 +53,30 @@ class InMemoryCheckRecordRepository:
         found = [r for r in self._records.values() if getattr(r, kind) == value]
         return sorted(found, key=lambda r: r.received_at, reverse=True)
 
+    async def list_between(
+        self, start: datetime, end: datetime, limit: int
+    ) -> list[CheckRecord]:
+        """List records received in ``[start, end)``, newest first, then by check id.
+
+        Args:
+            start: inclusive, timezone-aware lower bound.
+            end: exclusive, timezone-aware upper bound.
+            limit: maximum records to return. Nonpositive limits return no records.
+
+        Returns:
+            Matching records across all subjects.
+        """
+        if limit <= 0:
+            return []
+        found = [
+            record
+            for record in self._records.values()
+            if start <= record.received_at < end
+        ]
+        found.sort(key=lambda record: record.check_id)
+        found.sort(key=lambda record: record.received_at, reverse=True)
+        return found[:limit]
+
     async def delete_subject(self, kind: SubjectKind, value: str) -> list[str]:
         """Delete one person's records.
 

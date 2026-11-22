@@ -70,6 +70,19 @@ def test_list_for_session_or_user_is_newest_first(
     assert [r.check_id for r in by_user] == ["c_new", "c_old"]
 
 
+def test_list_between_filters_received_at_before_limiting(
+    run: asyncio.Runner, records: CheckRecordRepository
+) -> None:
+    first = record("c_first")
+    newest = record("c_a", 1)
+    tied = record("c_b", 1)
+    save(run, records, record("c_before", -1), first, tied, newest, record("c_end", 2))
+    end = T0 + timedelta(minutes=2)
+
+    assert run.run(records.list_between(T0, end, 10)) == [newest, tied, first]
+    assert run.run(records.list_between(T0, end, 1)) == [newest]
+
+
 def test_delete_subject_removes_only_that_subjects_records(
     run: asyncio.Runner, records: CheckRecordRepository
 ) -> None:

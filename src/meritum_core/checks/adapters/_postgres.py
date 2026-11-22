@@ -130,6 +130,31 @@ class PostgresCheckRecordRepository:
             rows = await cursor.fetchall()
         return list(starmap(_record, rows))
 
+    async def list_between(
+        self, start: datetime, end: datetime, limit: int
+    ) -> list[CheckRecord]:
+        """List records received in ``[start, end)``, newest first, then by check id.
+
+        Args:
+            start: inclusive, timezone-aware lower bound.
+            end: exclusive, timezone-aware upper bound.
+            limit: maximum records to return. Nonpositive limits return no records.
+
+        Returns:
+            Matching records across all subjects.
+        """
+        if limit <= 0:
+            return []
+        async with await self._connect() as conn:
+            cursor = await conn.execute(
+                "SELECT record FROM check_records"
+                " WHERE received_at >= %s AND received_at < %s"
+                " ORDER BY received_at DESC, check_id LIMIT %s",
+                (start, end, limit),
+            )
+            rows = await cursor.fetchall()
+        return list(starmap(_record, rows))
+
     async def delete_subject(self, kind: SubjectKind, value: str) -> list[str]:
         """Delete one person's records.
 

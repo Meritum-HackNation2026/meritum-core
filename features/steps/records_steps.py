@@ -6,6 +6,7 @@ database schema in production; nothing here talks to PostgreSQL.
 
 import asyncio
 import json
+from datetime import timedelta
 from pathlib import Path
 
 from behave import given, then, when
@@ -91,3 +92,23 @@ def then_records_gone_case_keeps_others(context: Context) -> None:
     case = asyncio.run(context.cases.get(context.case_id))
     assert case is not None
     assert case.check_ids == [_OTHER_CHECK]
+
+
+@when("analityk pobiera sprawdzenia z okresu obejmującego ten zapis")
+def when_analyst_lists_records(context: Context) -> None:
+    """Read the export window through the repository port."""
+    repository: CheckRecordRepository = InMemoryCheckRecordRepository()
+    record = context.record
+    assert isinstance(record, CheckRecord)
+    asyncio.run(repository.save(record))
+    context.exported_records = asyncio.run(
+        repository.list_between(
+            record.received_at, record.received_at + timedelta(days=1), 10
+        )
+    )
+
+
+@then("lista do eksportu zawiera zapisane sprawdzenie")
+def then_export_list_contains_record(context: Context) -> None:
+    """The saved check is available through the export query."""
+    assert context.exported_records == [context.record]
