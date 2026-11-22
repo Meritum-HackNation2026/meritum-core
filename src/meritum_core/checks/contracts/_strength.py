@@ -17,7 +17,7 @@ from ._base import _Model
 from ._types import Agreement, Strength, Validity
 
 if TYPE_CHECKING:
-    from ._sources import Citation
+    from ._sources import Citation, Source
 
 
 class Premises(_Model):
@@ -112,8 +112,23 @@ def evidence_age_hours(published_at: datetime | None, claim_date: date) -> int |
     return max(0, (claim_start - published_at) // timedelta(hours=1))
 
 
+def max_age_for(source: Source) -> int:
+    """The age threshold of a source: its catalogue entry's, else 365 days.
+
+    Args:
+        source: the cited source.
+
+    Returns:
+        The threshold in hours shared by the conflict rule and the strength rule.
+
+    Features:
+        US-ZRD-05, US-ZRD-10, ADR-25
+    """
+    return source.max_age_hours or DEFAULT_MAX_AGE_HOURS
+
+
 def is_expired(citation: Citation, claim_date: date) -> bool:
-    """Whether expiring evidence is past the default threshold at the claim date.
+    """Whether expiring evidence is past its source's threshold at the claim date.
 
     Expired evidence still counts for strength (as archival), but never creates a
     conflict with fresh evidence (US-ZRD-10).
@@ -123,18 +138,16 @@ def is_expired(citation: Citation, claim_date: date) -> bool:
         claim_date: the date the claim refers to.
 
     Returns:
-        True for ``expires`` evidence older than ``DEFAULT_MAX_AGE_HOURS``.
+        True for ``expires`` evidence older than ``max_age_for`` its source.
 
     Features:
         US-ZRD-05, US-ZRD-10, ADR-25
     """
-    # shortcut: the contract does not carry each source's catalogue threshold, so the
-    # conflict rule uses the default one; add it to Source if a shorter one must count.
     age = evidence_age_hours(citation.source.published_at, claim_date)
     return (
         citation.validity == "expires"
         and age is not None
-        and age > DEFAULT_MAX_AGE_HOURS
+        and age > max_age_for(citation.source)
     )
 
 

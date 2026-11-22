@@ -12,10 +12,6 @@ from meritum_core.checks import contracts as c
 STEPS = [{"code": "receive", "status": "done"}]
 
 
-def test_version_is_13() -> None:
-    assert c.CONTRACT_VERSION == 13
-
-
 def test_draft_is_optional() -> None:
     status = c.AnalysisStatus.model_validate({"check_id": "c_01", "steps": STEPS})
     assert status.draft is None

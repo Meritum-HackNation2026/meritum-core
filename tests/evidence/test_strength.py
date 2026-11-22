@@ -176,3 +176,14 @@ def test_catalogue_threshold_shorter_than_a_year_makes_evidence_stale() -> None:
     )
     assert strength is not None
     assert strength.level == "weak"
+
+
+def test_source_catalogue_threshold_makes_evidence_stale() -> None:
+    old = cite("supports", "imgw", "primary", published_at="2026-11-17T00:00:00+01:00")
+    citation = old.model_copy(
+        update={"source": old.source.model_copy(update={"max_age_hours": 48})}
+    )
+    strength = compute_strength("confirmed", [citation], claim_date=CLAIM_DATE)
+    assert strength is not None
+    assert strength.premises.max_age_hours == 48
+    assert strength.level == "weak"
