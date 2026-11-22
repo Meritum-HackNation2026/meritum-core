@@ -10,6 +10,7 @@ from typing import Any, Final
 from pydantic import BaseModel
 
 from meritum_core.jobs.constants import DEFAULT_QUEUE
+from meritum_core.jobs.contracts._archive import ArchivePageInput, ArchivePageOutput
 from meritum_core.jobs.contracts._check import CheckInput, CheckOutput
 from meritum_core.jobs.contracts._escalation import (
     EscalateClaimInput,
@@ -68,6 +69,11 @@ READINESS: Final = WorkflowSpec(
 EVAL_RUN: Final = WorkflowSpec("eval_run", DEFAULT_QUEUE, EvalRunInput, EvalRunOutput)
 """Runs the golden set or a staff file; ends with eval_run_done (US-OBS-06, F-28)."""
 
+ARCHIVE_PAGE: Final = WorkflowSpec(
+    "archive_page", DEFAULT_QUEUE, ArchivePageInput, ArchivePageOutput
+)
+"""Archives one public page for the citizen who asked (US-KOR-07, F-38)."""
+
 WORKFLOWS: Final[tuple[WorkflowSpec[Any, Any], ...]] = (
     PING,
     CHECK,
@@ -75,5 +81,6 @@ WORKFLOWS: Final[tuple[WorkflowSpec[Any, Any], ...]] = (
     DELETE_SUBJECT,
     READINESS,
     EVAL_RUN,
+    ARCHIVE_PAGE,
 )
 """Every workflow of the contract (names must be unique)."""

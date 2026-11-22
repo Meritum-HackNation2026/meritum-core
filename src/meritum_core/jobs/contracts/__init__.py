@@ -3,13 +3,19 @@
 Every input and output is one portable JSON object with `contract_version`.
 
 Features:
-    US-SPR-01, US-SPR-02, US-MOD-03, US-BEZ-05, US-WDR-08, US-OBS-06, F-09, F-28, ADR-03
+    US-SPR-01, US-SPR-02, US-KOR-07, US-MOD-03, US-BEZ-05, US-WDR-08, US-OBS-06,
+    F-09, F-28, F-38, ADR-03
 """
 
 from meritum_core.jobs.constants import (
     APPLICATION_NAME,
     CONTRACT_VERSION,
     DEFAULT_QUEUE,
+)
+from meritum_core.jobs.contracts._archive import (
+    ArchivePageInput,
+    ArchivePageOutput,
+    ArchiveRefusalCode,
 )
 from meritum_core.jobs.contracts._check import CheckInput, CheckOutput
 from meritum_core.jobs.contracts._escalation import (
@@ -26,6 +32,7 @@ from meritum_core.jobs.contracts._subjects import (
     SubjectKind,
 )
 from meritum_core.jobs.contracts._workflows import (
+    ARCHIVE_PAGE,
     CHECK,
     DELETE_SUBJECT,
     ESCALATE_CLAIM,
@@ -38,6 +45,7 @@ from meritum_core.jobs.contracts._workflows import (
 
 __all__ = [
     "APPLICATION_NAME",
+    "ARCHIVE_PAGE",
     "CHECK",
     "CONTRACT_VERSION",
     "DEFAULT_QUEUE",
@@ -47,6 +55,9 @@ __all__ = [
     "PING",
     "READINESS",
     "WORKFLOWS",
+    "ArchivePageInput",
+    "ArchivePageOutput",
+    "ArchiveRefusalCode",
     "CheckInput",
     "CheckOutput",
     "DeleteSubjectInput",

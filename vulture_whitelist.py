@@ -9,6 +9,7 @@ from meritum_core.corpus import CorpusSettings, Passage
 from meritum_core.corpus.constants import FULL_TEXT_RETENTION_DAYS
 from meritum_core.jobs.adapters import DbosJobQueue
 from meritum_core.jobs.contracts import (
+    ArchivePageOutput,
     CheckInput,
     DeleteSubjectOutput,
     EscalateClaimOutput,
@@ -77,3 +78,8 @@ FULL_TEXT_RETENTION_DAYS  # read by the worker retention job (US-KOR-05)
 LlmPort.complete_with_tools  # called by the worker research agent (core#115)
 ImageInfo.size_bytes  # file metadata read by the worker as context for the claim
 ImageOccurrence.seen_on  # read by the worker when it shows earlier hits
+
+ArchivePageOutput.archive_id  # read by the backend (core#144)
+ArchivePageOutput.owner_id  # read by the backend access check
+ArchivePageOutput.archived_at  # shown in the archive view
+ArchivePageOutput.refusal  # shown in the archive view
