@@ -24,6 +24,7 @@ from meritum_core.checks.contracts import (
     Verdict,
     evidence_age_hours,
     is_expired,
+    max_age_for,
     strength_for,
 )
 
@@ -61,7 +62,7 @@ def compute_premises(
     *,
     claim_date: date,
     reviews: Sequence[ClaimReviewPremise] = (),
-    max_age_hours: int = DEFAULT_MAX_AGE_HOURS,
+    max_age_hours: int | None = None,
 ) -> Premises:
     """Count the premises of a verdict from the evidence that agrees with it.
 
@@ -78,7 +79,8 @@ def compute_premises(
         citations: The citations with their stance and validity.
         claim_date: The date the claim refers to.
         reviews: Fact-checkers' ratings used as premises.
-        max_age_hours: The catalogue threshold of the newest source.
+        max_age_hours: Overrides the threshold; None takes the newest agreeing
+            source's (``max_age_for``).
 
     Returns:
         The premises the strength rule reads.
@@ -104,7 +106,7 @@ def compute_premises(
         primary_sources=len(primary),
         newest_source_published_at=newest_at,
         newest_source_age_hours=evidence_age_hours(newest_at, claim_date),
-        max_age_hours=max_age_hours,
+        max_age_hours=max_age_hours or _threshold(agreeing),
         validity=validity,
         agreement="conflicting"
         if _conflicting(citations, reviews, claim_date)
@@ -118,7 +120,7 @@ def compute_strength(
     *,
     claim_date: date,
     reviews: Sequence[ClaimReviewPremise] = (),
-    max_age_hours: int = DEFAULT_MAX_AGE_HOURS,
+    max_age_hours: int | None = None,
 ) -> EvidenceStrength | None:
     """Derive the strength of a verdict with the single rule of the contract.
 
@@ -127,7 +129,8 @@ def compute_strength(
         citations: The citations with their stance and validity.
         claim_date: The date the claim refers to.
         reviews: Fact-checkers' ratings used as premises.
-        max_age_hours: The catalogue threshold of the newest source.
+        max_age_hours: Overrides the threshold; None takes the newest agreeing
+            source's (``max_age_for``).
 
     Returns:
         The strength with its premises, or None when the verdict does not settle the
@@ -146,6 +149,17 @@ def compute_strength(
         max_age_hours=max_age_hours,
     )
     return EvidenceStrength(level=strength_for(premises), premises=premises)
+
+
+def _threshold(agreeing: Sequence[Citation]) -> int:
+    dated = [
+        (c.source.published_at, c.source) for c in agreeing if c.source.published_at
+    ]
+    return (
+        max_age_for(max(dated, key=itemgetter(0))[1])
+        if dated
+        else DEFAULT_MAX_AGE_HOURS
+    )
 
 
 def _current(citations: Sequence[Citation]) -> list[Citation]:

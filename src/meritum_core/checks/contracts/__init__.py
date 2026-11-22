@@ -86,6 +86,7 @@ from ._strength import (
     evidence_age_hours,
     is_expired,
     is_stale,
+    max_age_for,
     strength_for,
 )
 from ._types import (
@@ -195,6 +196,7 @@ __all__ = [
     "evidence_age_hours",
     "is_expired",
     "is_stale",
+    "max_age_for",
     "strength_for",
     "verdict_changes_for",
 ]

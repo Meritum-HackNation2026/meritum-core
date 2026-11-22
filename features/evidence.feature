@@ -63,6 +63,18 @@ Feature: Cytaty ze źródeł i siła dowodów
     When system ustala werdykt z datą twierdzenia
     Then werdykt opiera się na świeżym dowodzie
 
+  Scenario: próg wieku dowodu pochodzi z katalogu
+    Given źródło z katalogu z max_age_hours = 720
+    And dowód tego źródła starszy o 40 dni od daty twierdzenia obok świeżego obalenia
+    When system ustala werdykt z datą twierdzenia
+    Then ten dowód jest przeterminowany i nie tworzy rozbieżności
+
+  Scenario: źródło spoza katalogu
+    Given źródło bez max_age_hours
+    And dowód tego źródła starszy o 40 dni od daty twierdzenia obok świeżego obalenia
+    When system ustala werdykt z datą twierdzenia
+    Then działa domyślny próg 365 dni
+
   Scenario: werdykt z oceny Demagogu (scenariusz G)
     Given twierdzenie "Wrocław był jedynym miastem w Polsce, w którym 65-latkowie jeździli komunikacją miejską za darmo"
     And ClaimReview od Demagogu z textualRating "Fałsz", tytułem, datą i linkiem

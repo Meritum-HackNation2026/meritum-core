@@ -10,7 +10,6 @@ from collections.abc import Sequence
 from datetime import date, datetime
 
 from meritum_core.checks.contracts import (
-    DEFAULT_MAX_AGE_HOURS,
     Citation,
     ClaimDateSource,
     TechniqueCode,
@@ -51,7 +50,7 @@ def outdated_verdict(
     *,
     claim_date: date,
     present_tense: bool = False,
-    max_age_hours: int = DEFAULT_MAX_AGE_HOURS,
+    max_age_hours: int | None = None,
 ) -> tuple[Verdict, TechniqueCode | None, bool]:
     """Adjust a verdict for evidence that was true once but is not any more.
 
@@ -71,7 +70,8 @@ def outdated_verdict(
         citations: The citations with their validity set.
         claim_date: The date the claim refers to.
         present_tense: Whether the claim speaks about the present.
-        max_age_hours: The catalogue threshold of the newest source.
+        max_age_hours: Overrides the threshold; None takes the newest agreeing
+            source's (``max_age_for``).
 
     Returns:
         The verdict, its technique (or None) and whether the evidence is archival.

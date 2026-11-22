@@ -41,6 +41,7 @@ class Source(_Model):
         fetched_at: when the document was fetched.
         language: the two-letter language code.
         via: how the document reached the corpus.
+        max_age_hours: the catalogue threshold of the source; None means the default.
 
     Features:
         US-ZRD-01, US-KOR-02, US-KOR-03, US-KOR-04, US-KOR-06, ADR-02
@@ -63,6 +64,13 @@ class Source(_Model):
     fetched_at: datetime
     language: Annotated[str, Field(pattern=r"^[a-z]{2}$")] = "pl"
     via: SourceVia = "corpus"
+    max_age_hours: Annotated[
+        int | None,
+        Field(
+            ge=1,
+            description="Age threshold from the source's catalogue entry (since v14); absent means 365 days.",
+        ),
+    ] = None
 
 
 class Citation(_Model):
