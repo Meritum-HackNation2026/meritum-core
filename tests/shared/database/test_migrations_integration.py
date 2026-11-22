@@ -22,6 +22,7 @@ APP_TABLES = {
     "result_cache",
     "result_cache_checks",
     "jury_links",
+    "demo_link_metadata",
     "rate_limit_hits",
     "eval_runs",
     "eval_datasets",
