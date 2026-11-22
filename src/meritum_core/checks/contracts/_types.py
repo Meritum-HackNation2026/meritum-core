@@ -108,12 +108,15 @@ FailureCode = Literal[
 # A limitation never changes the check's status. corpus_scope: a note on what the
 # corpus holds; no_publications: neither the corpus nor search found coverage.
 # The audio codes explain an out_of_scope recording: unsupported format, or over
-# the length or size limit.
+# the length or size limit; the image codes do the same for an unsupported image
+# format or an image over the size limit.
 LimitationCode = Literal[
     "fact_check_unavailable",
     "image_search_not_run",
     "audio_format_unsupported",
     "audio_too_long",
+    "image_format_unsupported",
+    "image_too_large",
     "corpus_scope",
     "no_publications",
 ]

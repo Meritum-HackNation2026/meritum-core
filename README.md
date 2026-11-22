@@ -4,7 +4,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 
 | Moduł | Zawartość |
 | --- | --- |
-| `meritum_core.checks.contracts` | kontrakty sprawdzania (MSZ „Prawdowid”): `CheckRequest`, `CheckResult` z werdyktami, cytatami i przesłankami oraz znacznikiem `AiMarker` (który system AI napisał uzasadnienie, z `ai_marker_for`, US-BEZ-07), `CachedResult` (merytoryczna część wyniku w pamięci wyników), `AnalysisStatus` (od v13 opcjonalny `draft`: zamaskowany szkic odpowiedzi do strumieniowania, nie werdykt), `Source` (od v14 opcjonalne `max_age_hours` z katalogu; `max_age_for` daje ten sam próg regule rozbieżności i sile, domyślnie 365 dni), `CheckRecord`, `ModeratorCase`, `CatalogEntry`, `Notification` (od v9 kod kroku `step_code` przy `check_progress` i kod komunikatu `message_code` przy `system`; tekst składa aplikacja z copy/pl.json, ADR-29); reguły z treści zadania pilnuje walidacja, `CONTRACT_VERSION` osobno od kontraktu zadań |
+| `meritum_core.checks.contracts` | kontrakty sprawdzania (MSZ „Prawdowid”): `CheckRequest`, `CheckResult` z werdyktami, cytatami i przesłankami oraz znacznikiem `AiMarker` (który system AI napisał uzasadnienie, z `ai_marker_for`, US-BEZ-07), `CachedResult` (merytoryczna część wyniku w pamięci wyników), `AnalysisStatus` (od v13 opcjonalny `draft`: zamaskowany szkic odpowiedzi do strumieniowania, nie werdykt), `CheckRequest` (od v15 `image_id`, wykluczające się z `text`, `url` i `audio_id`), `Source` (od v14 opcjonalne `max_age_hours` z katalogu; `max_age_for` daje ten sam próg regule rozbieżności i sile, domyślnie 365 dni), `CheckRecord`, `ModeratorCase`, `CatalogEntry`, `Notification` (od v9 kod kroku `step_code` przy `check_progress` i kod komunikatu `message_code` przy `system`; tekst składa aplikacja z copy/pl.json, ADR-29); reguły z treści zadania pilnuje walidacja, `CONTRACT_VERSION` osobno od kontraktu zadań |
 | `meritum_core.jobs.contracts` | nazwa aplikacji DBOS, kolejki, workflowy (`WorkflowSpec`: `ping`, `check`, `escalate_claim`, `delete_subject`, `readiness`) i ich modele wejścia/wyjścia (Pydantic) |
 | `meritum_core.jobs.ports` | port `JobQueue`, przez który backend zleca zadania i czyta ich strumienie (`stream`) i zdarzenia (`event`) |
 | `meritum_core.jobs.adapters` | `DbosJobQueue`: implementacja portu na `DBOSClient` |
@@ -16,6 +16,7 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.security.injection` | detektor prompt injection przed każdym wywołaniem modelu: wzorce PL/EN odporne na wielkość liter, znaki niewidoczne i podobne litery, bramka klasyfikatora za portem `InjectionGatePort` (`NullInjectionGate` loguje pominięcie, `FakeInjectionGate` w `fakes`), izolowany klasyfikator przez `LlmPort`; `build_injection_detector(llm=..., gate=...)` przyjmuje gotową bramkę, a `instruction_removed` wycina polecenie z treści użytkownika i zwraca `InjectionEvent` |
 | `meritum_core.security.pii` | `mask_personal_data(text, gate)`: najpierw bramka maskowania za portem `PiiGatePort` (Google Sensitive Data Protection w regionie UE albo `NullPiiGate`, która loguje pominięcie), potem wzorce telefonu, e-maila, PESEL-u i numeru dowodu; fabryka `build_pii_gate(PiiGateSettings())` według `MERITUM_PII_GATE` (zob. [Maskowanie danych osobowych](#maskowanie-danych-osobowych-meritum_coresecuritypii)) |
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie, po usuniętych sprawdzeniach i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
+| `meritum_core.checks.ocr` | porty `OcrPort` (`image_id` z `BlobStore` → `OcrResult`: tekst, kandydat na `claim_date`, metadane pliku) i `ImageSearchPort` (wcześniejsze wystąpienia albo jawne „nie wyszukano”), adapter Cloud Vision (`eu-vision.googleapis.com`, `DOCUMENT_TEXT_DETECTION`) i stub, fabryki `build_ocr` i `build_image_search`, `inspect_image`, limity w `constants.py`, błędy `UnsupportedImageError` i `OcrUnavailableError` |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
 | `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal; `FetchedPage.tdm_reserved` mówi, czy znaczniki meta strony zastrzegają eksplorację, a `content_signals()` czyta Content-Signal z robots.txt |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
@@ -193,6 +194,28 @@ Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na
 gcloud auth application-default login
 MERITUM_WEB_SEARCH_PROJECT=<projekt> MERITUM_WEB_SEARCH_ENGINE=<engine> uv run pytest -m integration tests/corpus/web_search
 ```
+
+## OCR obrazów (`meritum_core.checks.ocr`)
+
+Zrzut ekranu albo zdjęcie z tekstem leży w `BlobStore` (ADR-31), a żądanie niesie `image_id` (kontrakt v15; wyklucza `text`, `url` i `audio_id`). Workflow woła `OcrPort.read(image_id)` i dostaje `OcrResult`: tekst, pierwszą datę z tekstu jako kandydata na `claim_date` i metadane pliku. `date_confirms_publication` jest zawsze `false`: data widoczna na obrazie sama nie potwierdza, kiedy post faktycznie opublikowano. Tekst sprawdzamy dalej jak zwykły tekst (US-SPR-08, F-33).
+
+| Co | Wartość |
+| --- | --- |
+| Dostawca | Google Cloud Vision API przez REST, `DOCUMENT_TEXT_DETECTION`, punkt końcowy UE `eu-vision.googleapis.com` (ADR-14, ADR-30). Obraz wysyłamy w treści żądania; retencję po stronie Google'a opisuje jego dokumentacja Vision (nie trenuje na danych klienta), a w naszym `BlobStore` obraz żyje do `expires_at` |
+| Formaty i limit | PNG, JPEG, WebP, do `MAX_IMAGE_BYTES` (10 MiB); format ustalają bajty pliku, nie typ MIME |
+| Koszt | płatne według liczby obrazów (cennik Cloud Vision, pierwsze 1000 jednostek miesięcznie bezpłatnie); ponowienia liczą się jako osobne wywołania |
+| Wyszukiwanie wcześniejszych wystąpień | `ImageSearchPort` nie ma jeszcze dostawcy: `build_image_search()` daje adapter, który zwraca `searched=false`. Odpowiedź pokazuje wtedy ograniczenie `image_search_not_run` |
+
+Błędy: `UnsupportedImageError` (inny format, za duży plik) workflow mapuje na `out_of_scope` z `out_of_scope_code: "image"`; podtypy niosą `limitation_code` (`image_format_unsupported`, `image_too_large`). `OcrUnavailableError` (dostawca padł po ponowieniach, odrzucone dane logowania, odrzucony obraz) workflow mapuje na `technical_failure`. Brak pliku to `BlobNotFoundError`.
+
+| Zmienna | Domyślnie | Znaczenie |
+| --- | --- | --- |
+| `MERITUM_OCR_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vision` |
+| `MERITUM_OCR_PROJECT` | brak | projekt Google Cloud z włączonym Cloud Vision API; wymagany dla `vision` |
+| `MERITUM_OCR_RETRIES` | `3` | liczba prób HTTP przy 429 i 5xx (z pierwszą) |
+| `MERITUM_OCR_STUB_TEXT` | brak | plik z tekstem, który stub „odczytuje” z każdego obrazu; bez niego stub rzuca `OcrUnavailableError` |
+
+Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na nagranych odpowiedziach Vision (`tests/checks/ocr/`), bez sieci; prawdziwy dostawca tylko lokalnie.
 
 ## Transkrypcja nagrań (`meritum_core.checks.transcription`)
 
