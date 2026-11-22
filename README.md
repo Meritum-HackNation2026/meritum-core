@@ -827,7 +827,7 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 
 - Wejście: https://euvsdisinfo.eu/
 - Podstawa prawna: nota prawna EEAS; licencja bazy niepotwierdzona
-- Uwagi: MCP https://euvsdisinfo-mcp-server.vercel.app/mcp; instrukcja organizatora: euvsdisinfo.eu/public-docs/How_to_grab_all_Articles_and_Cases_from_disinfo.pdf. robots.txt blokuje */feed/.
+- Uwagi: MCP https://mcp.euvsd.info/mcp; instrukcja organizatora: euvsdisinfo.eu/public-docs/How_to_grab_all_Articles_and_Cases_from_disinfo.pdf. robots.txt blokuje */feed/.
 
 #### `factchecktools.googleapis.com`
 
