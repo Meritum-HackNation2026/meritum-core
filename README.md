@@ -197,7 +197,7 @@ MERITUM_WEB_SEARCH_PROJECT=<projekt> MERITUM_WEB_SEARCH_ENGINE=<engine> uv run p
 
 ## OCR obrazów (`meritum_core.checks.ocr`)
 
-Zrzut ekranu albo zdjęcie z tekstem leży w `BlobStore` (ADR-31), a żądanie niesie `image_id` (kontrakt v15; wyklucza `text`, `url` i `audio_id`). Workflow woła `OcrPort.read(image_id)` i dostaje `OcrResult`: tekst, pierwszą datę z tekstu jako kandydata na `claim_date` i metadane pliku. `date_confirms_publication` jest zawsze `false`: data widoczna na obrazie sama nie potwierdza, kiedy post faktycznie opublikowano. Tekst sprawdzamy dalej jak zwykły tekst (US-SPR-08, F-33).
+Zrzut ekranu albo zdjęcie z tekstem leży w `BlobStore` (ADR-31), a żądanie niesie `image_id` (kontrakt v15; wyklucza `text`, `url` i `audio_id`). Workflow woła `OcrPort.read(image_id)` i dostaje `OcrResult`: tekst, pierwszą datę z tekstu jako kandydata na `claim_date` i metadane pliku. `date_confirms_publication` jest zawsze `false`: data widoczna na obrazie sama nie potwierdza, kiedy post faktycznie opublikowano. Tekst sprawdzamy dalej jak zwykły tekst (US-SPR-08, F-33). Od v16 `CheckResult` i `CachedResult` niosą odczytany tekst w opcjonalnym `image_text` (zamaskowany, jak `transcript` dla audio), żeby kanał mógł go pokazać.
 
 | Co | Wartość |
 | --- | --- |

@@ -30,6 +30,13 @@ _Transcript = Annotated[
         description="Audio input only: the automatic transcript, with personal data masked.",
     ),
 ]
+_ImageText = Annotated[
+    str | None,
+    Field(
+        max_length=4000,
+        description="Image input only: the text read from the image, with personal data masked.",
+    ),
+]
 _AiMarkerField = Annotated[
     AiMarker | None,
     Field(
@@ -113,6 +120,7 @@ class CheckResult(_Model):
         limitations: what the check could not cover.
         limitation_codes: the codes of those limitations.
         transcript: the masked automatic transcript of an audio input.
+        image_text: the masked text read from an image input.
         source_warning: a sanctions note about the checked content.
         escalation: the hand-off to the moderator queue.
         corpus_version: the id of the corpus snapshot.
@@ -139,6 +147,7 @@ class CheckResult(_Model):
     limitations: list[Annotated[str, Field(max_length=300)]] = []
     limitation_codes: _LimitationCodes = []
     transcript: _Transcript = None
+    image_text: _ImageText = None
     source_warning: SourceStatusWarning | None = None
     escalation: Escalation | None = None
     corpus_version: Annotated[
@@ -191,6 +200,7 @@ class CachedResult(_Model):
         limitations: the cached limitations.
         limitation_codes: the cached limitation codes.
         transcript: the cached masked transcript of an audio input.
+        image_text: the cached masked text read from an image input.
         source_warning: the cached sanctions note.
         ai_marker: the cached AI marker of a finished check.
         corpus_version: the corpus snapshot the result came from.
@@ -209,6 +219,7 @@ class CachedResult(_Model):
     limitations: list[Annotated[str, Field(max_length=300)]] = []
     limitation_codes: _LimitationCodes = []
     transcript: _Transcript = None
+    image_text: _ImageText = None
     source_warning: SourceStatusWarning | None = None
     ai_marker: _AiMarkerField = None
     corpus_version: Annotated[str, Field(min_length=1, max_length=40)]
