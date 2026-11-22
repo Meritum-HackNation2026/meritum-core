@@ -188,6 +188,8 @@ Migracja `0003_corpus_documents.sql` dodaje `corpus.documents` (jeden wiersz na 
 
 Migracja `0006_publisher_removals.sql` dodaje `corpus.publisher_removals`, ewidencję wniosków wydawców o usunięcie tekstu (adres, `publisher_id`, `requested_at`, `removed_at` i liczba usuniętych dokumentów). Wiersz zapisuje workflow `publisher_removal` w meritum-worker (worker#77) w tej samej transakcji, w której kasuje dokumenty i fragmenty, więc widać, czy zmieścił się w 7 dniach. Numer 0006 idzie po 0004 i 0005 schematu `app`; numerów 0004 i 0005 w `corpus` nie ma, a pliki biegną w kolejności nazw.
 
+Migracja `0007_documents_via.sql` dodaje do `corpus.documents` kolumnę `via`, czyli drogę, którą dokument trafił do korpusu (US-KOR-03, F-13). Wartości są te same co w `SourceVia` z kontraktów: `corpus`, `rss`, `web_search`, `mcp`, pilnuje ich ograniczenie `documents_via_known`. Wiersze sprzed migracji dostają `corpus`, domyślną wartość `SourceVia`, bo przyszły z wczytywania katalogu. Kontrakt się nie zmienia.
+
 ## Wyszukiwanie na żywo (`meritum_core.corpus.web_search`)
 
 Przy świeżych twierdzeniach agent badawczy uzupełnia korpus wyszukiwaniem w sieci, ale tylko w domenach z katalogu (US-KOR-04, ADR-07). `build_web_search(WebSearchSettings(), load_catalog())` zwraca `WebSearchPort`; `search(MaskedText, limit=...)` daje listę `WebSearchCandidate` (adres, domena z katalogu, `publisher_id`). Port nie pobiera stron i nie zwraca ich treści: adres czyta potem fetcher (`corpus.fetching`, `FetchPurpose.SOURCE`, z robots.txt i Content-Signal) i dopiero wtedy można go cytować.

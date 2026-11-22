@@ -41,6 +41,7 @@ EXPECTED = [
     ("documents", "full_text", "text", False),
     ("documents", "added_at", TIMESTAMP, True),
     ("documents", "retired_at", TIMESTAMP, False),
+    ("documents", "via", "text", True),
     ("ingest_attempts", "domain", "text", True),
     ("ingest_attempts", "attempted_at", TIMESTAMP, True),
     ("snapshot_manifest", "version", "text", True),
