@@ -15,6 +15,7 @@ from meritum_core.security.injection import (
     instruction_removed,
 )
 from meritum_core.security.pii import (
+    MARKERS,
     MaskedText,
     NullPiiGate,
     PiiGatePort,
@@ -25,6 +26,7 @@ from meritum_core.security.pii import (
 )
 
 __all__ = [
+    "MARKERS",
     "InjectionDetectorPort",
     "InjectionGatePort",
     "InjectionScan",

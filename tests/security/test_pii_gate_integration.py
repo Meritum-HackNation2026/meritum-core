@@ -20,15 +20,18 @@ from meritum_core.security.pii.constants import HTTP_TIMEOUT_SECONDS
 
 
 @pytest.mark.integration
-def test_real_sensitive_data_protection_masks_a_polish_address() -> None:
+def test_real_sensitive_data_protection_keeps_a_name_and_masks_identifiers() -> None:
     project = os.environ.get("MERITUM_PII_PROJECT")
     if project is None:
         pytest.skip("MERITUM_PII_PROJECT is not set")
-    text = "Mieszkam przy ul. Marszałkowskiej 12/4, 00-590 Warszawa. Szczepionki zawierają chipy."
+    text = (
+        "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL 44051401359,"
+        " dowód ABA300000. Sejm przy ul. Wiejskiej 4 wydał 850 000 000 zł."
+    )
     result, again = asyncio.run(_mask_twice(project, text))
-    assert "Marszałkowskiej" not in result.text
-    assert "[adres]" in result.text
-    assert result.text.endswith("Szczepionki zawierają chipy.")
+    assert result.text.startswith("Donald Tusk powiedział")
+    assert all(s not in result.text for s in ("44051401359", "ABA300000"))
+    assert "Sejm przy ul. Wiejskiej 4 wydał 850 000 000 zł." in result.text
     assert again == MaskedText(text=result.text, replaced=0)
 
 

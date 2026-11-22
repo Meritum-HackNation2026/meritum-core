@@ -6,6 +6,7 @@ mock transport), so nothing leaves the process.
 
 import asyncio
 import logging
+from datetime import date
 from pathlib import Path
 from typing import override
 
@@ -14,7 +15,13 @@ from behave import given, then, when
 from behave.runner import Context
 from google.oauth2.credentials import Credentials
 
-from meritum_core.security import PiiGateSettings, build_pii_gate, mask_personal_data
+from meritum_core.corpus import CorpusSearchPort, Passage
+from meritum_core.security import (
+    NullPiiGate,
+    PiiGateSettings,
+    build_pii_gate,
+    mask_personal_data,
+)
 
 FIXTURES = Path(__file__).parents[2] / "tests" / "security" / "fixtures"
 ADDRESS_TEXT = (
@@ -52,12 +59,6 @@ def given_text_to_mask(context: Context, text: str) -> None:
     context.gate = build_pii_gate(PiiGateSettings())
 
 
-@given("tekst z adresem zamieszkania, którego wzorce z core/009 nie znają")
-def given_text_with_address(context: Context) -> None:
-    """A street address: no phone, e-mail or PESEL the patterns would catch."""
-    context.raw_text = ADDRESS_TEXT
-
-
 @given("wdrożenie bez konfiguracji DLP")
 def given_no_dlp(context: Context) -> None:
     """Default settings, and a text with an address and a phone number."""
@@ -73,7 +74,7 @@ def when_system_masks(context: Context) -> None:
 
 def _recorded_dlp(context: Context) -> None:
     """Build Sensitive Data Protection answering with the recorded reply."""
-    reply = (FIXTURES / "dlp-address.json").read_bytes()
+    reply = (FIXTURES / "dlp-identifiers.json").read_bytes()
     context.sent = []
 
     def answer(request: httpx2.Request) -> httpx2.Response:
@@ -116,7 +117,8 @@ def then_markers_replace_data(
     """Every marker is present and no personal data is left."""
     masked = context.masked.text
     assert all(marker in masked for marker in (phone, email, pesel)), masked
-    for secret in ("601 234 567", "jan.kowalski@example.pl", "44051401359"):
+    secrets = ("601 234 567", "jan.kowalski@example.pl", "44051401359", "ABA300000")
+    for secret in secrets:
         assert secret not in masked, masked
 
 
@@ -133,12 +135,60 @@ def then_number_is_kept(context: Context) -> None:
     assert context.masked.text == context.raw_text, context.masked.text
 
 
-@then("adres jest zastąpiony znacznikiem, a reszta tekstu jest bez zmian")
-def then_address_is_masked(context: Context) -> None:
-    """The DLP marker stands where the address was; nothing else moved."""
-    expected = "Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy."
+@then("wynik jest identyczny z tekstem wejściowym")
+def then_text_is_unchanged(context: Context) -> None:
+    """Amounts are no personal data: nothing is replaced."""
+    assert context.masked.text == context.raw_text, context.masked.text
+    assert context.masked.replaced == 0
+
+
+@then('wynik zawiera "{kept}"')
+def then_result_keeps(context: Context, kept: str) -> None:
+    """A public figure's name stays in the masked text."""
+    assert kept in context.masked.text, context.masked.text
+
+
+@then('oba numery są zastąpione znacznikiem "{marker}"')
+def then_both_phones_are_masked(context: Context, marker: str) -> None:
+    """Prefixed mobile and landline numbers are both replaced."""
+    expected = f"Dzwoń na {marker} albo {marker}"
     assert context.masked.text == expected, context.masked.text
-    assert context.masked.replaced == 1
+
+
+class _RecordingCorpus(CorpusSearchPort):
+    """Corpus search that records the query it was given (no passages)."""
+
+    def __init__(self) -> None:
+        self.queries: list[str] = []
+
+    @override
+    async def search(
+        self, query: str, *, claim_date: date, corpus_version: str, limit: int = 5
+    ) -> list[Passage]:
+        self.queries.append(query)
+        return []
+
+
+@given('twierdzenie "{claim}" po maskowaniu')
+def given_masked_claim(context: Context, claim: str) -> None:
+    """Mask the claim as the backend does before the workflow starts."""
+    context.claim = asyncio.run(mask_personal_data(claim, NullPiiGate())).text
+
+
+@when("system buduje zapytanie do wyszukiwania dowodów")
+def when_system_builds_query(context: Context) -> None:
+    """The masked claim is the corpus query (``CorpusSearchPort.search``)."""
+    corpus = _RecordingCorpus()
+    asyncio.run(
+        corpus.search(context.claim, claim_date=date(2025, 1, 1), corpus_version="v1")
+    )
+    [context.query] = corpus.queries
+
+
+@then('zapytanie zawiera "{amount}"')
+def then_query_holds_amount(context: Context, amount: str) -> None:
+    """The amount reaches the evidence search unchanged."""
+    assert amount in context.query, context.query
 
 
 @then(

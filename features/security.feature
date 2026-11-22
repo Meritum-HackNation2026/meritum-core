@@ -12,10 +12,26 @@ Feature: Maskowanie danych osobowych
     When system maskuje tekst
     Then liczba z błędną sumą kontrolną PESEL zostaje bez zmian
 
-  Scenario: DLP znajduje adres zamieszkania
-    Given tekst z adresem zamieszkania, którego wzorce z core/009 nie znają
+  Scenario: kwota z odstępem tysięcy zostaje bez zmian
+    Given tekst do maskowania "Budżet na 2025 r. to 850 000 000 zł, a dług wynosi 1 450 000 000 zł"
+    When system maskuje tekst
+    Then wynik jest identyczny z tekstem wejściowym
+
+  Scenario: nazwisko osoby publicznej zostaje, identyfikatory znikają
+    Given tekst do maskowania "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL 44051401359, dowód ABA300000"
     When system maskuje tekst z włączoną bramką DLP
-    Then adres jest zastąpiony znacznikiem, a reszta tekstu jest bez zmian
+    Then wynik zawiera "Donald Tusk"
+    And wynik zawiera "[telefon]", "[PESEL]" i "[dowód osobisty]" zamiast tych danych
+
+  Scenario: telefon nadal jest maskowany
+    Given tekst do maskowania "Dzwoń na +48 601 234 567 albo 22 123 45 67"
+    When system maskuje tekst
+    Then oba numery są zastąpione znacznikiem "[telefon]"
+
+  Scenario: wyszukiwanie dowodu dostaje kwotę
+    Given twierdzenie "Budżet na 2025 r. to 850 000 000 zł" po maskowaniu
+    When system buduje zapytanie do wyszukiwania dowodów
+    Then zapytanie zawiera "850 000 000 zł"
 
   Scenario: DLP rozlicza wywołanie w projekcie z konfiguracji
     Given bramka DLP z projektem z konfiguracji

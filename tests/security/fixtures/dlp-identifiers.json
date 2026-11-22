@@ -1,21 +1,21 @@
 {
   "item": {
-    "value": "Mieszkam przy ul. [adres] i widziałem, że szczepionki zawierają chipy."
+    "value": "Donald Tusk powiedział, że zadzwoni pod 601 234 567, PESEL [PESEL], dowód ABA300000"
   },
   "overview": {
-    "transformedBytes": "38",
+    "transformedBytes": "11",
     "transformationSummaries": [
       {
         "infoType": {
-          "name": "STREET_ADDRESS",
+          "name": "POLAND_PESEL_NUMBER",
           "sensitivityScore": {
-            "score": "SENSITIVITY_MODERATE"
+            "score": "SENSITIVITY_HIGH"
           }
         },
         "transformation": {
           "replaceConfig": {
             "newValue": {
-              "stringValue": "[adres]"
+              "stringValue": "[PESEL]"
             }
           }
         },
@@ -25,7 +25,7 @@
             "code": "SUCCESS"
           }
         ],
-        "transformedBytes": "38"
+        "transformedBytes": "11"
       }
     ]
   }
