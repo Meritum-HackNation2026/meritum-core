@@ -9,7 +9,9 @@ from typing import Final
 BLOB_ID_RANDOM_BYTES: Final = 16
 """Random bytes in a blob id (128 bits), written as 32 hex characters."""
 
-BLOB_ID_PATTERN: Final = rf"^(audio|image)_[0-9a-f]{{{2 * BLOB_ID_RANDOM_BYTES}}}$"
+BLOB_ID_PATTERN: Final = (
+    rf"^(audio|image|dataset)_[0-9a-f]{{{2 * BLOB_ID_RANDOM_BYTES}}}$"
+)
 """A blob id: a ``BlobKind`` value, then random hex; no user data, a safe file name."""
 
 ENV_PREFIX: Final = "MERITUM_BLOB_"
