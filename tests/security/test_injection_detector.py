@@ -18,7 +18,7 @@ from meritum_core.security.injection import (
     instruction_removed,
 )
 from meritum_core.security.injection.fakes import FakeInjectionGate
-from meritum_core.shared.llm import LlmResult, LlmUsage, Prompt
+from meritum_core.shared.llm import LlmResult, LlmToolResult, LlmUsage, Prompt, Tool
 
 from .conftest import Scan
 
@@ -109,6 +109,11 @@ class _RecordingLlm:
         return LlmResult[T](
             output=output.model_validate({"injected": False}), usage=usage
         )
+
+    async def complete_with_tools[T: BaseModel](
+        self, prompt: Prompt, output: type[T], tools: tuple[Tool, ...]
+    ) -> LlmToolResult[T]:
+        raise NotImplementedError
 
 
 def test_the_classifier_sees_the_text_only_as_data() -> None:

@@ -21,7 +21,7 @@ from meritum_core.jobs.ports import JobQueue
 from meritum_core.moderation import HighRiskTopic
 from meritum_core.shared.blobs import BlobRef, BlobSettings
 from meritum_core.shared.embeddings import EmbeddingsSettings
-from meritum_core.shared.llm import LlmResult, LlmSettings, LlmUsage, Prompt
+from meritum_core.shared.llm import LlmPort, LlmResult, LlmSettings, LlmUsage, Prompt
 
 DbosJobQueue  # built by meritum-backend's composition root
 DbosJobQueue.enqueue  # called by meritum-backend through the JobQueue port
@@ -73,3 +73,4 @@ EmbeddingsSettings._vertex_is_in_the_eu  # ruff: ignore[private-member-access]  
 Passage.model_config  # read by pydantic
 HighRiskTopic.keywords  # read by the worker's topic step (keyword fallback)
 FULL_TEXT_RETENTION_DAYS  # read by the worker retention job (US-KOR-05)
+LlmPort.complete_with_tools  # called by the worker research agent (core#115)

@@ -12,7 +12,6 @@ from typing import override
 
 from httpx2 import AsyncClient
 from openai import AsyncOpenAI
-from pydantic import BaseModel
 from pydantic_ai.agent import AgentRunResult
 from pydantic_ai.messages import ModelResponse
 from pydantic_ai.models.openrouter import (
@@ -82,13 +81,13 @@ class OpenRouterLlm(AgentLlm):
         )
 
     @override
-    def _processed_in(self, result: AgentRunResult[BaseModel]) -> str:
+    def _processed_in(self, result: AgentRunResult[object]) -> str:
         details = _details(result)
         upstream = details[-1].get(OPENROUTER_UPSTREAM_FIELD) if details else None
         return f"{self._region}:{upstream}" if upstream else self._region
 
     @override
-    def _cost(self, result: AgentRunResult[BaseModel]) -> float:
+    def _cost(self, result: AgentRunResult[object]) -> float:
         costs = (d.get(OPENROUTER_COST_FIELD) for d in _details(result))
         return sum(cost for cost in costs if isinstance(cost, int | float))
 
@@ -113,7 +112,7 @@ def _routing(settings: LlmSettings) -> OpenRouterProviderConfig:
     return routing
 
 
-def _details(result: AgentRunResult[BaseModel]) -> list[dict[str, object]]:
+def _details(result: AgentRunResult[object]) -> list[dict[str, object]]:
     """Collect the provider details of each model response in the run.
 
     Args:
