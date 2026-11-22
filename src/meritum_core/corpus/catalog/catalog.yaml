@@ -380,6 +380,71 @@ entries:
   qualified_because: Lista organizatora; komunikaty Prezesa Rady Ministrów.
   tdm_reservation: none
 
+- domain: www.gov.pl/web/rodzina
+  publisher: Ministerstwo Rodziny, Pracy i Polityki Społecznej
+  publisher_id: mrpips
+  kind: instytucja
+  tier: primary
+  role: evidence
+  license: CC BY-SA 4.0 (treści tekstowe gov.pl)
+  ingest: static
+  refresh_minutes: 1440
+  validity: expires
+  qualified_because: 'Płaca minimalna, 800+ i inne świadczenia: najczęstsze twierdzenia obywateli o pieniądzach (worker#170).'
+  tdm_reservation: none
+
+- domain: www.gov.pl/web/finanse
+  publisher: Ministerstwo Finansów
+  publisher_id: mf
+  kind: instytucja
+  tier: primary
+  role: evidence
+  license: CC BY-SA 4.0 (treści tekstowe gov.pl)
+  ingest: static
+  refresh_minutes: 1440
+  validity: expires
+  qualified_because: 'Budżet państwa, deficyt i dług publiczny: komunikaty i dane Ministerstwa Finansów (worker#170).'
+  tdm_reservation: none
+
+- domain: podatki.gov.pl
+  publisher: Ministerstwo Finansów (Krajowa Administracja Skarbowa)
+  publisher_id: mf
+  kind: instytucja
+  tier: primary
+  role: evidence
+  license: materiał urzędowy, ponowne wykorzystanie ISP
+  ingest: static
+  refresh_minutes: 10080
+  validity: updated_in_place
+  qualified_because: Objaśnienia stawek i progów PIT i VAT dla obywateli; ten sam wydawca co gov.pl/web/finanse (worker#170).
+  tdm_reservation: none
+
+- domain: www.zus.pl
+  publisher: Zakład Ubezpieczeń Społecznych
+  publisher_id: zus
+  kind: instytucja
+  tier: primary
+  role: evidence
+  license: materiał urzędowy, ponowne wykorzystanie ISP
+  ingest: static
+  refresh_minutes: 1440
+  validity: expires
+  qualified_because: 'Kwoty emerytur, rent i waloryzacji: źródło pierwotne twierdzeń o świadczeniach (worker#170).'
+  tdm_reservation: none
+
+- domain: www.prezydent.pl
+  publisher: Kancelaria Prezydenta RP
+  publisher_id: kprp
+  kind: instytucja
+  tier: primary
+  role: evidence
+  license: materiał urzędowy, ponowne wykorzystanie ISP
+  ingest: static
+  refresh_minutes: 360
+  validity: expires
+  qualified_because: 'Oficjalne komunikaty, ustawy podpisane i zawetowane: twierdzenia o urzędzie prezydenta (worker#170).'
+  tdm_reservation: none
+
 - domain: meteo.imgw.pl
   publisher: Instytut Meteorologii i Gospodarki Wodnej – PIB
   publisher_id: imgw
@@ -447,6 +512,22 @@ entries:
   validity: in_force
   qualified_because: 'Zastępuje ISAP: oficjalne API ELI z tekstami Dziennika Ustaw i Monitora Polskiego.'
   tdm_reservation: none
+
+- domain: www.sejm.gov.pl
+  publisher: Kancelaria Sejmu
+  publisher_id: kancelaria-sejmu
+  kind: instytucja
+  kind_by_path:
+    /Sejm10.nsf/stenogramy: transcript
+  tier: primary
+  role: evidence
+  license: materiał urzędowy
+  ingest: static
+  validity: expires
+  qualified_because: 'Prace Sejmu: głosowania, druki i stenogramy posiedzeń.'
+  tdm_reservation: none
+  excluded: true
+  exclusion_reason: Strona zwraca robotom wyzwanie (pętla przekierowań 307 i pusta strona „Loading”), więc fetcher nie odczyta treści. Akty i procesy legislacyjne pobieramy z api.sejm.gov.pl.
 
 - domain: eur-lex.europa.eu
   publisher: Urząd Publikacji Unii Europejskiej
@@ -693,6 +774,19 @@ entries:
   refresh_minutes: 10080
   validity: expires
   qualified_because: 'Oficjalna statystyka publiczna: twierdzenia liczbowe i rozbieżne dane (scenariusz C).'
+  tdm_reservation: none
+
+- domain: stat.gov.pl
+  publisher: Główny Urząd Statystyczny
+  publisher_id: gus
+  kind: dane_publiczne
+  tier: primary
+  role: evidence
+  license: materiał urzędowy, ponowne wykorzystanie ISP
+  ingest: static
+  refresh_minutes: 1440
+  validity: expires
+  qualified_because: Komunikaty i obwieszczenia GUS (inflacja, wynagrodzenia, PKB) w formie, w jakiej cytują je media; ten sam wydawca co BDL (worker#170).
   tdm_reservation: none
 
 - domain: api.nbp.pl

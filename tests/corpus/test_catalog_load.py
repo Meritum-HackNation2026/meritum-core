@@ -18,6 +18,17 @@ ENTRY = """
 """
 
 
+def test_catalogue_has_primary_sources_of_citizens_money_questions() -> None:
+    entries = {e.domain: e for e in load_catalog()}
+    citizens = ["www.gov.pl/web/rodzina", "www.gov.pl/web/finanse", "podatki.gov.pl"]
+    citizens += ["www.zus.pl", "stat.gov.pl", "www.prezydent.pl"]
+    for domain in citizens:
+        assert entries[domain].tier == "primary", domain
+        assert not entries[domain].excluded, domain
+    assert entries["www.sejm.gov.pl"].excluded
+    assert entries["www.sejm.gov.pl"].exclusion_reason is not None
+
+
 def _write(tmp_path: Path, body: str) -> Path:
     path = tmp_path / "catalog.yaml"
     path.write_text(body, encoding="utf-8")
@@ -26,7 +37,7 @@ def _write(tmp_path: Path, body: str) -> Path:
 
 def test_shipped_catalogue_has_the_curated_entries() -> None:
     entries = {e.domain: e for e in load_catalog()}
-    assert len(entries) == 57
+    assert len(entries) == 64
     assert entries["euvsdisinfo.eu"].publisher_id == "eeas-euvsdisinfo"
     assert entries["euvsdisinfo.eu"].ingest == "mcp"
     assert entries["konkret24.tvn24.pl"].excluded
