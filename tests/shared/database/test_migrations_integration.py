@@ -19,6 +19,10 @@ APP_TABLES = {
     "notifications",
     "removed_case_checks",
     "staff_accounts",
+    "result_cache",
+    "result_cache_checks",
+    "jury_links",
+    "rate_limit_hits",
     "schema_migrations",
 }
 MIGRATIONS = sorted(
@@ -104,3 +108,19 @@ def test_notifications_are_indexed_by_check_id(empty_schema: tuple[str, str]) ->
         ).fetchone()
     assert row is not None
     assert "check_id" in str(row[0])
+
+
+@pytest.mark.integration
+def test_rate_limit_hits_are_indexed_by_window_start(
+    empty_schema: tuple[str, str],
+) -> None:
+    url, schema = empty_schema
+    apply_migrations(url)
+    with psycopg.connect(url) as conn:
+        row = conn.execute(
+            "SELECT indexdef FROM pg_indexes WHERE schemaname = %s"
+            " AND indexname = 'rate_limit_hits_window_start'",
+            (schema,),
+        ).fetchone()
+    assert row is not None
+    assert "window_start" in str(row[0])
