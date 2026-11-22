@@ -80,6 +80,7 @@ from ._evidence import (
     current_citations,
     sources_conflict,
 )
+from ._kind import kind_for
 from ._moderation import CaseClaim, ModeratorCase
 from ._notifications import Notification
 from ._progress import AnalysisStatus, AnalysisStep
@@ -207,6 +208,7 @@ __all__ = [
     "evidence_age_hours",
     "is_expired",
     "is_stale",
+    "kind_for",
     "max_age_for",
     "sources_conflict",
     "strength_for",

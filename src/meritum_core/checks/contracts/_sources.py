@@ -152,6 +152,8 @@ class CatalogEntry(_Model):
         publisher: the publisher's name.
         publisher_id: the publisher id independence is counted on.
         kind: the kind of source.
+        kind_by_path: URL path fragments that override ``kind`` (e.g. ``/transcripts/``
+            is a ``transcript`` on a domain otherwise made of legal acts).
         tier: primary or secondary.
         license: the licence the content is used under.
         role: evidence, or a source-status list that only feeds a neutral warning.
@@ -173,6 +175,7 @@ class CatalogEntry(_Model):
     publisher: Annotated[str, Field(min_length=2, max_length=120)]
     publisher_id: PublisherId
     kind: SourceKind
+    kind_by_path: dict[str, SourceKind] = {}
     tier: SourceTier
     role: Annotated[
         Literal["evidence", "source_status"],

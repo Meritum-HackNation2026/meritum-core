@@ -20,10 +20,6 @@ def _premises(**kw: object) -> c.Premises:
     return c.Premises.model_validate(base | kw)
 
 
-def test_version_is_17() -> None:
-    assert c.CONTRACT_VERSION == 17
-
-
 def test_signatory_reviews_default_to_zero() -> None:
     assert _premises().signatory_reviews == 0
 

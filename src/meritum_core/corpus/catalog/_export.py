@@ -67,7 +67,9 @@ def catalog_markdown(entries: Sequence[CatalogEntry]) -> str:
 
 def _yaml_entry(entry: CatalogEntry) -> str:
     dumped_fields = entry.model_dump(mode="json", exclude_none=True)
-    fields = {k: v for k, v in dumped_fields.items() if v != []}  # e.g. signatory_of
+    fields = {
+        k: v for k, v in dumped_fields.items() if v not in ([], {})
+    }  # e.g. signatory_of, kind_by_path
     if not entry.excluded:
         del fields["excluded"]
     dumped = yaml.safe_dump([fields], allow_unicode=True, sort_keys=False, width=10_000)
@@ -78,8 +80,8 @@ def catalog_yaml(entries: Sequence[CatalogEntry], current: str) -> str:
     """Render the catalogue back to ``catalog.yaml`` in the curators' layout.
 
     Keeps the leading comment lines of ``current``, omits empty fields, empty
-    lists and ``excluded: false`` and puts a blank line between entries, so rewriting an
-    unchanged catalogue gives the same bytes.
+    lists and maps and ``excluded: false`` and puts a blank line between entries,
+    so rewriting an unchanged catalogue gives the same bytes.
 
     Args:
         entries: the validated catalogue.
