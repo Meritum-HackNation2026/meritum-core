@@ -4,6 +4,7 @@ Run: ``uv run vulture`` (paths come from ``[tool.vulture]`` in pyproject.toml).
 """
 
 from meritum_core.checks import constants
+from meritum_core.checks.ocr import ImageInfo, ImageOccurrence
 from meritum_core.corpus import CorpusSettings, Passage
 from meritum_core.corpus.constants import FULL_TEXT_RETENTION_DAYS
 from meritum_core.jobs.adapters import DbosJobQueue
@@ -74,3 +75,5 @@ Passage.model_config  # read by pydantic
 HighRiskTopic.keywords  # read by the worker's topic step (keyword fallback)
 FULL_TEXT_RETENTION_DAYS  # read by the worker retention job (US-KOR-05)
 LlmPort.complete_with_tools  # called by the worker research agent (core#115)
+ImageInfo.size_bytes  # file metadata read by the worker as context for the claim
+ImageOccurrence.seen_on  # read by the worker when it shows earlier hits

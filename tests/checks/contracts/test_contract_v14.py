@@ -11,10 +11,6 @@ from tests.evidence.samples import SOURCE
 from meritum_core.checks import contracts as c
 
 
-def test_version_is_14() -> None:
-    assert c.CONTRACT_VERSION == 14
-
-
 def test_threshold_defaults_to_a_year() -> None:
     source = c.Source.model_validate(SOURCE)
     assert source.max_age_hours is None

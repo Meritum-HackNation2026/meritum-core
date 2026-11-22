@@ -25,13 +25,15 @@ class CheckRequest(_Model):
         url: a link to check.
         page_url: extension only, the post the text came from.
         audio_id: an uploaded audio file or Discord voice message.
+        image_id: an uploaded screenshot or photo with text; read by OCR in the EU,
+            then checked like text. Excludes text, url and audio_id.
         channel_user_id: Discord, SMS and MCP only, the user id in that channel. The API
             turns it into the salted channel_user_hash (backend/027) and never stores it.
         session_id: web and extension only, the random browser session id that the
             API copies to CheckRecord.session_id.
 
     Features:
-        US-SPR-01, US-SPR-07, US-SPR-11, US-WTY-01, US-WTY-02, US-WTY-06,
+        US-SPR-01, US-SPR-07, US-SPR-08, US-SPR-11, US-WTY-01, US-WTY-02, US-WTY-06,
         US-WTY-07, US-WTY-08, US-WTY-09, US-BEZ-02, US-BEZ-05, US-BEZ-06, ADR-02
     """
 
@@ -48,6 +50,14 @@ class CheckRequest(_Model):
             min_length=1,
             max_length=80,
             description="Uploaded audio file or Discord voice message; transcribed in an EU region, then checked like text.",
+        ),
+    ] = None
+    image_id: Annotated[
+        str | None,
+        Field(
+            min_length=1,
+            max_length=80,
+            description="Uploaded screenshot or photo with text; read by OCR in an EU region, then checked like text. Excludes text, url and audio_id.",
         ),
     ] = None
     channel_user_id: Annotated[
@@ -71,8 +81,18 @@ class CheckRequest(_Model):
     @model_validator(mode="after")
     def _text_url_or_audio(self) -> CheckRequest:
         has_text = self.text is not None and len(self.text.strip()) >= MIN_TEXT_CHARS
-        if self.url is None and self.audio_id is None and not has_text:
-            raise ValueError("send text (3+ characters), a URL or an audio file")
+        has_input = self.url or self.audio_id or self.image_id or has_text
+        if not has_input:
+            raise ValueError(
+                "send text (3+ characters), a URL, an audio file or an image"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _image_stands_alone(self) -> CheckRequest:
+        others = (self.text, self.url, self.audio_id)
+        if self.image_id is not None and any(o is not None for o in others):
+            raise ValueError("an image excludes text, a URL and an audio file")
         return self
 
     @model_validator(mode="after")

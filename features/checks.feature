@@ -127,3 +127,19 @@ Feature: Sprawdzanie treści
     Given wynik ze stanem "done" z kodem powodu "image"
     When kontrakt waliduje wynik
     Then walidacja go odrzuca
+
+  Scenario: zrzut ekranu z tekstem i datą
+    Given zrzut ekranu posta z tekstem i datą "12.11.2026"
+    When system zleca OCR
+    Then dostaje odczytany tekst i datę jako kandydata na claim_date
+    And wynik zaznacza, że data widoczna na obrazie sama nie potwierdza rzeczywistej daty publikacji
+
+  Scenario: brak wyszukiwania wcześniejszych wystąpień
+    Given nie skonfigurowano działającego API ani lokalnej bazy obrazów
+    When system pyta o wcześniejsze wystąpienia
+    Then port zwraca jawny wynik "nie wyszukano", który odpowiedź pokazuje użytkownikowi
+
+  Scenario: awaria OCR
+    Given dostawca OCR zwraca błąd po wyczerpaniu ponowień
+    When system zleca OCR
+    Then port rzuca udokumentowany błąd, który workflow mapuje na "technical_failure"
