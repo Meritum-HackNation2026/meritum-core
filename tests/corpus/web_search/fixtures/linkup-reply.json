@@ -1,0 +1,22 @@
+{
+  "results": [
+    {
+      "type": "text",
+      "name": "Ostrzeżenia - Portal Gov.pl",
+      "url": "https://www.gov.pl/web/gov/ostrzezenia",
+      "content": "Ostrzeżenia przed burzami dla województw."
+    },
+    {
+      "type": "text",
+      "name": "Burze w Polsce",
+      "url": "https://example.com/burze",
+      "content": "Blog o burzach."
+    },
+    {
+      "type": "text",
+      "name": "Ostrzeżenia meteorologiczne IMGW-PIB",
+      "url": "https://meteo.imgw.pl/dyn/?osmet=true",
+      "content": "Aktualne ostrzeżenia meteorologiczne."
+    }
+  ]
+}

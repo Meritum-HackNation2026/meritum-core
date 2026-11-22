@@ -185,10 +185,29 @@ Zapasowy dostawca (core/024) implementuje `WebSearchProviderPort` (zapytanie →
 
 | Zmienna | Domyślnie | Znaczenie |
 | --- | --- | --- |
-| `MERITUM_WEB_SEARCH_PROVIDER` | `stub` | `stub` (bez kluczy i sieci) albo `vertex_search` |
+| `MERITUM_WEB_SEARCH_PROVIDER` | `stub` | `stub` (bez kluczy i sieci), `vertex_search`, `searxng` (zapas) albo `linkup` (opcjonalny) |
 | `MERITUM_WEB_SEARCH_PROJECT` | brak | projekt Google Cloud aplikacji wyszukiwania; wymagany dla `vertex_search` |
 | `MERITUM_WEB_SEARCH_ENGINE` | brak | id aplikacji (engine) Vertex AI Search nad website data store; wymagany dla `vertex_search` |
 | `MERITUM_WEB_SEARCH_STUB_FIXTURE` | brak | plik JSON z listą adresów, które zwraca stub; bez niego stub nic nie znajduje |
+| `MERITUM_WEB_SEARCH_SEARXNG_URL` | brak | adres naszej instancji SearXNG (np. `http://searxng:8080`); wymagany dla `searxng` |
+| `MERITUM_WEB_SEARCH_LINKUP_API_KEY` | brak | klucz Linkup; wymagany dla `linkup` |
+| `MERITUM_WEB_SEARCH_LINKUP_ENABLED` | `false` | wyłącznik Linkup; bez `true` ustawienia odrzucają `linkup` |
+
+Brak wymaganej zmiennej to błąd walidacji `WebSearchSettings` z jej nazwą w komunikacie, więc test gotowości workflowu pokazuje, czego brakuje.
+
+### Zapas: SearXNG i Linkup
+
+Gdy Vertex AI Search nie działa albo chcemy uniezależnić się od jednego dostawcy, `MERITUM_WEB_SEARCH_PROVIDER=searxng` przełącza port na własną instancję SearXNG. Oba zapasowe adaptery stoją za tym samym `WebSearchPort`, z tym samym limitem czasu, limitem zapytań i filtrem `catalog_entry_for`.
+
+| Co | SearXNG (`searxng`) | Linkup (`linkup`) |
+| --- | --- | --- |
+| Zapytanie | `GET {SEARXNG_URL}/search?format=json`, do `q` dopisane `(site:host1 OR site:host2 ...)` z hostów katalogu (`catalog_hosts`) | `POST https://api.linkup.so/v1/search`, `outputType=searchResults`, `depth=standard`, hosty katalogu w `includeDomains` |
+| Ścieżki wpisów | nie trafiają do dostawcy; sprawdza je dopiero nasz filtr | jak obok |
+| Włączenie | adres instancji | klucz i `LINKUP_ENABLED=true` |
+
+Usługa SearXNG: obraz `docker.io/searxng/searxng` (przypnij tag z datą wydania), port 8080. W `settings.yml` instancji trzeba włączyć format JSON (`search.formats: [html, json]`), ustawić `server.secret_key` z sekretu, `server.limiter: false` (ruch tylko z sieci wewnętrznej workera) i wybrać silniki obsługujące `site:` (np. `duckduckgo`, `bing`, `brave`). Instancja stoi w tym samym regionie UE co worker i nie jest wystawiona publicznie; do silników wychodzi tylko zamaskowane twierdzenie. Dopisanie usługi do `docker-compose.yml` w meritum-monorepo i wdrożenie to osobna zmiana po decyzji o włączeniu zapasu.
+
+Testy działają na nagranych odpowiedziach SearXNG i Linkup (`searxng-reply.json`, `linkup-reply.json`), bez sieci.
 
 Uwierzytelnienie przez Application Default Credentials. Testy w CI działają na nagranych odpowiedziach w formacie Discovery Engine (`tests/corpus/web_search/fixtures/`), bez sieci. Zapytanie do prawdziwego data store tylko lokalnie:
 

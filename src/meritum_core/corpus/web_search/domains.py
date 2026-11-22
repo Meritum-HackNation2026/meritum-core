@@ -75,3 +75,22 @@ def catalog_entry_for(url: str, catalog: Sequence[CatalogEntry]) -> CatalogEntry
     usable = (e for e in catalog if not e.excluded and e.role == "evidence")
     found = [e for e in usable if _matches(host, path, e)]
     return max(found, key=_specificity, default=None)
+
+
+def catalog_hosts(catalog: Sequence[CatalogEntry]) -> tuple[str, ...]:
+    """Hosts a provider may search: usable catalogue entries, without ``www.``.
+
+    Entry paths are left out, since providers filter by site;
+    ``catalog_entry_for`` checks the path afterwards.
+
+    Args:
+        catalog: the loaded catalogue.
+
+    Returns:
+        Each host once, in catalogue order.
+
+    Features:
+        US-KOR-04, F-13, ADR-07
+    """
+    usable = (e for e in catalog if not e.excluded and e.role == "evidence")
+    return tuple(dict.fromkeys(_split(e)[0] for e in usable))
