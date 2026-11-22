@@ -57,3 +57,20 @@ Feature: Cytaty ze źródeł i siła dowodów
     When system ustala werdykt
     Then starszy dowód ma ważność "superseded" i nie liczy się do siły ani rozbieżności
     And werdykt to "fałszywe" albo "wprowadzające w błąd" z techniką "outdated", nigdy "brak wystarczających dowodów"
+
+  Scenario: werdykt z oceny Demagogu (scenariusz G)
+    Given twierdzenie "Wrocław był jedynym miastem w Polsce, w którym 65-latkowie jeździli komunikacją miejską za darmo"
+    And ClaimReview od Demagogu z textualRating "Fałsz", tytułem, datą i linkiem
+    When system liczy werdykt i przesłanki
+    Then werdykt to "fałszywe" z przesłanką z oceną "Fałsz", tytułem, datą i linkiem do Demagogu, bez fragmentu strony
+    And siła liczy Demagoga jako jednego niezależnego wydawcę wtórnego, więc sama nie jest "mocna"
+
+  Scenario: ocena spoza tabeli mapowania
+    Given ClaimReview z textualRating, którego nie ma w tabeli mapowania ocen
+    When system liczy werdykt
+    Then ocena zostaje kontekstem z linkiem i nie jest przesłanką
+
+  Scenario: dosłowny tekst oceny
+    Given ClaimReview z textualRating "Częściowa prawda"
+    When kanał pokazuje przesłankę
+    Then ocena ma dokładnie brzmienie "Częściowa prawda", a nie parafrazę modelu
