@@ -30,6 +30,7 @@ class Premises(_Model):
     Attributes:
         independent_sources: distinct publishers among the agreeing citations.
         primary_sources: distinct primary-tier publishers among them.
+        signatory_reviews: distinct IFCN/EFCSN fact-checkers whose rating agrees.
         newest_source_published_at: publication date of the newest agreeing source.
         newest_source_age_hours: hours from that source to the claim date.
         max_age_hours: the catalogue threshold of the newest source.
@@ -54,6 +55,13 @@ class Premises(_Model):
             description="Distinct primary-tier publishers among the agreeing citations.",
         ),
     ]
+    signatory_reviews: Annotated[
+        int,
+        Field(
+            ge=0,
+            description="Distinct IFCN/EFCSN fact-checkers (publisher_id) whose ClaimReview rating agrees with the verdict; one is enough for at least moderate strength.",
+        ),
+    ] = 0
     newest_source_published_at: Annotated[
         datetime | None,
         Field(
@@ -160,7 +168,7 @@ def strength_for(p: Premises) -> Strength:
 
     Counts cover only publishers whose citations agree with the verdict. Strong: 2+
     agreeing independent publishers, 1+ of them primary, fresh evidence. Moderate: 2+
-    agreeing publishers or 1 primary, fresh evidence. Weak: one non-primary publisher,
+    agreeing publishers, 1 primary or 1 agreeing IFCN/EFCSN rating, fresh evidence. Weak: one non-primary publisher,
     or archival evidence.
 
     Args:
@@ -182,6 +190,7 @@ def strength_for(p: Premises) -> Strength:
     if (
         p.independent_sources >= STRONG_MIN_SOURCES
         or p.primary_sources >= STRONG_MIN_PRIMARY
+        or p.signatory_reviews >= 1
     ):
         return "moderate"
     return "weak"

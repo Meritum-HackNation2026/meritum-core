@@ -220,6 +220,8 @@ MERITUM_WEB_SEARCH_PROJECT=<projekt> MERITUM_WEB_SEARCH_ENGINE=<engine> uv run p
 
 Zrzut ekranu albo zdjęcie z tekstem leży w `BlobStore` (ADR-31), a żądanie niesie `image_id` (kontrakt v15; wyklucza `text`, `url` i `audio_id`). Workflow woła `OcrPort.read(image_id)` i dostaje `OcrResult`: tekst, pierwszą datę z tekstu jako kandydata na `claim_date` i metadane pliku. `date_confirms_publication` jest zawsze `false`: data widoczna na obrazie sama nie potwierdza, kiedy post faktycznie opublikowano. Tekst sprawdzamy dalej jak zwykły tekst (US-SPR-08, F-33). Od v16 `CheckResult` i `CachedResult` niosą odczytany tekst w opcjonalnym `image_text` (zamaskowany, jak `transcript` dla audio), żeby kanał mógł go pokazać.
 
+Od v17 `Premises` niesie `signatory_reviews` (liczbę sygnatariuszy IFCN/EFCSN, których ocena zgadza się z werdyktem), a jedna taka ocena daje siłę co najmniej „umiarkowaną” (`strength_for`). Pole jest addytywne, domyślnie 0.
+
 | Co | Wartość |
 | --- | --- |
 | Dostawca | Google Cloud Vision API przez REST, `DOCUMENT_TEXT_DETECTION`, punkt końcowy UE `eu-vision.googleapis.com` (ADR-14, ADR-30). Obraz wysyłamy w treści żądania; retencję po stronie Google'a opisuje jego dokumentacja Vision (nie trenuje na danych klienta), a w naszym `BlobStore` obraz żyje do `expires_at` |
