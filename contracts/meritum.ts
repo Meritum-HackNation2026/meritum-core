@@ -70,6 +70,10 @@ export type IndependentSources = number;
  */
 export type PrimarySources = number;
 /**
+ * Distinct IFCN/EFCSN fact-checkers (publisher_id) whose ClaimReview rating agrees with the verdict; one is enough for at least moderate strength.
+ */
+export type SignatoryReviews = number;
+/**
  * Publication date of the newest agreeing source, shown as a date.
  */
 export type NewestSourcePublishedAt = string | null;
@@ -571,6 +575,7 @@ export interface EvidenceStrength {
 export interface Premises {
   independent_sources: IndependentSources;
   primary_sources: PrimarySources;
+  signatory_reviews?: SignatoryReviews;
   newest_source_published_at?: NewestSourcePublishedAt;
   newest_source_age_hours?: NewestSourceAgeHours;
   max_age_hours?: MaxAgeHours1;

@@ -100,6 +100,7 @@ def compute_premises(
     return Premises(
         independent_sources=len(found.publishers),
         primary_sources=len(found.primary),
+        signatory_reviews=len({r.publisher_id for r in agreeing_reviews}),
         newest_source_published_at=newest_at,
         newest_source_age_hours=evidence_age_hours(newest_at, claim_date),
         max_age_hours=max_age_hours or _threshold(agreeing),

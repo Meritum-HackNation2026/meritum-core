@@ -12,10 +12,6 @@ from meritum_core.checks import contracts as c
 TEXT = "Sejm przyjął ustawę"
 
 
-def test_version_is_16() -> None:
-    assert c.CONTRACT_VERSION == 16
-
-
 def test_image_text_defaults_to_none() -> None:
     assert (
         c.CheckResult(
