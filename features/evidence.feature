@@ -58,6 +58,11 @@ Feature: Cytaty ze źródeł i siła dowodów
     Then starszy dowód ma ważność "superseded" i nie liczy się do siły ani rozbieżności
     And werdykt to "fałszywe" albo "wprowadzające w błąd" z techniką "outdated", nigdy "brak wystarczających dowodów"
 
+  Scenario: przeterminowany dowód nie tworzy rozbieżności
+    Given dowód z expires starszy niż data twierdzenia i świeże obalenie
+    When system ustala werdykt z datą twierdzenia
+    Then werdykt opiera się na świeżym dowodzie
+
   Scenario: werdykt z oceny Demagogu (scenariusz G)
     Given twierdzenie "Wrocław był jedynym miastem w Polsce, w którym 65-latkowie jeździli komunikacją miejską za darmo"
     And ClaimReview od Demagogu z textualRating "Fałsz", tytułem, datą i linkiem
