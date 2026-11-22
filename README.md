@@ -380,6 +380,7 @@ Każdy wpis w `catalog.yaml` to dokładnie `CatalogEntry`. Kontrakt ma `extra="f
 | `qualified_because` | Powód kwalifikacji |
 | `tdm_reservation` | `none`: brak zastrzeżenia. `reserved`: `ai-train=no` albo `ai-input=no` w Content-Signal robots.txt, znacznik meta `tdm-reservation` albo `noai`. Samo `Disallow` blokuje pobieranie, nie eksplorację, więc daje wykluczenie z powodem, a nie `reserved`. `unknown`: nie dało się odczytać. |
 | `signatory_of` | `ifcn` i/lub `efcsn`, gdy wydawca jest na liście Active IFCN albo na liście sygnatariuszy EFCSN (reguła i data weryfikacji wyżej). Puste u wydawców bez członkostwa oraz u agregatorów i portali bez własnych ocen ClaimReview (np. EUvsDisinfo, EDMO, Check First, NASK). |
+| `disclaimer` | Własne zastrzeżenie wydawcy, które frontend pokazuje obok cytatu z tego źródła (dziś tylko EUvsDisinfo: przypadki nie są oficjalnym stanowiskiem UE). Pole opcjonalne i addytywne, więc `CONTRACT_VERSION` zostaje bez zmian; frontend szuka wpisu po `publisher_id` w `catalog.json`. |
 | `excluded`, `exclusion_reason` | Wykluczenie zawsze ma powód. Pola pomijamy, gdy wpis nie jest wykluczony. Wykluczenie nie zeruje `signatory_of`, jeśli Fact Check API ma rozpoznać wydawcę oceny. |
 
 ### Tabela audytu

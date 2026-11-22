@@ -166,6 +166,7 @@ class CatalogEntry(_Model):
         signatory_of: the fact-checking networks the publisher signed (IFCN, EFCSN).
         excluded: whether the domain is excluded.
         exclusion_reason: why it is excluded.
+        disclaimer: the publisher's own disclaimer, shown next to every citation of it.
 
     Features:
         US-ZRD-12, US-KOR-01, US-KOR-05, US-KOR-08, ADR-02, ADR-34
@@ -219,6 +220,7 @@ class CatalogEntry(_Model):
     ] = []
     excluded: bool = False
     exclusion_reason: Annotated[str | None, Field(max_length=300)] = None
+    disclaimer: Annotated[str | None, Field(max_length=300)] = None
 
     @model_validator(mode="after")
     def _exclusion_has_reason(self) -> CatalogEntry:
