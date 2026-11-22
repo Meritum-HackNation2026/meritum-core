@@ -109,7 +109,7 @@ class PostgresCheckRecordRepository:
                 "SELECT record FROM check_records WHERE check_id = %s", (check_id,)
             )
             row = await cursor.fetchone()
-        return None if row is None else CheckRecord.model_validate(row[0])
+        return None if row is None else _record(row[0])
 
     async def list_for(self, kind: SubjectKind, value: str) -> list[CheckRecord]:
         """List one person's records, newest first.
@@ -128,7 +128,7 @@ class PostgresCheckRecordRepository:
         async with await self._connect() as conn:
             cursor = await conn.execute(query, (value,))
             rows = await cursor.fetchall()
-        return list(starmap(CheckRecord.model_validate, rows))
+        return list(starmap(_record, rows))
 
     async def delete_subject(self, kind: SubjectKind, value: str) -> list[str]:
         """Delete one person's records.
@@ -172,3 +172,8 @@ class PostgresCheckRecordRepository:
             await conn.execute(
                 "DELETE FROM check_records WHERE check_id = ANY(%s)", (list(check_ids),)
             )
+
+
+def _record(value: object) -> CheckRecord:
+    # The worker may run a newer contract than this reader (core#140).
+    return CheckRecord.model_validate(value, extra="ignore")

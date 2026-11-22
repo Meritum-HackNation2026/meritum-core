@@ -5,8 +5,13 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import psycopg
+import pytest
+
 from meritum_core.checks import CheckRecordRepository
 from meritum_core.checks.contracts import CheckRecord
+from meritum_core.observability import build_app_repositories
+from meritum_core.shared.database import DatabaseProvider, DatabaseSettings
 
 EXAMPLE = json.loads(
     (Path(__file__).parents[3] / "contracts" / "examples.json").read_text("utf-8")
@@ -100,3 +105,20 @@ def test_delete_removes_the_given_checks_and_ignores_unknown_ids(
     run.run(records.delete(["c_1", "c_unknown"]))
     assert run.run(records.get("c_1")) is None
     assert run.run(records.get("c_2")) is not None
+
+
+@pytest.mark.integration
+def test_postgres_reads_records_a_newer_contract_wrote(
+    app_database_url: str, run: asyncio.Runner
+) -> None:
+    settings = DatabaseSettings(
+        provider=DatabaseProvider.POSTGRES, url=app_database_url
+    )
+    repo = build_app_repositories(settings).records
+    save(run, repo, record("c1"))
+    with psycopg.connect(app_database_url, autocommit=True) as conn:
+        conn.execute(
+            "UPDATE check_records SET record = record || '{\"from_v_next\": 1}'"
+        )
+    assert run.run(repo.get("c1")) == record("c1")
+    assert run.run(repo.list_for("session_id", SESSION)) == [record("c1")]
