@@ -61,3 +61,21 @@ DOT_SEGMENTS: Final = frozenset({".", ".."})
 PATH_SEPARATORS: Final = frozenset({"/", "\\", ";"})
 """Separators a segment may not hold once decoded (``%2f``, ``%5c``, ``..;``): a
 server that splits on them would see other segments than the path filter did."""
+
+SEARXNG_SEARCH_PATH: Final = "search"
+"""Path of the SearXNG search endpoint, joined to ``MERITUM_WEB_SEARCH_SEARXNG_URL``."""
+
+SEARXNG_FORMAT: Final = "json"
+"""Reply format asked from SearXNG; the instance must list it in ``search.formats``."""
+
+SITE_JOINER: Final = " OR "
+"""Joins the ``site:`` operators that keep a SearXNG query on catalogue hosts."""
+
+LINKUP_ENDPOINT: Final = "https://api.linkup.so/v1/search"
+"""REST endpoint of Linkup search; the optional adapter behind a key and a switch."""
+
+LINKUP_DEPTH: Final = "standard"
+"""Linkup search depth: one pass, the cheaper of ``standard`` and ``deep``."""
+
+LINKUP_OUTPUT: Final = "searchResults"
+"""Linkup output type that returns result addresses, not a sourced answer."""

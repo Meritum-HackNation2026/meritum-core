@@ -54,3 +54,13 @@ Feature: Wyszukiwanie w korpusie
     Given MERITUM_WEB_SEARCH_PROVIDER=stub
     When system wyszukuje dowolną frazę
     Then port zwraca kandydatów z fixture, bez wywołań sieci
+
+  Scenario: zapas wybrany konfiguracją
+    Given MERITUM_WEB_SEARCH_PROVIDER=searxng i adres instancji SearXNG
+    When fabryka buduje adapter i system szuka w sieci "ostrzeżenie przed burzami"
+    Then zapytanie jest ograniczone do domen katalogu, a wynik spoza katalogu odpada w naszym filtrze
+
+  Scenario: Linkup bez klucza
+    Given MERITUM_WEB_SEARCH_PROVIDER=linkup bez klucza albo z wyłączonym wyłącznikiem
+    When fabryka buduje adapter wyszukiwania
+    Then zgłasza błąd konfiguracji, który test gotowości wymienia z nazwy zmiennej
