@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Final
 if TYPE_CHECKING:
     from meritum_core.checks.contracts import (
         Channel,
+        EvalOutcome,
         MatchBasis,
         MatchedOn,
         NotificationKind,
@@ -71,7 +72,7 @@ URL_TRAILING_PUNCTUATION: Final = ".,;:!?)\"'"
 URL_SCHEMES: Final = frozenset({"http", "https"})
 """Schemes a post URL may have; anything else is dropped from the context."""
 
-CONTRACT_VERSION: Final = 9
+CONTRACT_VERSION: Final = 10
 """Version of the check contracts (CheckRequest, CheckResult, ...).
 
 Independent of the job contract version in meritum_core.jobs.contracts. Raise it on
@@ -130,3 +131,19 @@ REQUIRED_MATCH_BASIS: Final[dict[MatchedOn, frozenset[MatchBasis]]] = {
     "domain": frozenset({"domain", "topic"}),
 }
 """What an incident match must agree on; a domain alone never makes a content match."""
+
+EVAL_OUTCOME_ORDER: Final[tuple[EvalOutcome, ...]] = (
+    "wrong_decisive",
+    "non_verdict",
+    "wrong_abstention",
+    "correct",
+)
+"""Case outcomes from the worst; of several main claims the worst counts (US-OBS-04)."""
+
+ABSTAINING: Final[frozenset[Verdict]] = frozenset(
+    {"insufficient_evidence", "not_verifiable"}
+)
+"""Verdicts that abstain from settling a claim; a wrong one beats a wrong settling."""
+
+STAFF_KINDS: Final[frozenset[NotificationKind]] = frozenset({"eval_run_done"})
+"""Notification kinds addressed only to a signed-in staff user, never a session."""

@@ -11,7 +11,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field, model_validator
 
-from meritum_core.checks.constants import CASE_KINDS, CHECK_KINDS
+from meritum_core.checks.constants import CASE_KINDS, CHECK_KINDS, STAFF_KINDS
 
 from ._base import _Model
 from ._types import AnalysisStepCode, NotificationKind, SystemMessageCode
@@ -49,8 +49,8 @@ class Notification(_Model):
         retention_until: when it is deleted.
 
     Features:
-        US-POW-01, US-POW-02, US-POW-03, US-POW-04, US-POW-05, US-MOD-07, F-26, ADR-02,
-        ADR-29
+        US-POW-01, US-POW-02, US-POW-03, US-POW-04, US-POW-05, US-MOD-07, F-26, F-28,
+        ADR-02, ADR-29
     """
 
     id: Annotated[str, Field(min_length=1, max_length=40)]
@@ -87,6 +87,8 @@ class Notification(_Model):
             raise ValueError("a notification goes to one session or one signed-in user")
         if self.kind in CHECK_KINDS and self.check_id is None:
             raise ValueError(f"{self.kind!r} names the check")
+        if self.kind in STAFF_KINDS and self.user_id is None:
+            raise ValueError(f"{self.kind!r} goes to a staff user, not a session")
         if self.kind in CASE_KINDS and self.case_id is None:
             raise ValueError(f"{self.kind!r} names the case")
         _code_for_kind(self.kind, "check_progress", self.step_code, "a step")

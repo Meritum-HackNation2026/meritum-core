@@ -73,6 +73,7 @@ NotificationKind = Literal[
     "new_evidence",  # new evidence for an earlier question
     "case_assigned",  # staff: a case was created or updated for the moderator
     "system",
+    "eval_run_done",  # staff: an evaluation run the recipient started finished
 ]
 # A step of the check pipeline, shown in the processing strip and named by a
 # check_progress notification; the text is analysis.steps.<code> in copy/pl.json.
@@ -130,3 +131,9 @@ MatchBasis = Literal["title", "topic", "date", "domain"]
 MatchedOn = Literal["content", "domain"]
 # Networks whose signatories' ClaimReview ratings may be premises (ADR-34).
 FactCheckNetwork = Literal["ifcn", "efcsn"]
+
+# Case outcome of an evaluation run, from the worst (US-OBS-04).
+EvalOutcome = Literal["wrong_decisive", "non_verdict", "wrong_abstention", "correct"]
+# golden: the repo's golden set; user_file: a case file a staff user uploaded.
+EvalCaseSet = Literal["golden", "user_file"]
+EvalRunStatus = Literal["queued", "running", "done", "failed"]

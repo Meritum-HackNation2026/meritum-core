@@ -53,6 +53,7 @@ from meritum_core.checks.constants import (
     CHECK_KINDS,
     CONTRACT_VERSION,
     DEFAULT_MAX_AGE_HOURS,
+    EVAL_OUTCOME_ORDER,
     MIN_TEXT_CHARS,
     PER_EVIDENCE_VALIDITY,
     REQUIRED_MATCH_BASIS,
@@ -64,6 +65,13 @@ from meritum_core.checks.constants import (
 from ._ai import AiMarker, ai_marker_for
 from ._claims import ClaimResult
 from ._context import ClaimReviewContext, IncidentMatch, SourceStatusWarning
+from ._evals import (
+    EvalCaseResult,
+    EvalMetrics,
+    EvalRun,
+    EvalScenarioScore,
+    case_outcome,
+)
 from ._moderation import CaseClaim, ModeratorCase
 from ._notifications import Notification
 from ._progress import AnalysisStatus, AnalysisStep
@@ -80,6 +88,9 @@ from ._types import (
     Channel,
     CheckStatus,
     ClaimDateSource,
+    EvalCaseSet,
+    EvalOutcome,
+    EvalRunStatus,
     FactCheckNetwork,
     FailureCode,
     LimitationCode,
@@ -108,6 +119,7 @@ __all__ = [
     "CHECK_KINDS",
     "CONTRACT_VERSION",
     "DEFAULT_MAX_AGE_HOURS",
+    "EVAL_OUTCOME_ORDER",
     "MIN_TEXT_CHARS",
     "PER_EVIDENCE_VALIDITY",
     "REQUIRED_MATCH_BASIS",
@@ -135,6 +147,13 @@ __all__ = [
     "ClaimReviewContext",
     "ClaimReviewPremise",
     "Escalation",
+    "EvalCaseResult",
+    "EvalCaseSet",
+    "EvalMetrics",
+    "EvalOutcome",
+    "EvalRun",
+    "EvalRunStatus",
+    "EvalScenarioScore",
     "EvidenceStrength",
     "FactCheckNetwork",
     "FailureCode",
@@ -164,6 +183,7 @@ __all__ = [
     "Verdict",
     "VerdictChange",
     "ai_marker_for",
+    "case_outcome",
     "is_stale",
     "strength_for",
     "verdict_changes_for",

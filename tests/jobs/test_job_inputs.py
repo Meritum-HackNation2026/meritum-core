@@ -34,6 +34,7 @@ def test_contract_version_is_4_and_every_workflow_is_listed() -> None:
         "escalate_claim",
         "delete_subject",
         "readiness",
+        "eval_run",
     }
     assert {CHECK, ESCALATE_CLAIM, DELETE_SUBJECT, READINESS} <= set(WORKFLOWS)
 

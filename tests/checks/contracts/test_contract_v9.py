@@ -77,7 +77,3 @@ def test_schema_describes_the_codes() -> None:
     props = c.Notification.model_json_schema()["properties"]
     assert "check_progress only" in props["step_code"]["description"]
     assert "system only" in props["message_code"]["description"]
-
-
-def test_contract_version_is_9() -> None:
-    assert c.CONTRACT_VERSION == 9

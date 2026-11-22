@@ -11,6 +11,7 @@ from meritum_core.jobs.contracts import (
     CheckInput,
     DeleteSubjectOutput,
     EscalateClaimOutput,
+    EvalRunInput,
     PingInput,
     PingOutput,
     ReadinessReport,
@@ -49,6 +50,8 @@ DeleteSubjectOutput.deleted
 ReadinessReport.missing_env
 ReadinessReport.unavailable_providers
 ReadinessReport.checked_at
+EvalRunInput.run_id  # read by meritum-worker's eval_run workflow
+EvalRunInput.case_file
 
 # Contract constants: read by the models in checks/contracts/, which vulture skips.
 constants.MIN_TEXT_CHARS
@@ -60,6 +63,9 @@ constants.DEFAULT_MAX_AGE_HOURS
 constants.SESSIONLESS_CHANNELS
 constants.CHECK_KINDS
 constants.CASE_KINDS
+constants.STAFF_KINDS
+constants.ABSTAINING
+constants.EVAL_OUTCOME_ORDER
 CorpusSettings.model_config  # read by pydantic-settings
 CorpusSettings._postgres_has_a_database  # ruff: ignore[private-member-access]  # Pydantic validator
 EmbeddingsSettings.model_config  # read by pydantic-settings
