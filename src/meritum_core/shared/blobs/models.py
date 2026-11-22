@@ -16,7 +16,7 @@ from meritum_core.shared.blobs.errors import BlobNotFoundError
 
 
 class BlobKind(StrEnum):
-    """What a blob holds; its value prefixes the id (``audio_id``, ``image_id``).
+    """What a blob holds; its value prefixes the id (``audio_id``, ``dataset_id``...).
 
     Features:
         US-SPR-11, US-SPR-08, ADR-31
@@ -24,6 +24,7 @@ class BlobKind(StrEnum):
 
     AUDIO = "audio"
     IMAGE = "image"
+    DATASET = "dataset"
 
 
 class BlobRef(BaseModel):

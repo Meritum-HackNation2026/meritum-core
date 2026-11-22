@@ -14,6 +14,7 @@ from meritum_core.jobs.contracts import (
     CheckInput,
     DeleteSubjectInput,
     EscalateClaimInput,
+    EvalRunInput,
     ReadinessReport,
 )
 
@@ -26,8 +27,8 @@ def _discord(**identity: str) -> CheckInput:
     return CheckInput(request=request, received_at=NOW, **identity)
 
 
-def test_contract_version_is_4_and_every_workflow_is_listed() -> None:
-    assert CONTRACT_VERSION == 4
+def test_contract_version_is_5_and_every_workflow_is_listed() -> None:
+    assert CONTRACT_VERSION == 5
     assert {s.name for s in WORKFLOWS} == {
         "ping",
         "check",
@@ -181,3 +182,37 @@ def test_check_input_rejects_a_request_session_id_other_than_its_own() -> None:
         CheckInput(request=request, user_id="user-0001", received_at=NOW)
     same = CheckInput(request=request, session_id="session-1", received_at=NOW)
     assert same.request.session_id == same.session_id
+
+
+EVAL_RUN = {
+    "run_id": "run-1",
+    "case_set": "user_file",
+    "case_file": "przypadki.csv",
+    "corpus_version": "2026-11-22",
+    "user_id": "staff-0001",
+}
+DATASET_BLOB = "dataset_" + "a" * 32
+
+
+def test_eval_run_input_names_the_dataset_blob_of_a_user_file() -> None:
+    job = EvalRunInput.model_validate(EVAL_RUN | {"dataset_blob_id": DATASET_BLOB})
+    assert job.dataset_blob_id == DATASET_BLOB
+
+
+def test_eval_run_input_without_a_dataset_blob_stays_valid() -> None:
+    assert EvalRunInput.model_validate(EVAL_RUN).dataset_blob_id is None
+
+
+@pytest.mark.parametrize(
+    "extra",
+    [
+        {"case_set": "golden", "case_file": None, "dataset_blob_id": DATASET_BLOB},
+        {"dataset_blob_id": "../etc/passwd"},
+        {"dataset_blob_id": "audio_" + "a" * 32},
+    ],
+)
+def test_eval_run_input_rejects_a_dataset_blob_that_is_not_a_user_files(
+    extra: dict[str, object],
+) -> None:
+    with pytest.raises(ValidationError):
+        EvalRunInput.model_validate(EVAL_RUN | extra)

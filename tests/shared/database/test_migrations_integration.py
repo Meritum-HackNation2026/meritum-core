@@ -23,6 +23,8 @@ APP_TABLES = {
     "result_cache_checks",
     "jury_links",
     "rate_limit_hits",
+    "eval_runs",
+    "eval_datasets",
     "schema_migrations",
 }
 MIGRATIONS = sorted(

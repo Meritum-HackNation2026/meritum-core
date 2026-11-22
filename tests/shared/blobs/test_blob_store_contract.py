@@ -16,7 +16,11 @@ from meritum_core.shared.blobs import (
 )
 
 EXPIRES_AT = datetime.now(UTC) + timedelta(days=30)
-CONTENT_TYPES = {BlobKind.AUDIO: "audio/ogg", BlobKind.IMAGE: "image/png"}
+CONTENT_TYPES = {
+    BlobKind.AUDIO: "audio/ogg",
+    BlobKind.IMAGE: "image/png",
+    BlobKind.DATASET: "application/json",
+}
 UNKNOWN_ID = f"{BlobKind.AUDIO}_{'0' * 32}"
 MALFORMED_IDS = ["", "../etc/passwd", f"{BlobKind.AUDIO}_../../x", "a" * 81]
 

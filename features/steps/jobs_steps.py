@@ -11,7 +11,13 @@ from pydantic import ValidationError
 
 from meritum_core.checks import AnalysisStatus, CheckRequest, CheckResult
 from meritum_core.jobs.constants import PROGRESS_KEY
-from meritum_core.jobs.contracts import CHECK, WORKFLOWS, CheckInput, EscalateClaimInput
+from meritum_core.jobs.contracts import (
+    CHECK,
+    WORKFLOWS,
+    CheckInput,
+    EscalateClaimInput,
+    EvalRunInput,
+)
 from meritum_core.jobs.fakes import InMemoryJobQueue
 
 _SALT = b"behave-salt"
@@ -181,3 +187,49 @@ def then_input_rejected(context: Context) -> None:
     """The job contract refused the input for its session id."""
     assert context.error is not None
     assert "session id" in str(context.error)
+
+
+_DATASET_BLOB = "dataset_" + "a" * 32
+_EVAL_RUN = {
+    "run_id": "run-1",
+    "case_set": "user_file",
+    "case_file": "przypadki.csv",
+    "corpus_version": "2026-11-22",
+    "user_id": "staff-0001",
+}
+
+
+@given("EvalRunInput z pliku użytkownika z dataset_blob_id wskazującym zestaw")
+def given_eval_run_with_dataset_blob(context: Context) -> None:
+    """A user file run whose cases sit in the blob store."""
+    context.payload = {**_EVAL_RUN, "dataset_blob_id": _DATASET_BLOB}
+
+
+@when("kontrakt waliduje wejście przebiegu")
+def when_contract_validates_eval_run(context: Context) -> None:
+    """Validate the payload as the worker does."""
+    context.eval_run = EvalRunInput.model_validate(context.payload)
+
+
+@then("wejście przebiegu jest poprawne i niesie identyfikator zestawu")
+def then_eval_run_names_the_dataset(context: Context) -> None:
+    """The input is valid and carries the blob id."""
+    assert context.eval_run.dataset_blob_id == _DATASET_BLOB
+
+
+@then("to samo wejście bez dataset_blob_id też jest poprawne")
+def then_eval_run_without_blob_is_valid(_context: Context) -> None:
+    """Additive change: an older sender's input still validates."""
+    assert EvalRunInput.model_validate(_EVAL_RUN).dataset_blob_id is None
+
+
+@then("dataset_blob_id przy zestawie złotym jest odrzucane")
+def then_golden_set_refuses_a_blob(context: Context) -> None:
+    """Only a user file run has an uploaded set."""
+    payload = {**context.payload, "case_set": "golden", "case_file": None}
+    refused = False
+    try:
+        EvalRunInput.model_validate(payload)
+    except ValidationError:
+        refused = True
+    assert refused

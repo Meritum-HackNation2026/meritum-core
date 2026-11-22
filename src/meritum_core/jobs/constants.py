@@ -6,7 +6,7 @@ Features:
 
 from typing import Final
 
-CONTRACT_VERSION: Final = 4
+CONTRACT_VERSION: Final = 5
 """Version of the job contract; raise it on any change a consumer cannot read."""
 
 APPLICATION_NAME: Final = "meritum-worker"
