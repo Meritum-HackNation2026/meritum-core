@@ -58,6 +58,21 @@ class CheckRecordRepository(Protocol):
         """
         ...
 
+    async def list_between(
+        self, start: datetime, end: datetime, limit: int
+    ) -> list[CheckRecord]:
+        """List records received in ``[start, end)``, newest first, then by check id.
+
+        Args:
+            start: inclusive, timezone-aware lower bound.
+            end: exclusive, timezone-aware upper bound.
+            limit: maximum records to return. Nonpositive limits return no records.
+
+        Returns:
+            Matching records across all subjects.
+        """
+        ...
+
     async def delete_subject(self, kind: SubjectKind, value: str) -> list[str]:
         """Delete every record of one person (US-BEZ-05).
 
