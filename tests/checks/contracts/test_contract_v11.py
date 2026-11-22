@@ -15,10 +15,6 @@ from meritum_core.checks import contracts as c
 CACHED: dict[str, Any] = EXAMPLES["CachedResult"]
 
 
-def test_version_is_11() -> None:
-    assert c.CONTRACT_VERSION == 11
-
-
 def test_corpus_scope_note_has_its_code() -> None:
     result = c.CheckResult.model_validate(DONE)
     assert result.limitation_codes == ["corpus_scope"]

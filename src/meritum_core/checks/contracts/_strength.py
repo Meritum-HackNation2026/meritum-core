@@ -6,8 +6,8 @@ Features:
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Annotated
+from datetime import date, datetime, time, timedelta
+from typing import TYPE_CHECKING, Annotated
 
 from pydantic import Field, model_validator
 
@@ -15,6 +15,9 @@ from meritum_core.checks.constants import DEFAULT_MAX_AGE_HOURS, STRONG_MIN_SOUR
 
 from ._base import _Model
 from ._types import Agreement, Strength, Validity
+
+if TYPE_CHECKING:
+    from ._sources import Citation
 
 
 class Premises(_Model):
@@ -86,6 +89,52 @@ def is_stale(p: Premises) -> bool:
         p.validity == "expires"
         and p.newest_source_age_hours is not None
         and p.newest_source_age_hours > p.max_age_hours
+    )
+
+
+def evidence_age_hours(published_at: datetime | None, claim_date: date) -> int | None:
+    """Hours from a publication to the start of the claim date, in its own UTC offset.
+
+    Args:
+        published_at: when the evidence was published; None when unknown.
+        claim_date: the date the claim refers to.
+
+    Returns:
+        The age in whole hours, 0 for evidence newer than the claim date, None when
+        undated.
+
+    Features:
+        US-ZRD-05, ADR-25
+    """
+    if published_at is None:
+        return None
+    claim_start = datetime.combine(claim_date, time.min, tzinfo=published_at.tzinfo)
+    return max(0, (claim_start - published_at) // timedelta(hours=1))
+
+
+def is_expired(citation: Citation, claim_date: date) -> bool:
+    """Whether expiring evidence is past the default threshold at the claim date.
+
+    Expired evidence still counts for strength (as archival), but never creates a
+    conflict with fresh evidence (US-ZRD-10).
+
+    Args:
+        citation: the citation with its validity set by ``assign_validity``.
+        claim_date: the date the claim refers to.
+
+    Returns:
+        True for ``expires`` evidence older than ``DEFAULT_MAX_AGE_HOURS``.
+
+    Features:
+        US-ZRD-05, US-ZRD-10, ADR-25
+    """
+    # shortcut: the contract does not carry each source's catalogue threshold, so the
+    # conflict rule uses the default one; add it to Source if a shorter one must count.
+    age = evidence_age_hours(citation.source.published_at, claim_date)
+    return (
+        citation.validity == "expires"
+        and age is not None
+        and age > DEFAULT_MAX_AGE_HOURS
     )
 
 

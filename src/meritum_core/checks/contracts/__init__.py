@@ -17,7 +17,8 @@ Rules from the MSZ brief that the models enforce:
   "insufficient_evidence" with both sides cited and no strength;
 - conflict is computed only between evidence valid at the claim date: evidence that
   newer evidence replaced (superseded) is shown on the timeline but neither conflicts
-  nor counts towards strength;
+  nor counts towards strength; expiring evidence older than the default threshold at
+  the claim date still counts towards strength (archival) but never conflicts;
 - independence is counted per catalogue publisher (publisher_id), not per page or
   domain, and only among citations whose stance agrees with the verdict;
 - every claim has a date (claim_date) and says where it came from;
@@ -79,7 +80,14 @@ from ._records import CheckRecord, InjectionEvent, ModelUsage
 from ._request import CheckRequest
 from ._results import CachedResult, CheckResult, Escalation
 from ._sources import CatalogEntry, Citation, ClaimReviewPremise, Source
-from ._strength import EvidenceStrength, Premises, is_stale, strength_for
+from ._strength import (
+    EvidenceStrength,
+    Premises,
+    evidence_age_hours,
+    is_expired,
+    is_stale,
+    strength_for,
+)
 from ._types import (
     Agreement,
     AnalysisStepCode,
@@ -184,6 +192,8 @@ __all__ = [
     "VerdictChange",
     "ai_marker_for",
     "case_outcome",
+    "evidence_age_hours",
+    "is_expired",
     "is_stale",
     "strength_for",
     "verdict_changes_for",

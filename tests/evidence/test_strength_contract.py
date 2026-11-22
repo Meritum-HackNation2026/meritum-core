@@ -44,6 +44,16 @@ CASES: dict[str, tuple[Verdict, list[Citation], list[ClaimReviewPremise]]] = {
         ],
         [],
     ),
+    "expired-next-to-fresh": (
+        "false",
+        [
+            cite(
+                "supports", "kprm", "primary", published_at="2020-01-01T00:00:00+01:00"
+            ),
+            cite("refutes", "demagog"),
+        ],
+        [],
+    ),
     "review-only": ("false", [], [review("refutes", "demagog")]),
     "conflict": (
         "confirmed",
@@ -56,7 +66,7 @@ CASES: dict[str, tuple[Verdict, list[Citation], list[ClaimReviewPremise]]] = {
 @pytest.mark.parametrize("case", CASES)
 def test_computed_strength_passes_the_contract(case: str) -> None:
     proposed, citations, reviews = CASES[case]
-    verdict = settle_verdict(proposed, citations, reviews)
+    verdict = settle_verdict(proposed, citations, reviews, claim_date=CLAIM_DATE)
     strength = compute_strength(
         verdict, citations, claim_date=CLAIM_DATE, reviews=reviews
     )

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from meritum_core.checks.constants import AGREEING_STANCE, SETTLING
 
-from ._strength import is_stale
+from ._strength import is_expired, is_stale
 from ._verdict_changes import verdict_changes_for
 
 if TYPE_CHECKING:
@@ -35,7 +35,9 @@ def check_verdict_rules(claim: ClaimResult) -> None:
     _superseded_next_to_newer(claim.citations, current)
     reviews = claim.claim_review_premises
     stances = {c.stance for c in current} | {r.stance for r in reviews}
-    conflicting = {"supports", "refutes"} <= stances
+    # Expired evidence never disagrees with fresh evidence (US-ZRD-10).
+    fresh = {c.stance for c in current if not is_expired(c, claim.claim_date)}
+    conflicting = {"supports", "refutes"} <= fresh | {r.stance for r in reviews}
     _conflict_rules(claim, conflicting=conflicting)
     _settling_rules(claim, stances)
     # ClaimReview-only premises have no citation validity, so they stay "expires".

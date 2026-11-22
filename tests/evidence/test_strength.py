@@ -97,6 +97,24 @@ def test_superseded_evidence_neither_counts_nor_conflicts() -> None:
     assert (premises.independent_sources, premises.agreement) == (1, "consistent")
 
 
+def test_expired_evidence_does_not_conflict_with_fresh_evidence() -> None:
+    citations = [
+        cite("supports", "kprm", "primary", published_at=OLD),
+        cite("refutes", "demagog"),
+    ]
+    assert settle_verdict("false", citations, claim_date=CLAIM_DATE) == "false"
+    premises = compute_premises("false", citations, claim_date=CLAIM_DATE)
+    assert premises.agreement == "consistent"
+
+
+def test_expired_evidence_conflicts_when_no_claim_date_is_given() -> None:
+    citations = [
+        cite("supports", "kprm", "primary", published_at=OLD),
+        cite("refutes", "demagog"),
+    ]
+    assert settle_verdict("false", citations) == "insufficient_evidence"
+
+
 def test_fact_checker_rating_counts_as_a_secondary_publisher() -> None:
     reviews = [review("refutes", "demagog")]
     citations = [cite("refutes", "kprm", "primary")]
