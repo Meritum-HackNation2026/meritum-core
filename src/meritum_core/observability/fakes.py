@@ -7,7 +7,7 @@ Features:
 from meritum_core.checks import CheckRecordRepository, SubjectKind
 from meritum_core.moderation import ModeratorCaseRepository
 from meritum_core.notifications import NotificationRepository
-from meritum_core.observability.constants import SUBJECT_RECIPIENT
+from meritum_core.observability.constants import ERASED_KINDS, SUBJECT_RECIPIENT
 
 
 class InMemorySubjectEraser:
@@ -44,6 +44,7 @@ class InMemorySubjectEraser:
         """
         check_ids = await self._records.delete_subject(kind, value)
         await self._cases.remove_checks(check_ids)
-        notes = await self._notifications.delete_for(SUBJECT_RECIPIENT[kind], value)
+        recipient = SUBJECT_RECIPIENT[kind]
+        notes = await self._notifications.delete_for(recipient, value, ERASED_KINDS)
         notes += await self._notifications.delete_for_checks(check_ids)
         return len(check_ids) + notes
