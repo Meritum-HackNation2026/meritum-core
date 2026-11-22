@@ -60,6 +60,7 @@ from meritum_core.checks.constants import (
     REQUIRED_MATCH_BASIS,
     SESSIONLESS_CHANNELS,
     SETTLING,
+    STRONG_MIN_PRIMARY,
     STRONG_MIN_SOURCES,
 )
 
@@ -72,6 +73,12 @@ from ._evals import (
     EvalRun,
     EvalScenarioScore,
     case_outcome,
+)
+from ._evidence import (
+    AgreeingEvidence,
+    agreeing_evidence,
+    current_citations,
+    sources_conflict,
 )
 from ._moderation import CaseClaim, ModeratorCase
 from ._notifications import Notification
@@ -134,7 +141,9 @@ __all__ = [
     "REQUIRED_MATCH_BASIS",
     "SESSIONLESS_CHANNELS",
     "SETTLING",
+    "STRONG_MIN_PRIMARY",
     "STRONG_MIN_SOURCES",
+    "AgreeingEvidence",
     "Agreement",
     "AiMarker",
     "AnalysisStatus",
@@ -191,12 +200,15 @@ __all__ = [
     "Validity",
     "Verdict",
     "VerdictChange",
+    "agreeing_evidence",
     "ai_marker_for",
     "case_outcome",
+    "current_citations",
     "evidence_age_hours",
     "is_expired",
     "is_stale",
     "max_age_for",
+    "sources_conflict",
     "strength_for",
     "verdict_changes_for",
 ]

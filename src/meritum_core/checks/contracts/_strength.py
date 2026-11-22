@@ -11,7 +11,11 @@ from typing import TYPE_CHECKING, Annotated
 
 from pydantic import Field, model_validator
 
-from meritum_core.checks.constants import DEFAULT_MAX_AGE_HOURS, STRONG_MIN_SOURCES
+from meritum_core.checks.constants import (
+    DEFAULT_MAX_AGE_HOURS,
+    STRONG_MIN_PRIMARY,
+    STRONG_MIN_SOURCES,
+)
 
 from ._base import _Model
 from ._types import Agreement, Strength, Validity
@@ -170,9 +174,15 @@ def strength_for(p: Premises) -> Strength:
     """
     if p.agreement != "consistent" or is_stale(p):
         return "weak"
-    if p.independent_sources >= STRONG_MIN_SOURCES and p.primary_sources >= 1:
+    if (
+        p.independent_sources >= STRONG_MIN_SOURCES
+        and p.primary_sources >= STRONG_MIN_PRIMARY
+    ):
         return "strong"
-    if p.independent_sources >= STRONG_MIN_SOURCES or p.primary_sources >= 1:
+    if (
+        p.independent_sources >= STRONG_MIN_SOURCES
+        or p.primary_sources >= STRONG_MIN_PRIMARY
+    ):
         return "moderate"
     return "weak"
 

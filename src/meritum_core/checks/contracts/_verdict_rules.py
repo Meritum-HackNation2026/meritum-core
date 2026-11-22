@@ -8,15 +8,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from meritum_core.checks.constants import AGREEING_STANCE, SETTLING
+from meritum_core.checks.constants import SETTLING
 
-from ._strength import is_expired, is_stale
+from ._evidence import agreeing_evidence, current_citations, sources_conflict
+from ._strength import is_stale
 from ._verdict_changes import verdict_changes_for
 
 if TYPE_CHECKING:
     from ._claims import ClaimResult
-    from ._sources import Citation, ClaimReviewPremise
-    from ._types import PublisherId, Stance
+    from ._sources import Citation
+    from ._types import Stance
 
 
 def check_verdict_rules(claim: ClaimResult) -> None:
@@ -31,17 +32,15 @@ def check_verdict_rules(claim: ClaimResult) -> None:
     Features:
         US-ZRD-03, US-ZRD-04, US-ZRD-05, US-ZRD-10, US-ZRD-11, ADR-02, ADR-34
     """
-    current = [c for c in claim.citations if c.validity != "superseded"]
+    current = current_citations(claim.citations)
     _superseded_next_to_newer(claim.citations, current)
     reviews = claim.claim_review_premises
     stances = {c.stance for c in current} | {r.stance for r in reviews}
-    # Expired evidence never disagrees with fresh evidence (US-ZRD-10).
-    fresh = {c.stance for c in current if not is_expired(c, claim.claim_date)}
-    conflicting = {"supports", "refutes"} <= fresh | {r.stance for r in reviews}
+    conflicting = sources_conflict(claim.citations, reviews, claim.claim_date)
     _conflict_rules(claim, conflicting=conflicting)
     _settling_rules(claim, stances)
     # ClaimReview-only premises have no citation validity, so they stay "expires".
-    _premises_rules(claim, current, conflicting=conflicting)
+    _premises_rules(claim, conflicting=conflicting)
     if claim.verdict == "insufficient_evidence" and (
         claim.unresolved is None or not claim.unresolved
     ):
@@ -109,17 +108,15 @@ def _settling_rules(claim: ClaimResult, stances: set[Stance]) -> None:
         )
 
 
-def _premises_rules(
-    claim: ClaimResult, current: list[Citation], *, conflicting: bool
-) -> None:
+def _premises_rules(claim: ClaimResult, *, conflicting: bool) -> None:
     if claim.strength is None or claim.verdict not in SETTLING:
         return
     p = claim.strength.premises
-    stance = AGREEING_STANCE[claim.verdict]
-    agreeing = [c for c in current if c.stance == stance]
-    reviews = _agreeing_reviews(claim.claim_review_premises, stance)
-    publishers = {c.source.publisher_id for c in agreeing} | reviews
-    primary = {c.source.publisher_id for c in agreeing if c.source.tier == "primary"}
+    evidence = agreeing_evidence(
+        claim.verdict, claim.citations, claim.claim_review_premises
+    )
+    agreeing = evidence.citations
+    publishers, primary = evidence.publishers, evidence.primary
     if p.agreement != ("conflicting" if conflicting else "consistent"):
         raise ValueError("agreement must follow from the citation stances")
     if (p.independent_sources, p.primary_sources) != (len(publishers), len(primary)):
@@ -129,13 +126,6 @@ def _premises_rules(
         )
     if p.validity != "expires" and p.validity not in {c.validity for c in agreeing}:
         raise ValueError("the premises' validity must come from an agreeing citation")
-
-
-def _agreeing_reviews(
-    reviews: list[ClaimReviewPremise], stance: Stance
-) -> set[PublisherId]:
-    # A fact-checker's rating counts as one secondary-tier publisher (ADR-34).
-    return {r.publisher_id for r in reviews if r.stance == stance}
 
 
 def _age_rules(claim: ClaimResult) -> None:
