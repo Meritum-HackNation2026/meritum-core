@@ -8,7 +8,15 @@ Features:
 
 from meritum_core.shared.llm.errors import ProviderUnavailableError
 from meritum_core.shared.llm.factory import build_llm
-from meritum_core.shared.llm.ports import LlmPort, LlmResult, LlmUsage, Prompt
+from meritum_core.shared.llm.ports import (
+    LlmPort,
+    LlmResult,
+    LlmToolResult,
+    LlmUsage,
+    Prompt,
+    Tool,
+    ToolCall,
+)
 from meritum_core.shared.llm.settings import LlmProvider, LlmSettings, Reasoning
 
 __all__ = [
@@ -16,9 +24,12 @@ __all__ = [
     "LlmProvider",
     "LlmResult",
     "LlmSettings",
+    "LlmToolResult",
     "LlmUsage",
     "Prompt",
     "ProviderUnavailableError",
     "Reasoning",
+    "Tool",
+    "ToolCall",
     "build_llm",
 ]
