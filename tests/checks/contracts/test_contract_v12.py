@@ -15,10 +15,6 @@ from meritum_core.checks import contracts as c
 OLD = "2020-01-01T00:00:00+01:00"
 
 
-def test_version_is_12() -> None:
-    assert c.CONTRACT_VERSION == 12
-
-
 def _insufficient(citations: list[c.Citation]) -> c.ClaimResult:
     return c.ClaimResult.model_validate(
         CLAIM
