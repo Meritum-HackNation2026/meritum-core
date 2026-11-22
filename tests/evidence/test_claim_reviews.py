@@ -34,6 +34,15 @@ def found(
 def test_normalize_rating_folds_case_whitespace_and_diacritics() -> None:
     assert normalize_rating("  CZĘŚCIOWA \u00a0 Prawda ") == "czesciowa prawda"
     assert normalize_rating("Fałsz") == normalize_rating("falsz")
+    assert normalize_rating("Fałsz.") == "falsz"
+
+
+def test_rating_with_its_explanation_becomes_a_premise_with_the_whole_rating() -> None:
+    rating = "Fałsz. Szczepionki nie zmieniają kodu genetycznego."
+    rated = rate_review(found(rating), cache_control="max-age=3600")
+    assert isinstance(rated.evidence, ClaimReviewPremise)
+    assert rated.evidence.stance == "refutes"
+    assert rated.evidence.rating == rating
 
 
 @pytest.mark.parametrize(
@@ -49,6 +58,17 @@ def test_normalize_rating_folds_case_whitespace_and_diacritics() -> None:
         ("afp", "Fałsz", "refutes"),
         ("demagog", "Nie do końca", "context"),
         ("unknown-checker", "Fałsz", "context"),
+        # Dev, 2026-11-22 (core#154): Demagog's ratings as Fact Check API sends them.
+        ("demagog", "Fałsz.", "refutes"),
+        ("demagog", "Prawda.", "supports"),
+        (
+            "demagog",
+            "Fałsz. COVID-19 nie rozprzestrzenia się falami radiowymi.",
+            "refutes",
+        ),
+        ("demagog", "Prawda! Dane GUS to potwierdzają.", "supports"),
+        ("demagog", "Brakujący kontekst.", "context"),
+        ("demagog", "Fałszywy alarm w tytule", "context"),
     ],
 )
 def test_rating_stance_reads_the_publishers_table(

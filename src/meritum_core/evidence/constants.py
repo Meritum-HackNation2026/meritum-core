@@ -8,6 +8,7 @@ Features:
     US-ZRD-01, US-KOR-01, F-14, F-16, ADR-06, ADR-34
 """
 
+import re
 from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Final
@@ -26,6 +27,14 @@ paragraph breaks therefore never stop a fragment from matching."""
 OUTDATED_VERDICTS: Final[frozenset[Verdict]] = frozenset({"false", "misleading"})
 """Verdicts that take technique ``outdated`` when newer evidence replaced the support
 for the claim (US-ZRD-10, ADR-25)."""
+
+RATING_END_PUNCTUATION: Final = " .!?…:;,"
+"""Characters a normalized rating loses at its end: ``Fałsz.`` reads as ``Fałsz``
+(core#154)."""
+
+RATING_SENTENCE_END: Final = re.compile(r"[.!?…:;]\s")
+"""End of a rating's first sentence; ``Fałsz. Szczepionki nie…`` is looked up as
+``Fałsz`` when the whole rating is not in the table (core#154)."""
 
 RATING_FOLD: Final = str.maketrans({"ł": "l", "Ł": "l"})
 """Letters with no Unicode decomposition that rating normalization folds by hand;

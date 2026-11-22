@@ -21,7 +21,9 @@ from meritum_core.evidence.constants import (
     CLAIM_REVIEW_STANCES,
     MAX_AGE_DIRECTIVE,
     NO_RETENTION_DIRECTIVES,
+    RATING_END_PUNCTUATION,
     RATING_FOLD,
+    RATING_SENTENCE_END,
 )
 from meritum_core.evidence.models import FoundClaimReview, RatedReview
 
@@ -33,18 +35,22 @@ def normalize_rating(rating: str) -> str:
         rating: The textualRating as published.
 
     Returns:
-        The rating in lower case, without diacritics, with single spaces.
+        The rating in lower case, without diacritics, with single spaces and
+        without punctuation at its end (``Fałsz.`` is ``falsz``, core#154).
 
     Features:
         US-KOR-01, F-14, ADR-34
     """
     decomposed = unicodedata.normalize("NFKD", rating.translate(RATING_FOLD))
     letters = "".join(c for c in decomposed if not unicodedata.combining(c))
-    return " ".join(letters.casefold().split())
+    return " ".join(letters.casefold().split()).rstrip(RATING_END_PUNCTUATION)
 
 
 def rating_stance(publisher_id: str, rating: str) -> Stance:
     """Look up the stance of a fact-checker's rating in its publisher's table.
+
+    A rating not in the table is looked up again by its first sentence, the
+    verdict before an explanation (``Fałsz. Szczepionki nie…``, core#154).
 
     Args:
         publisher_id: The catalogue publisher id of the fact-checker.
@@ -57,7 +63,10 @@ def rating_stance(publisher_id: str, rating: str) -> Stance:
         US-KOR-01, F-14, ADR-34
     """
     table = CLAIM_REVIEW_STANCES.get(publisher_id)
-    stance = table.get(normalize_rating(rating)) if table is not None else None
+    if table is None:
+        return "context"
+    verdict = RATING_SENTENCE_END.split(rating, maxsplit=1)[0]
+    stance = table.get(normalize_rating(rating)) or table.get(normalize_rating(verdict))
     return stance or "context"
 
 
