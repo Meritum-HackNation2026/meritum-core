@@ -79,7 +79,9 @@ class InMemoryJobQueue:
             raise TypeError(msg)
         workflow_id = workflow_id or uuid4().hex
         if not self._known(workflow_id):
-            sent = spec.input.model_validate(payload.model_dump(mode="json"))
+            sent = spec.input.model_validate(
+                payload.model_dump(mode="json", exclude_none=True)
+            )
             self.enqueued.append(EnqueuedJob(spec, sent, workflow_id))
         return workflow_id
 
@@ -135,7 +137,7 @@ class InMemoryJobQueue:
             The published values.
         """
         for value in self._streams.get((workflow_id, key), []):
-            yield model.model_validate(value)
+            yield model.model_validate(value, extra="ignore")
 
     async def event[T: BaseModel](
         self,
@@ -159,4 +161,4 @@ class InMemoryJobQueue:
             The value or None.
         """
         value = self._events.get((workflow_id, key))
-        return None if value is None else model.model_validate(value)
+        return None if value is None else model.model_validate(value, extra="ignore")

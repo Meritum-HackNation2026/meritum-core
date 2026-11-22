@@ -37,7 +37,8 @@ class DbosJobQueue:
 
         Args:
             spec: the workflow to run.
-            payload: its input model, sent as a JSON object.
+            payload: its input model, sent as a JSON object without None fields,
+                so a worker on an older contract never sees a field it lacks.
             workflow_id: an idempotency key; DBOS generates one when None.
 
         Returns:
@@ -53,7 +54,7 @@ class DbosJobQueue:
         if workflow_id is not None:
             options["workflow_id"] = workflow_id
         handle = await self._client.enqueue_async(
-            options, payload.model_dump(mode="json")
+            options, payload.model_dump(mode="json", exclude_none=True)
         )
         return handle.get_workflow_id()
 
@@ -82,7 +83,8 @@ class DbosJobQueue:
     ) -> AsyncIterator[T]:
         """Yield the values of a DBOS stream, validated against `model`.
 
-        A value that does not match `model` raises pydantic's ValidationError.
+        Fields a newer contract added are dropped; any other mismatch with `model`
+        raises pydantic's ValidationError.
 
         Args:
             workflow_id: the id `enqueue` returned.
@@ -93,7 +95,7 @@ class DbosJobQueue:
             The stream values in the order the workflow wrote them.
         """
         async for value in self._client.read_stream_async(workflow_id, key):
-            yield model.model_validate(value)
+            yield model.model_validate(value, extra="ignore")
 
     async def event[T: BaseModel](
         self,
@@ -105,7 +107,8 @@ class DbosJobQueue:
     ) -> T | None:
         """Read a DBOS event, validated against `model`.
 
-        A value that does not match `model` raises pydantic's ValidationError.
+        Fields a newer contract added are dropped; any other mismatch with `model`
+        raises pydantic's ValidationError.
 
         Args:
             workflow_id: the id `enqueue` returned.
@@ -117,4 +120,4 @@ class DbosJobQueue:
             The value, or None when it was not set in time.
         """
         value = await self._client.get_event_async(workflow_id, key, timeout_seconds)
-        return None if value is None else model.model_validate(value)
+        return None if value is None else model.model_validate(value, extra="ignore")
