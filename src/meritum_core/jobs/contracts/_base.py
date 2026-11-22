@@ -17,8 +17,10 @@ Identifier = Annotated[str, Field(min_length=ID_MIN_CHARS, max_length=ID_MAX_CHA
 class JobModel(BaseModel):
     """A workflow input or output sent as one portable JSON object.
 
-    Unknown fields are rejected, so nothing (a raw channel user id included)
-    rides along unnoticed.
+    Unknown fields are rejected when a payload is built, so nothing (a raw channel
+    user id included) rides along unnoticed. A reader of the queue validates with
+    `extra="ignore"` and the sender drops None fields, so a backend and a worker on
+    different contract versions still understand each other (core#140).
 
     Attributes:
         contract_version: the job contract version the sender speaks.
