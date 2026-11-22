@@ -73,7 +73,7 @@ def gcs_emulator() -> Iterator[str]:
 @pytest.fixture(scope="session")
 def s3_server() -> Iterator[str]:
     """In-process S3 server (moto) on a free localhost port; yields its address."""
-    server = ThreadedMotoServer(port=0, verbose=False)
+    server = ThreadedMotoServer(ip_address="127.0.0.1", port=0, verbose=False)
     server.start()
     host, port = server.get_host_and_port()
     endpoint = f"http://{host}:{port}"
