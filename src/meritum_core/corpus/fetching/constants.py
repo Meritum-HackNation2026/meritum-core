@@ -116,3 +116,15 @@ ROBOTS_META_NAME: Final = "robots"
 
 NOAI_DIRECTIVE: Final = "noai"
 """Robots meta directive that opts the page out of AI use."""
+
+ENV_PREFIX: Final = "MERITUM_FETCH_"
+"""Prefix of every page fetcher setting in the environment."""
+
+CRAWL4AI_TIMEOUT_S: Final = 30.0
+"""Budget of one Crawl4AI render: a headless browser is slower than one GET."""
+
+CRAWL4AI_CRAWL_PATH: Final = "/crawl"
+"""Crawl4AI endpoint that renders a list of URLs and answers with the results."""
+
+CRAWL4AI_MAX_REPLY_BYTES: Final = 4 * MAX_RESPONSE_BYTES
+"""Largest Crawl4AI reply read; it carries the HTML plus markdown and metadata."""

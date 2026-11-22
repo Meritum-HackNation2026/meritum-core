@@ -71,7 +71,7 @@ class PaywallError(LoginWallError):
 
 
 class JavaScriptRequiredError(PageFetchError):
-    """The HTML has no main text without JavaScript; core/025 renders such pages.
+    """The HTML has no main text without JavaScript; Crawl4AI may render it.
 
     Features:
         US-SPR-07, F-06

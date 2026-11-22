@@ -18,11 +18,32 @@ Kod wspólny dla [meritum-backend](https://github.com/Meritum-HackNation2026/mer
 | `meritum_core.checks` (repozytorium), `moderation`, `notifications` | porty repozytoriów: `CheckRecordRepository` (zapis, odczyt, lista po sesji albo koncie, usunięcie osoby, wybór do retencji), `ModeratorCaseRepository` (zapis i aktualizacja, otwarta sprawa po twierdzeniu, lista dla panelu, usunięcie skasowanych sprawdzeń ze spraw), `HighRiskTopicRepository` (tematy wysokiego ryzyka ze słowami kluczowymi), `NotificationRepository` (zapis, lista dla sesji albo konta, oznaczenie jako przeczytane, usunięcie po adresacie, po usuniętych sprawdzeniach i po `retention_until`); fake'i w pamięci w modułach `fakes` każdej domeny (`InMemory…`), adaptery PostgreSQL i testy kontraktowe w `tests/checks/records/`, `tests/moderation/`, `tests/notifications/`, które przechodzą oba (zob. [Baza aplikacji](#baza-aplikacji)) |
 | `meritum_core.checks.ocr` | porty `OcrPort` (`image_id` z `BlobStore` → `OcrResult`: tekst, kandydat na `claim_date`, metadane pliku) i `ImageSearchPort` (wcześniejsze wystąpienia albo jawne „nie wyszukano”), adapter Cloud Vision (`eu-vision.googleapis.com`, `DOCUMENT_TEXT_DETECTION`) i stub, fabryki `build_ocr` i `build_image_search`, `inspect_image`, limity w `constants.py`, błędy `UnsupportedImageError` i `OcrUnavailableError` |
 | `meritum_core.checks.transcription` | port `TranscriptionPort` (`audio_id` z `BlobStore` → `Transcript` w pl-PL), adapter Speech-to-Text v2 (Chirp 3, `eu`) i stub, fabryka `build_transcriber`, `inspect_audio` (format i długość z bajtów pliku), limity w `constants.py`, błędy `UnsupportedAudioError` i `TranscriptionUnavailableError` |
-| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu; źródła respektują robots.txt i Content-Signal; `FetchedPage.tdm_reserved` mówi, czy znaczniki meta strony zastrzegają eksplorację, a `content_signals()` czyta Content-Signal z robots.txt |
+| `meritum_core.corpus.fetching` | `PageFetcherPort` i `build_page_fetcher()`: jedyna droga pobrania adresu URL. Tylko http(s), adresy wewnętrzne blokowane także po przekierowaniu i przy DNS rebinding, limity w `constants.py`, tekst główny przez trafilatura, osobne błędy dla logowania, paywalla i stron wymagających JavaScriptu (te opcjonalnie renderuje Crawl4AI, zob. [Strony wymagające JavaScriptu](#strony-wymagające-javascriptu-crawl4ai-core30)); źródła respektują robots.txt i Content-Signal; `FetchedPage.tdm_reserved` mówi, czy znaczniki meta strony zastrzegają eksplorację, a `content_signals()` czyta Content-Signal z robots.txt |
 | `meritum_core.observability` | `build_app_repositories(DatabaseSettings())` buduje wszystkie repozytoria aplikacji naraz (`AppRepositories`) według `MERITUM_DATABASE_PROVIDER`; port `SubjectEraser` usuwa jedną osobę ze wszystkich tabel aplikacji (US-BEZ-05), fake w `observability.fakes` |
 | `meritum_core.shared.database` | `DatabaseSettings` (`MERITUM_DATABASE_*`), migracje schematu aplikacji i polecenie `meritum-migrate-app` |
 | `meritum_core.corpus.catalog` | jawny katalog źródeł `catalog.yaml` (zob. [Katalog źródeł](#katalog-źródeł-meritum_corecorpuscatalog)): `load_catalog()` waliduje każdy wpis jako `CatalogEntry`, `check_tdm()` zapisuje zastrzeżenie TDM właściciela przez fetcher stron, `catalog_json()` i `catalog_markdown()` dają eksport dla frontendu i tabelę audytu |
 | `meritum_core.evidence`, `shared` | szkielet domen (ADR-01): na razie puste publiczne API (`__all__ = []`); kod dochodzi w kolejnych zgłoszeniach |
+
+## Strony wymagające JavaScriptu (Crawl4AI, core#30)
+
+Fetcher httpx nie uruchamia JavaScriptu. Strona, której HTML nie ma tekstu głównego, kończy się `JavaScriptRequiredError` (`javascript_required`): obywatel dostaje prośbę o wklejenie tekstu, a inne źródła pobierają się dalej. Po ustawieniu `MERITUM_FETCH_CRAWL4AI_URL` (np. `http://crawl4ai:11235`) i `MERITUM_FETCH_CRAWL4AI_TOKEN` fabryka `build_page_fetcher(settings=FetchingSettings())` dokłada adapter, który taką stronę renderuje w lokalnym Crawl4AI. Włączamy go w obrazie `worker-ingest` (ADR-32), bo przeglądarka bezgłowa jest ciężka; zwykły worker zostaje bez niej. Obraz to `unclecode/crawl4ai:0.9.2`, plik `deploy/crawl4ai/compose.yaml` (repo niczego nie wdraża).
+
+Ochrona przed SSRF przy renderowaniu:
+
+- Crawl4AI dostaje adres dopiero wtedy, gdy fetcher httpx przeszedł z nim wszystkie kontrole (schemat, publiczny adres na każdym przekierowaniu, robots.txt i Content-Signal dla źródeł) i nie znalazł tylko tekstu.
+- Tuż przed renderowaniem host jest rozwiązywany i sprawdzany jeszcze raz.
+- Gdy przeglądarka wyląduje na innym hoście albo na adresie wewnętrznym, wynik jest odrzucany jako `redirect_blocked`. Inny host odrzucamy zawsze, bo wymagałby osobnego robots.txt.
+- Kod nie może przypiąć adresu przeglądarki ani zatrzymać jej podzasobów, więc ostatnią warstwą jest sieć kontenera: Crawl4AI nie publikuje portu, z workerem rozmawia przez sieć `internal`, a ruch wychodzący idzie przez most `br-crawl4ai`. Na hoście trzeba zablokować z niego adresy wewnętrzne, np.:
+
+```bash
+for net in 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 169.254.0.0/16 100.64.0.0/10 127.0.0.0/8; do
+  iptables -I DOCKER-USER -i br-crawl4ai -d "$net" -j DROP
+done
+ip6tables -I DOCKER-USER -i br-crawl4ai -d fc00::/7 -j DROP
+ip6tables -I DOCKER-USER -i br-crawl4ai -d fe80::/10 -j DROP
+```
+
+W Cloud Run odpowiednikiem jest osobna usługa z ruchem wychodzącym przez VPC i regułą zapory odmawiającą zakresów prywatnych i serwera metadanych. Testy (`tests/corpus/test_fetching_crawl4ai.py`) odtwarzają nagrane odpowiedzi Crawl4AI z `tests/corpus/fixtures/`, bez przeglądarki i sieci. Próbę z prawdziwym Crawl4AI robi się lokalnie, poza CI.
 
 ## Magazyn plików
 

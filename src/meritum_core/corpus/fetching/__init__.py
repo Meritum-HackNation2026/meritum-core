@@ -22,12 +22,14 @@ from meritum_core.corpus.fetching.models import (
 )
 from meritum_core.corpus.fetching.ports import PageFetcherPort, Resolver
 from meritum_core.corpus.fetching.robots import content_signals, signal_denies
+from meritum_core.corpus.fetching.settings import FetchingSettings
 
 __all__ = [
     "BlockedAddressError",
     "FetchFailureReason",
     "FetchPurpose",
     "FetchedPage",
+    "FetchingSettings",
     "JavaScriptRequiredError",
     "LoginWallError",
     "PageFetchError",

@@ -1,0 +1,16 @@
+{
+  "success": true,
+  "results": [
+    {
+      "url": "https://example.org/app",
+      "html": "<html><body><div id=\"root\"><article><p>Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. Sejm uchwalił ustawę o ochronie danych. </p></article></div></body></html>",
+      "success": true,
+      "status_code": 200,
+      "redirected_url": "https://example.org/app",
+      "error_message": null,
+      "response_headers": {
+        "content-type": "text/html; charset=utf-8"
+      }
+    }
+  ]
+}
