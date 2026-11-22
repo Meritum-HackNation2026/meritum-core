@@ -72,7 +72,7 @@ URL_TRAILING_PUNCTUATION: Final = ".,;:!?)\"'"
 URL_SCHEMES: Final = frozenset({"http", "https"})
 """Schemes a post URL may have; anything else is dropped from the context."""
 
-CONTRACT_VERSION: Final = 12
+CONTRACT_VERSION: Final = 13
 """Version of the check contracts (CheckRequest, CheckResult, ...).
 
 Independent of the job contract version in meritum_core.jobs.contracts. Raise it on

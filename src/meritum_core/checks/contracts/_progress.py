@@ -35,6 +35,8 @@ class AnalysisStatus(_Model):
         check_id: the running check.
         steps: the processing steps in order.
         result: the result, once the check finished.
+        draft: the answer text streamed so far, personal data masked; a preview, never a
+            verdict, replaced by ``result`` when the check finishes.
 
     Features:
         US-SPR-02, ADR-02
@@ -43,3 +45,10 @@ class AnalysisStatus(_Model):
     check_id: str
     steps: Annotated[list[AnalysisStep], Field(min_length=1)]
     result: CheckResult | None = None
+    draft: Annotated[
+        str | None,
+        Field(
+            max_length=4000,
+            description="Streamed draft of the answer, personal data masked; a preview, never a verdict.",
+        ),
+    ] = None
