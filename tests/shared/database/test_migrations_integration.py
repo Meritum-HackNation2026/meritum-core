@@ -25,6 +25,7 @@ APP_TABLES = {
     "rate_limit_hits",
     "eval_runs",
     "eval_datasets",
+    "page_archives",
     "schema_migrations",
 }
 MIGRATIONS = sorted(

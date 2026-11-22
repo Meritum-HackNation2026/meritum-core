@@ -41,3 +41,9 @@ MAX_PING_MESSAGE_CHARS: Final = 200
 
 CHECK_ID_MAX_CHARS: Final = 40
 """Longest check id, as in CheckResult.check_id."""
+
+ARCHIVE_URL_MAX_CHARS: Final = 2048
+"""Longest page URL the `archive_page` workflow takes."""
+
+ARCHIVE_URL_PATTERN: Final = r"^https?://\S+$"
+"""Only http(s) URLs reach the worker's fetcher (which also blocks private hosts)."""
