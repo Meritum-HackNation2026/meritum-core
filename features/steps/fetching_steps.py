@@ -73,6 +73,25 @@ def given_facebook_post(context: Context) -> None:
     context.url = "https://www.facebook.com/post/1"
 
 
+BOT_BLOCK_PAGES = {
+    "Incapsula z kodem 200": httpx.Response(
+        200,
+        html="<html><body>Request unsuccessful. Incapsula incident ID: "
+        "1234-5678</body></html>",
+    ),
+    "AWS WAF z kodem 202": httpx.Response(
+        202, html='<html><body><script src="challenge.js"></script></body></html>'
+    ),
+}
+
+
+@given("serwis za ochroną antybotową odpowiada stroną blokady {provider}")
+def given_bot_block_page(context: Context, provider: str) -> None:
+    """A public office site whose anti-bot layer answers with its block page."""
+    _serve(context, {"news.example/a": BOT_BLOCK_PAGES[provider]})
+    context.url = "https://news.example/a"
+
+
 ARTICLE = "<p>" + "Sejm uchwalił ustawę o ochronie danych. " * 20 + "</p>"
 
 
@@ -148,3 +167,11 @@ def then_failure_asks_for_text(context: Context, status: str) -> None:
     assert context.error.check_status == status
     assert context.error.reason is FetchFailureReason.LOGIN_WALL
     assert context.error.asks_for_text
+
+
+@then('wynik to "{status}" z powodem "{reason}"')
+def then_failure_with_reason(context: Context, status: str, reason: str) -> None:
+    """The fetch failed with ``reason`` instead of returning the page."""
+    assert context.error is not None
+    assert context.error.check_status == status
+    assert context.error.reason == reason

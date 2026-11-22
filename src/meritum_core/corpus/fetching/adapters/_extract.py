@@ -14,6 +14,8 @@ from urllib3.exceptions import DependencyWarning
 from meritum_core.corpus.fetching.adapters._meta import meta_reserves_mining
 from meritum_core.corpus.fetching.constants import (
     ALLOWED_CONTENT_TYPES,
+    BOT_BLOCK_MARKER,
+    BOT_CHALLENGE_STATUSES,
     HTML_CONTENT_TYPES,
     LOGIN_PATH,
     LOGIN_WALL_MAX_TEXT_CHARS,
@@ -83,6 +85,9 @@ class RawResponse:
 def _check_walls(response: RawResponse) -> None:
     on_login_path = LOGIN_PATH.search(urlsplit(response.url).path) is not None
     landed_on_login = response.redirected and on_login_path
+    blocked_by_bot = response.status in BOT_CHALLENGE_STATUSES
+    if blocked_by_bot or BOT_BLOCK_MARKER.search(response.text):
+        raise PageFetchError(FetchFailureReason.BLOCKED_BY_BOT_PROTECTION)
     if landed_on_login or response.status in LOGIN_WALL_STATUSES:
         raise LoginWallError(FetchFailureReason.LOGIN_WALL)
     if response.status in PAYWALL_STATUSES:
@@ -126,7 +131,8 @@ def to_page(response: RawResponse) -> FetchedPage:
         LoginWallError: A login stands in front of the content.
         PaywallError: A paywall stands in front of the content.
         JavaScriptRequiredError: The HTML has no main text without JavaScript.
-        PageFetchError: An error status or an unsupported media type.
+        PageFetchError: An error status, an unsupported media type or an
+            anti-bot block page.
 
     Features:
         US-SPR-07, US-ZRD-05, F-06, ADR-12
