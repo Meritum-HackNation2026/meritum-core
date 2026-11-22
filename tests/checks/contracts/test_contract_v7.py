@@ -31,9 +31,3 @@ def test_out_of_scope_audio_result_carries_the_code() -> None:
     result = c.CheckResult.model_validate(EXAMPLES["CheckResult.audio_rejected"])
     assert result.status == "out_of_scope"
     assert result.limitation_codes == ["audio_format_unsupported"]
-
-
-def test_schema_says_codes_and_texts_are_not_paired() -> None:
-    schema = c.CheckResult.model_json_schema()
-    description = schema["properties"]["limitation_codes"]["description"]
-    assert "Not paired with limitations by index" in description

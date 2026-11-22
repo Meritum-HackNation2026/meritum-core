@@ -104,14 +104,18 @@ FailureCode = Literal[
     "url_unavailable",
     "not_ready",
 ]
-# What a check could not cover; the channel builds the text from copy/pl.json.
-# A limitation never changes the check's status. The audio codes explain an
-# out_of_scope recording: unsupported format, or over the length or size limit.
+# What a check could not cover; each code pairs with one text in limitations.
+# A limitation never changes the check's status. corpus_scope: a note on what the
+# corpus holds; no_publications: neither the corpus nor search found coverage.
+# The audio codes explain an out_of_scope recording: unsupported format, or over
+# the length or size limit.
 LimitationCode = Literal[
     "fact_check_unavailable",
     "image_search_not_run",
     "audio_format_unsupported",
     "audio_too_long",
+    "corpus_scope",
+    "no_publications",
 ]
 # Why a check is out_of_scope; the channel picks the text from copy/pl.json. audio is
 # one value for any rejected recording: the detail (format, length) stays in

@@ -39,9 +39,20 @@ _AiMarkerField = Annotated[
 _LimitationCodes = Annotated[
     list[LimitationCode],
     Field(
-        description="Codes of the limitations the channel words from copy/pl.json; they never set the status, though the audio codes explain an out_of_scope recording. Not paired with limitations by index: each code has its own text in copy/pl.json, and limitations may also hold texts with no code (e.g. notes on the corpus scope)."
+        description="Codes of the limitations the channel words from copy/pl.json; they never set the status, though the audio codes explain an out_of_scope recording. Paired with limitations by index: one code per text, same order."
     ),
 ]
+
+
+def _codes_pair_with_texts(texts: list[str], codes: list[LimitationCode]) -> None:
+    """Rejects limitations whose codes do not pair one to one with the texts.
+
+    Raises:
+        ValueError: when the lists differ in length.
+    """
+    if len(texts) != len(codes):
+        raise ValueError("one code per limitation, in the same order")
+
 
 _OutOfScopeCode = Annotated[
     OutOfScopeCode | None,
@@ -147,6 +158,7 @@ class CheckResult(_Model):
         if failed != (self.failure_code is not None):
             raise ValueError("a technical failure, and only it, has a failure code")
         _code_only_out_of_scope(self.status, self.out_of_scope_code)
+        _codes_pair_with_texts(self.limitations, self.limitation_codes)
         return self
 
     @model_validator(mode="after")
@@ -211,6 +223,7 @@ class CachedResult(_Model):
         if self.status == "done":
             _require_marker(self.ai_marker)
         _code_only_out_of_scope(self.status, self.out_of_scope_code)
+        _codes_pair_with_texts(self.limitations, self.limitation_codes)
         if self.expires_at <= self.cached_at:
             raise ValueError("a cache entry expires after it was stored")
         cited = {c.source.id for claim in self.claims for c in claim.citations}
