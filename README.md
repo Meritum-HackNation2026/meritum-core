@@ -356,8 +356,8 @@ MERITUM_PII_PROJECT=<projekt> uv run pytest -m integration tests/security/test_p
 
 Ta sekcja opisuje [`catalog.yaml`](src/meritum_core/corpus/catalog/catalog.yaml), czyli jawny katalog domen, w których Meritum szuka dowodów. Dokumentów nie dodajemy ręcznie. System pobiera je sam według katalogu: z RSS, map stron, API albo ze stałych adresów.
 
-- Stan na 21.11.2026. robots.txt, Content-Signal i `/.well-known/tdmrep.json` sprawdzono automatycznie tego dnia.
-- 57 wpisów: 51 włączonych (40 niezależnych wydawców) i 6 wykluczonych z podanym powodem.
+- Stan na 22.11.2026. robots.txt, Content-Signal i `/.well-known/tdmrep.json` sprawdzono automatycznie tego dnia.
+- 64 wpisy: 57 włączonych (44 niezależnych wydawców) i 7 wykluczonych z podanym powodem.
 - Wszystkie wpisy przechodzą walidację kontraktu `CatalogEntry` z `meritum-core` (`meritum_core.checks.contracts`).
 - Członkostwo IFCN/EFCSN w polu `signatory_of` (tylko wydawcy ocen ClaimReview) ustalamy według obecności na oficjalnej liście sygnatariuszy IFCN w zakładce **Active** (https://ifcncodeofprinciples.poynter.org/signatories) albo na liście EFCSN (https://members.efcsn.com/signatories), stan na **2026-11-21**. Datę ważności odznaki na profilu IFCN nie bierzemy pod uwagę.
 
@@ -418,11 +418,17 @@ Generuje ją `uv run python scripts/export_catalog.py` z `catalog.yaml`, razem z
 | `www.gov.pl/web/dyplomacja` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 360 | updated_in_place | none | włączone |
 | `odyseusz.gov.pl` | Ministerstwo Spraw Zagranicznych (`msz`) | primary | evidence | static | 1440 | updated_in_place | none | włączone |
 | `www.gov.pl/web/premier` | Kancelaria Prezesa Rady Ministrów (`kprm`) | primary | evidence | static | 360 | expires | none | włączone |
+| `www.gov.pl/web/rodzina` | Ministerstwo Rodziny, Pracy i Polityki Społecznej (`mrpips`) | primary | evidence | static | 1440 | expires | none | włączone |
+| `www.gov.pl/web/finanse` | Ministerstwo Finansów (`mf`) | primary | evidence | static | 1440 | expires | none | włączone |
+| `podatki.gov.pl` | Ministerstwo Finansów (Krajowa Administracja Skarbowa) (`mf`) | primary | evidence | static | 10080 | updated_in_place | none | włączone |
+| `www.zus.pl` | Zakład Ubezpieczeń Społecznych (`zus`) | primary | evidence | static | 1440 | expires | none | włączone |
+| `www.prezydent.pl` | Kancelaria Prezydenta RP (`kprp`) | primary | evidence | static | 360 | expires | none | włączone |
 | `meteo.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
 | `hydro.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
 | `baltyk.imgw.pl` | Instytut Meteorologii i Gospodarki Wodnej – PIB (`imgw`) | primary | evidence | live |  | expires, 24 h | none | włączone |
 | `isap.sejm.gov.pl` | Kancelaria Sejmu (`kancelaria-sejmu`) | primary | evidence | static |  | in_force | none | wykluczone: robots.txt: Disallow: / dla wszystkich robotów. Te same akty pobieramy z api.sejm.gov.pl (ELI). |
 | `api.sejm.gov.pl` | Kancelaria Sejmu (`kancelaria-sejmu`) | primary | evidence | api | 10080 | in_force | none | włączone |
+| `www.sejm.gov.pl` | Kancelaria Sejmu (`kancelaria-sejmu`) | primary | evidence | static |  | expires | none | wykluczone: Strona zwraca robotom wyzwanie (pętla przekierowań 307 i pusta strona „Loading”), więc fetcher nie odczyta treści. Akty i procesy legislacyjne pobieramy z api.sejm.gov.pl. |
 | `eur-lex.europa.eu` | Urząd Publikacji Unii Europejskiej (`urzad-publikacji-ue`) | primary | evidence | static | 10080 | in_force | unknown | włączone |
 | `dane.gov.pl` | Ministerstwo Cyfryzacji (`mc`) | primary | evidence | api | 1440 | expires | none | włączone |
 | `fakenews.pl` | Fundacja Przeciwdziałania Dezinformacji (fakenews.pl) (`fakenews-pl`) | secondary | evidence | rss | 60 | expires | none | włączone |
@@ -441,6 +447,7 @@ Generuje ją `uv run python scripts/export_catalog.py` z `catalog.yaml`, razem z
 | `www.consilium.europa.eu` | Rada Unii Europejskiej (`rada-ue`) | primary | evidence | static |  | expires | none | wykluczone: Strona „Browser check” blokuje automaty (403), także robots.txt. Nie obchodzimy zabezpieczeń; decyzje Rady bierzemy z Dziennika Urzędowego w EUR-Lex. |
 | `www.nato.int` | Organizacja Traktatu Północnoatlantyckiego (NATO) (`nato`) | primary | evidence | sitemap | 360 | expires | none | włączone |
 | `bdl.stat.gov.pl` | Główny Urząd Statystyczny (`gus`) | primary | evidence | api | 10080 | expires | none | włączone |
+| `stat.gov.pl` | Główny Urząd Statystyczny (`gus`) | primary | evidence | static | 1440 | expires | none | włączone |
 | `api.nbp.pl` | Narodowy Bank Polski (`nbp`) | primary | evidence | api | 1440 | expires | none | włączone |
 | `ec.europa.eu/eurostat` | Eurostat (Komisja Europejska) (`eurostat`) | primary | evidence | api | 10080 | expires | none | włączone |
 | `pkw.gov.pl` | Państwowa Komisja Wyborcza (`pkw`) | primary | evidence | sitemap | 360 | expires | none | włączone |
@@ -725,6 +732,36 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://www.gov.pl/web/premier
 - Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
 
+#### `www.gov.pl/web/rodzina`
+
+- Wejście: https://www.gov.pl/web/rodzina
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Płaca minimalna, 800+ i świadczenia rodzinne. Dodane po benchmarku jakości sprawdzania faktów (worker#170).
+
+#### `www.gov.pl/web/finanse`
+
+- Wejście: https://www.gov.pl/web/finanse
+- Podstawa prawna: art. 4 pkt 2 pr. aut. (materiały urzędowe); warunki gov.pl/web/gov/prawa-autorskie
+- Uwagi: Budżet państwa, deficyt i dług publiczny (worker#170).
+
+#### `podatki.gov.pl`
+
+- Wejście: https://www.podatki.gov.pl/pit/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: robots.txt blokuje tylko wyniki wyszukiwania (`/*?query`). Ten sam wydawca (`mf`) co gov.pl/web/finanse (worker#170).
+
+#### `www.zus.pl`
+
+- Wejście: https://www.zus.pl/swiadczenia/emerytury
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: robots.txt bez blokad; sitemap: https://www.zus.pl/sitemap.xml (worker#170).
+
+#### `www.prezydent.pl`
+
+- Wejście: https://www.prezydent.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: robots.txt blokuje tylko `/ajax/` i `/api/` (worker#170).
+
 #### `meteo.imgw.pl`
 
 - Wejście: https://meteo.imgw.pl/
@@ -753,6 +790,12 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://api.sejm.gov.pl/eli/acts/DU/2024
 - Podstawa prawna: art. 4 pkt 1 pr. aut. (akty normatywne nie są utworami)
 - Uwagi: robots.txt: Allow: /. Pobieramy wybrane akty, nie całość.
+
+#### `www.sejm.gov.pl`
+
+- Wejście: https://www.sejm.gov.pl/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.
+- Uwagi: Wykluczone: robotom strona odpowiada pętlą przekierowań 307 i pustą stroną „Loading”. Akty i procesy legislacyjne są w api.sejm.gov.pl (worker#170).
 
 #### `eur-lex.europa.eu`
 
@@ -862,6 +905,12 @@ Kontrakt odrzuca wpis `live` z `refresh_minutes`.
 - Wejście: https://bdl.stat.gov.pl/api/v1/subjects?format=json
 - Podstawa prawna: ustawa o statystyce publicznej; ustawa z 11.08.2021 o otwartych danych
 - Uwagi: API BDL działa; także API Dziedzinowej Bazy Wiedzy: https://api-dbw.stat.gov.pl/. Warunki portalu GUS do potwierdzenia.
+
+#### `stat.gov.pl`
+
+- Wejście: https://stat.gov.pl/sygnalne/komunikaty-i-obwieszczenia/
+- Podstawa prawna: art. 4 pkt 2 pr. aut.; ustawa z 11.08.2021 o otwartych danych i ponownym wykorzystywaniu ISP
+- Uwagi: Komunikaty i obwieszczenia GUS (np. średnioroczna inflacja). Ten sam wydawca (`gus`) co bdl.stat.gov.pl (worker#170).
 
 #### `api.nbp.pl`
 
